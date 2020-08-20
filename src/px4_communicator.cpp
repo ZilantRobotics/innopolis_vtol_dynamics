@@ -364,7 +364,7 @@ int PX4Communicator::Send(unsigned int time_usec)
     return 0;
 }
 
-int PX4Communicator::Recieve(bool blocking, bool &armed, std::vector<double>& command)
+int PX4Communicator::Receive(bool blocking, bool &armed, std::vector<double>& command)
 {
 
         mavlink_message_t msg;

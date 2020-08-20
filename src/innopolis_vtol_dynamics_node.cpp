@@ -349,7 +349,7 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
   {
     for (size_t i = 0; i < 1; i++)
     {
-      px4Recved = (px4->Recieve(false, armed_, propSpeedCommand) == 1);
+      px4Recved = (px4->Receive(false, armed_, propSpeedCommand) == 1);
       // usleep(500);
       if(px4Recved)
         break;
@@ -357,7 +357,7 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
   }
   else
   {
-    px4Recved = (px4->Recieve(false, armed_, propSpeedCommand) == 1);
+    px4Recved = (px4->Receive(false, armed_, propSpeedCommand) == 1);
     if(px4Recved)
       receivedPX4Actuator = true;
   }
@@ -432,7 +432,7 @@ void Uav_Dynamics::inputCallback(mav_msgs::RateThrust::Ptr msg){
 
 /**
  * @brief Handle arming message
- * @param msg Empty message, this will be recieved when drone is to be armed
+ * @param msg Empty message, this will be received when drone is to be armed
  */
 void Uav_Dynamics::armCallback(std_msgs::Empty::Ptr msg){
 	armed_ = true;
@@ -440,7 +440,7 @@ void Uav_Dynamics::armCallback(std_msgs::Empty::Ptr msg){
 
 /**
  * @brief Handle reset message
- * @param msg Empty message, this will be recieved when drone is to be reset
+ * @param msg Empty message, this will be received when drone is to be reset
  */
 void Uav_Dynamics::resetCallback(std_msgs::Empty::Ptr msg){
 	resetRequested_ = true;
@@ -456,7 +456,7 @@ void Uav_Dynamics::inputMotorspeedCallback(mav_msgs::Actuators::Ptr msg){
 
 /**
  * @brief Handle the checking of collisions
- * @param msg Empty message, this will be recieved when a collision is detected
+ * @param msg Empty message, this will be received when a collision is detected
  */
 void Uav_Dynamics::collisionCallback(std_msgs::Empty::Ptr msg){
   hasCollided_ = true;

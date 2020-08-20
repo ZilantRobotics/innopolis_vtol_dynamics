@@ -128,7 +128,7 @@ public:
     //void CheckClientReconect();
 
 	int Send(unsigned int time_usec);
-	int Recieve(bool blocking, bool &armed, std::vector<double>& command);
+	int Receive(bool blocking, bool &armed, std::vector<double>& command);
 
 
 	int Test();
