@@ -317,7 +317,6 @@ int PX4Communicator::Send(unsigned int time_usec)
 
     mavlink_msg_hil_sensor_encode_chan(1, 200, MAVLINK_COMM_0, &msg, &sensor_msg);
     packetlen = mavlink_msg_to_send_buffer(buffer, &msg);
-    send(px4MavlinkSock, buffer, packetlen, 0);
     if(send(px4MavlinkSock, buffer, packetlen, 0)!=packetlen)
     {
         std::cerr << "PX4 Communicator: Sent to PX4 failed: "<< strerror(errno) <<std::endl;
@@ -326,7 +325,7 @@ int PX4Communicator::Send(unsigned int time_usec)
     if(last_gps_time_usec < 0)
         last_gps_time_usec = time_usec;
 
-    if( time_usec - last_gps_time_usec > 10e6/5)
+    if( time_usec - last_gps_time_usec > 10e5/5)
     {
         std::cout << "GPS" << std::endl;
         last_gps_time_usec = time_usec;
