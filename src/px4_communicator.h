@@ -53,7 +53,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -72,8 +71,8 @@
 const unsigned int SENS_ACCEL       = 0b111;
 const unsigned int SENS_GYRO        = 0b111000;
 const unsigned int SENS_MAG         = 0b111000000;
-const unsigned int SENS_BARO		= 0b1101000000000;
-const unsigned int SENS_DIFF_PRESS	= 0b10000000000;
+const unsigned int SENS_BARO        = 0b1101000000000;
+const unsigned int SENS_DIFF_PRESS  = 0b10000000000;
 
 /*
  * @brief Quaternion for rotation between ENU and NED frames
@@ -81,7 +80,7 @@ const unsigned int SENS_DIFF_PRESS	= 0b10000000000;
  * NED to ENU: +PI/2 rotation about Z (Down) followed by a +PI rotation around X (old North/new East)
  * ENU to NED: +PI/2 rotation about Z (Up) followed by a +PI rotation about X (old East/new North)
  */
-static const auto q_ned_enu = Eigen::Quaterniond(0, 0.70711, 0.70711, 0);		// q_ng
+static const auto q_ned_enu = Eigen::Quaterniond(0, 0.70711, 0.70711, 0);       // q_ng
 // NED_px4 = q_ng * ENU_ros
 
 /**
@@ -90,7 +89,7 @@ static const auto q_ned_enu = Eigen::Quaterniond(0, 0.70711, 0.70711, 0);		// q_
  * +PI rotation around X (Forward) axis rotates from Forward, Right, Down (aircraft)
  * to Forward, Left, Up (base_link) frames and vice-versa.
  */
-static const auto q_frd_flu = Eigen::Quaterniond(0, 1, 0, 0);		// q_br
+static const auto q_frd_flu = Eigen::Quaterniond(0, 1, 0, 0);       // q_br
 // FRD_px4(b) = q_br * FLU_ros(r)
 
 
@@ -98,40 +97,53 @@ class PX4Communicator
 {
 
 private:
-	MulticopterDynamicsSim *sim;
+    MulticopterDynamicsSim *sim;
 
-	struct sockaddr_in  px4_mavlink_addr;
-	struct sockaddr_in  simulator_mavlink_addr;
-	int listenMavlinkSock;
-	int px4MavlinkSock;
+    struct sockaddr_in  px4_mavlink_addr;
+    struct sockaddr_in  simulator_mavlink_addr;
+    int listenMavlinkSock;
+    int px4MavlinkSock;
 
-    const int portBase=4560;
+    const int portBase = 4560;
 
-	std::default_random_engine random_generator_;
-	std::normal_distribution<double> standard_normal_distribution_;
-	double acc_nois;
-	double gyro_nois;
-	double mag_nois;
-	double baro_alt_nois;
-	double temp_nois;
-	double abs_pressure_nois;
-	double diff_pressure_nois;
+    std::default_random_engine random_generator_;
+    std::normal_distribution<double> standard_normal_distribution_;
+    double mag_nois;
+    double baro_alt_nois;
+    double temp_nois;
+    double abs_pressure_nois;
+    double diff_pressure_nois;
 
-	unsigned int last_gps_time_usec;
-	unsigned int last_mag_time_usec;
-	unsigned int last_baro_time_usec;
+    unsigned int last_gps_time_usec;
+    unsigned int last_mag_time_usec;
+    unsigned int last_baro_time_usec;
+
+    int SendHilSensor(unsigned int time_usec);
+    int SendHilGps(unsigned int time_usec);
 
 public:
-	PX4Communicator();
-	int Init(int portOffset, MulticopterDynamicsSim *s);
-	int Clean();
-    //void CheckClientReconect();
+    PX4Communicator();
 
-	int Send(unsigned int time_usec);
-	int Receive(bool blocking, bool &armed, std::vector<double>& command);
+    /**
+     * @brief Init connection with PX4 using TCP
+     */
+    int Init(int portOffset, MulticopterDynamicsSim *s);
+
+    int Clean();
+
+    /**
+     * @brief Send hil_sensor (#107) and hil_gps (#113) to PX4 via mavlink
+     */
+    int Send(unsigned int time_usec);
 
 
-	int Test();
+    /**
+     * @brief Receive hil_actuator_controls (#93) from PX4 via mavlink
+     * @param blocking - input
+     * @param armed - output
+     * @param command - output
+     */
+    int Receive(bool blocking, bool &armed, std::vector<double>& command);
 };
 
 
