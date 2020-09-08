@@ -345,26 +345,8 @@ Eigen::Vector3d MulticopterDynamicsSim::getVehicleSpecificForce(void){
  * @return Eigen::Vector3d Total force in vehicle-fixed reference frame
  */
 Eigen::Vector3d MulticopterDynamicsSim::getTotalForce(void){
-    // Eigen::Vector3d force = (getThrust(motorSpeed_) + 
-    //                                  attitude_.inverse()*(-gravity_*vehicleMass_ + getDragForce(velocity_) + stochForce_ ))
-    //                                  / vehicleMass_;
-
-    // std::cout << "getThrust(motorSpeed_) " << getThrust(motorSpeed_).transpose() << std::endl;
-    // std::cout << "gravity_ " << gravity_.transpose() << std::endl;
-    // std::cout << "getDragForce(velocity_) " << getDragForce(velocity_).transpose() << std::endl;
-    // std::cout << "stochForce_ " << stochForce_.transpose() << std::endl;
-
-
     return (getThrust(motorSpeed_) + attitude_.inverse()*(gravity_*vehicleMass_ + getDragForce(velocity_) + stochForce_))/vehicleMass_;
-
-    
-    // return force;
 }
-
-// Eigen::Vector3d MulticopterDynamicsSim::getVelocityDerivative(const Eigen::Quaterniond & attitude, const Eigen::Vector3d & stochForce,
-//                                         const Eigen::Vector3d & velocity, const std::vector<double> & motorSpeed){
-//     return (gravity_ + (attitude*getThrust(motorSpeed) + getDragForce(velocity) + stochForce)/vehicleMass_);
-// }
 
 
 /**
@@ -375,16 +357,11 @@ Eigen::Vector3d MulticopterDynamicsSim::getTotalForce(void){
  */
 Eigen::Vector3d MulticopterDynamicsSim::getThrust(const std::vector<double> & motorSpeed){
     Eigen::Vector3d thrust = Eigen::Vector3d::Zero();
-
-    // std::cout << "motors ";
     for (int indx = 0; indx < numCopter_; indx++){
 
         Eigen::Vector3d motorThrust(0.,0.,fabs(motorSpeed.at(indx))*motorSpeed.at(indx)*thrustCoefficient_.at(indx));
         thrust += motorFrame_.at(indx).linear()*motorThrust;
-        // std::cout << motorSpeed.at(indx) << " ";
     }
-    // std::cout << "\nthrust " << thrust.transpose() << std::endl;
-
     return thrust;
 }
 
@@ -439,19 +416,14 @@ Eigen::Vector3d MulticopterDynamicsSim::getDragForce(const Eigen::Vector3d & vel
  * @param gyroOutput Ouput gyroscope measurement
  */
 void MulticopterDynamicsSim::getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput){
-    // imu_.getMeasurement(accOutput, gyroOutput, getVehicleSpecificForce(), angularVelocity_);
     imu_.getMeasurement(accOutput, gyroOutput, getTotalForce(), angularVelocity_);
 
     if( position_.z() < 0.1){
-        imu_.getMeasurement(accOutput, gyroOutput, getVehicleSpecificForce(), angularVelocity_);
+        Eigen::Vector3d zero_force;
+        zero_force.setZero();
+        imu_.getMeasurement(accOutput, gyroOutput, zero_force, angularVelocity_);
     }
-
-    // std::cout << "accOutput " << accOutput.transpose() << std::endl;
-
     accOutput = accOutput - attitude_.inverse()*gravity_;
-    // std::cout << "attitude_.inverse()*gravity_ " << (attitude_.inverse()*gravity_).transpose() << std::endl;
-
-    // std::cout << "accOutput after" << accOutput.transpose() << std::endl << std::endl;
 }
 
 /**
@@ -480,7 +452,6 @@ void MulticopterDynamicsSim::proceedState_ExplicitEuler(double dt_secs, const st
     Eigen::Quaterniond attitude = attitude_;
 
     stochForce_ /= sqrt(dt_secs);
-
     Eigen::Vector3d stochMoment;
     stochMoment << sqrt(momentProcessNoiseAutoCorrelation_/dt_secs)*standardNormalDistribution_(randomNumberGenerator_),
                    sqrt(momentProcessNoiseAutoCorrelation_/dt_secs)*standardNormalDistribution_(randomNumberGenerator_),
@@ -490,8 +461,6 @@ void MulticopterDynamicsSim::proceedState_ExplicitEuler(double dt_secs, const st
     getMotorSpeedDerivative(motorSpeedDer,motorSpeed,motorSpeedCommandBounded);
     Eigen::Vector3d positionDer = velocity;
     Eigen::Vector3d velocityDer = getVelocityDerivative(attitude,stochForce_,velocity,motorSpeed);
-    // std::cout << "der " << velocityDer.transpose() << std::endl;
-
     Eigen::Vector4d attitudeDer = getAttitudeDerivative(attitude,angularVelocity);
     Eigen::Vector3d angularVelocityDer = getAngularVelocityDerivative(motorSpeed,motorSpeedDer,angularVelocity,stochMoment);
 
@@ -505,7 +474,7 @@ void MulticopterDynamicsSim::proceedState_ExplicitEuler(double dt_secs, const st
     attitude_.normalize();
 
     if( position_.z() < 0){
-        position_[2] = 0.05;
+        position_[2] = 0.00;
         velocity_ << 0.0, 0.0, 0.0;
         angularVelocity_ << 0.0, 0.0, 0.0;
         attitude_ = Eigen::Quaterniond(1, 0,0,0);
