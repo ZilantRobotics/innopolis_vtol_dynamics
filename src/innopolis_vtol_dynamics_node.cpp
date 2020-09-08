@@ -8,6 +8,8 @@
  * 
  */
 
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Twist.h>
 #include "innopolis_vtol_dynamics_node.hpp"
 
 /**
@@ -21,6 +23,9 @@ int main(int argc, char **argv)
 {
 
   ros::init(argc, argv, "innopolis_vtol_dynamics_node");
+  if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
+    ros::console::notifyLoggerLevelsChanged();
+  }
 
   /**
    * NodeHandle is the main access point to communications with the ROS system.
@@ -28,7 +33,6 @@ int main(int argc, char **argv)
    * NodeHandle destructed will close down the node.
    */
   ros::NodeHandle n;
-
   // Init class
   Uav_Dynamics uav_dynamics_node(n);
 
@@ -108,7 +112,7 @@ node_(nh)
       dragCoeff = 0.1;
   }
 
-  Eigen::Matrix3d aeroMomentCoefficient;
+  Eigen::Matrix3d aeroMomentCoefficient = Eigen::Matrix3d::Zero();
   if (!ros::param::get("/uav/innopolis_vtol_dynamics/aeromoment_coefficient_xx", aeroMomentCoefficient(0,0))) { 
       std::cout << "Did not get the aeromoment (x) from the params, defaulting to 0.003 Nm/(rad/s)^2" << std::endl;
       aeroMomentCoefficient(0,0) = 0.003;
@@ -124,7 +128,7 @@ node_(nh)
       aeroMomentCoefficient(2,2) = 0.003;
   }
 
-  Eigen::Matrix3d vehicleInertia;
+  Eigen::Matrix3d vehicleInertia = Eigen::Matrix3d::Zero();
   if (!ros::param::get("/uav/innopolis_vtol_dynamics/vehicle_inertia_xx", vehicleInertia(0,0))) { 
       std::cout << "Did not get the inertia (x) from the params, defaulting to 0.0049 kg m^2" << std::endl;
       vehicleInertia(0,0) = 0.0049;
@@ -143,7 +147,7 @@ node_(nh)
   double maxPropSpeed;
   if (!ros::param::get("/uav/innopolis_vtol_dynamics/max_prop_speed", maxPropSpeed)) { 
       std::cout << "Did not get the max prop speed from the params, defaulting to 2200 rad/s" << std::endl;
-      maxPropSpeed = 6200.;   // 2200
+      maxPropSpeed = 1500;//2200;
   }
 
   double momentProcessNoiseAutoCorrelation;
@@ -163,7 +167,7 @@ node_(nh)
     // Start a few meters above the ground.
     std::cout << "Did NOT find initial pose from param file" << std::endl;
 
-    initPose.at(2) = 1.5;
+    initPose.at(2) = 0.2;
     initPose.at(6) = 1.0;
   }
 
@@ -244,9 +248,15 @@ node_(nh)
   }
   multicopterSim_->imu_.setNoiseVariance(accMeasNoiseVariance_, gyroMeasNoiseVariance_);
 
+  #ifdef START_LOCATION_INNOPOLIS
   double latRef = 55.7544426;
   double lonRef = 48.742684;
   double altRef = -6.5;
+  #else
+  double latRef = 47.3977420;
+  double lonRef = 8.5455940;
+  double altRef = 488.157;
+  #endif
   multicopterSim_->geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
 
   // Only enable clock scaling when simtime is enabled.
@@ -271,6 +281,8 @@ node_(nh)
   /*Allow for up to 100ms sim time buffer of outgoing IMU messages. 
     This should improve IMU integration methods on slow client nodes (see issue #63). */
   imuPub_ = node_.advertise<sensor_msgs::Imu>("/uav/sensors/imu", 96);  
+  positionPub_ = node_.advertise<geometry_msgs::Pose>("/uav/position", 1);
+  speedPub_ = node_.advertise<geometry_msgs::Twist>("/uav/speed", 1);
   inputCommandSub_ = node_.subscribe("/uav/input/rateThrust", 1, &Uav_Dynamics::inputCallback, this);
   inputMotorspeedCommandSub_ = node_.subscribe("/uav/input/motorspeed", 1, &Uav_Dynamics::inputMotorspeedCallback, this);
   collisionSub_ = node_.subscribe("/uav/collision", 1, &Uav_Dynamics::collisionCallback, this);
@@ -404,14 +416,12 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
     // Publish IMU measurements
     publishIMUMeasurement();
   }
+  publishUavPosition();
+  publishUavSpeed();
 
   // Publish quadcopter state
   publishState();
   // std::cout << "[" << currentTime_ <<"]: position " << multicopterSim_->getVehiclePosition().transpose() << std::endl;
-
-  ROS_INFO_STREAM_THROTTLE(0.2, "[" << currentTime_ <<"]: position \033[1;32m" << multicopterSim_->getVehiclePosition().transpose() << "\033[0m");
-
- 
 
   // Update clockscale if necessary
   if (actualFps != -1 && actualFps < 1e3 && useSimTime_ && useAutomaticClockscale_) {
@@ -535,6 +545,40 @@ void Uav_Dynamics::publishIMUMeasurement(void){
   meas.linear_acceleration_covariance[8] = accMeasNoiseVariance_;
 
   imuPub_.publish(meas);
+}
+
+/**
+ * @brief Publish position message
+ */
+void Uav_Dynamics::publishUavPosition(void){
+    auto position = multicopterSim_->getVehiclePosition().transpose();
+    auto euler_angles = multicopterSim_->getVehicleAttitude().toRotationMatrix().eulerAngles(0, 1, 2);
+  
+    geometry_msgs::Pose pose;
+    pose.position.x = position[0];
+    pose.position.y = position[1];
+    pose.position.z = position[2];
+    pose.orientation.x = euler_angles[0];
+    pose.orientation.y = euler_angles[1];
+    pose.orientation.z = euler_angles[2];
+    positionPub_.publish(pose);
+}
+
+/**
+ * @brief Publish position message
+ */
+void Uav_Dynamics::publishUavSpeed(void){
+    auto velocity = multicopterSim_->getVehicleVelocity();
+    auto angular_velocity = multicopterSim_->getVehicleAngularVelocity();
+
+    geometry_msgs::Twist speed;
+    speed.linear.x = velocity[0];
+    speed.linear.y = velocity[1];
+    speed.linear.z = velocity[2];
+    speed.angular.x = angular_velocity[0];
+    speed.angular.y = angular_velocity[1];
+    speed.angular.z = angular_velocity[2];
+    speedPub_.publish(speed);
 }
 
 /**

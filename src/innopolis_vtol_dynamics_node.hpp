@@ -118,10 +118,14 @@ class Uav_Dynamics {
         /// @name Publishers
         //@{
         ros::Publisher imuPub_;
+        ros::Publisher positionPub_;
+        ros::Publisher speedPub_;
         ros::Publisher clockPub_;
 
         void publishState(void);
         void publishIMUMeasurement(void);
+        void publishUavPosition(void);
+        void publishUavSpeed(void);
         void publishStaticMotorTransform(
             const ros::Time & timeStamp, const char * frame_id,
             const char * child_frame_id, const Eigen::Isometry3d & motorFrame);
