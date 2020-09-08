@@ -1,0 +1,8 @@
+<launch>
+    
+    <param name="/use_sim_time" value="false"/>
+
+    <node pkg="innopolis_vtol_dynamics" type="node" name="node" output="screen">
+    </node>
+
+</launch>
