@@ -46,7 +46,8 @@
 #include <ros/ros.h>
 
 
-PX4Communicator::PX4Communicator()
+PX4Communicator::PX4Communicator(float alt_home) :
+    ALT_HOME(alt_home)
 {
     standard_normal_distribution_ = std::normal_distribution<double>(0.0f, 0.1f);
 
@@ -199,7 +200,6 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     // Input data:
     Eigen::Vector3d pos_enu = sim->getVehiclePosition();
     Eigen::Quaterniond q_enu_flu = sim->getVehicleAttitude();
-    float ALT_HOME = 488.5;     // TODO: move to params
     float pose_n_z = -pos_enu.z(); // convert Z-component from ENU to NED
 
     // Output data

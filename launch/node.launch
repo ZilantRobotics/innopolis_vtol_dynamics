@@ -2,6 +2,7 @@
     
     <param name="/use_sim_time" value="false"/>
 
+    <rosparam file="$(find innopolis_vtol_dynamics)/config/inno_vtol_dynamics.yaml" command="load" ns="uav/innopolis_vtol_dynamics" />
     <node pkg="innopolis_vtol_dynamics" type="node" name="node" output="screen">
     </node>
 

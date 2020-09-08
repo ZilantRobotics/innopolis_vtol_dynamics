@@ -118,11 +118,13 @@ private:
     unsigned int last_mag_time_usec;
     unsigned int last_baro_time_usec;
 
+    float ALT_HOME;
+
     int SendHilSensor(unsigned int time_usec);
     int SendHilGps(unsigned int time_usec);
 
 public:
-    PX4Communicator();
+    PX4Communicator(float lat_home);
 
     /**
      * @brief Init connection with PX4 using TCP

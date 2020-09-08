@@ -223,6 +223,11 @@ class Uav_Dynamics {
         double accBiasInitVar_;
         double gyroBiasInitVar_;
         //@}
+
+        double latRef_;
+        double lonRef_;
+        double altRef_;
+
 };
 
 #endif

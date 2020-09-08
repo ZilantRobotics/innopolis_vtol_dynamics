@@ -1,0 +1,13 @@
+# reference position:
+
+# 1. inno:
+lat_ref : 55.7544426
+lon_ref : 48.742684
+alt_ref : -6.5
+
+# as in gazebo:
+# lat_ref : 47.3977420
+# lon_ref : 8.5455940
+# alt_ref : 488.157
+
+init_pose: [0, 0, 0.2, 0, 0, 1.0, 0.0]

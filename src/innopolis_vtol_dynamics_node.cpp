@@ -42,6 +42,30 @@ int main(int argc, char **argv)
   return 0;
 }
 
+static const std::string INNO_DYNAMICS_NS = "/uav/innopolis_vtol_dynamics/";
+void getParameter(std::string name, bool& parameter, bool default_value){
+  if (!ros::param::get(INNO_DYNAMICS_NS + name, parameter)){
+    std::cout << "Did not get bool "
+              << name
+              << " from the params, defaulting to "
+              << default_value
+              << std::endl;
+    parameter = default_value;
+  }
+}
+void getParameter(std::string name, double& parameter, double default_value, std::string unit=""){
+  if (!ros::param::get(INNO_DYNAMICS_NS + name, parameter)){
+    std::cout << "Did not get "
+              << name
+              << " from the params, defaulting to "
+              << default_value
+              << " "
+              << unit
+              << std::endl;
+    parameter = default_value;
+  }
+}
+
 /**
  * @brief Construct a new Uav_Dynamics::Uav_Dynamics object
  * 
@@ -51,119 +75,42 @@ Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh):
 // Node handle
 node_(nh)
 {
-  //  Populate params
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/ignore_collisions", ignoreCollisions_)){
-      std::cout << "Did not get bool ignoreCollisions_ from the params, defaulting to false" << std::endl;
-  }
+  getParameter("ignore_collisions",         ignoreCollisions_,          false);
+  getParameter("use_ratethrust_controller", useRateThrustController_,   true);
+  getParameter("use_rungekutta4integrator", useRungeKutta4Integrator_,  false);
+  getParameter("/use_sim_time",             useSimTime_,                true);
 
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/use_ratethrust_controller", useRateThrustController_)){
-      std::cout << "Did not get bool useRateThrustController_ from the params, defaulting to true" << std::endl;
-  }
+  getParameter("ignore_collisions",         ignoreCollisions_,          false);
+  getParameter("use_ratethrust_controller", useRateThrustController_,   true);
+  getParameter("use_rungekutta4integrator", useRungeKutta4Integrator_,  false);
+  getParameter("use_sim_time",              useSimTime_,                true);
 
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/use_rungekutta4integrator", useRungeKutta4Integrator_)){
-      std::cout << "Did not get bool useRungeKutta4Integrator_ from the params, defaulting to Explicit Euler integration" << std::endl;
-  }
-
-  if (!ros::param::get("/use_sim_time", useSimTime_)) {
-      std::cout << "Did not get bool useSimTime_ from the params, defaulting to false" << std::endl;
-      useSimTime_ = true;   // false
-  }
-
-  double vehicleMass;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/vehicle_mass", vehicleMass)) { 
-      std::cout << "Did not get the vehicle mass from the params, defaulting to 1kg" << std::endl;
-      vehicleMass = 1.;
-  }
-
-  double motorTimeconstant;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/motor_time_constant", motorTimeconstant)) { 
-      std::cout << "Did not get the motor time constant from the params, defaulting to 0.02 s" << std::endl;
-      motorTimeconstant = 0.02;
-  }
-
-  double motorRotationalInertia;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/motor_rotational_inertia", motorRotationalInertia)) { 
-      std::cout << "Did not get the motor rotational inertia from the params, defaulting to 6.62e-6 kg m^2" << std::endl;
-      motorRotationalInertia = 6.62e-6;
-  }
-
-  double momentArm;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/moment_arm", momentArm)) { 
-      std::cout << "Did not get the moment arm from the params, defaulting to 0.08 m" << std::endl;
-      // momentArm = 0.08;
-      momentArm = 0.35;
-  }
-
-  double thrustCoeff;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/thrust_coefficient", thrustCoeff)) { 
-      std::cout << "Did not get the thrust coefficient from the params, defaulting to 1.91e-6 N/(rad/s)^2" << std::endl;
-      thrustCoeff = 1.91e-6;
-  }
-  
-  double torqueCoeff;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/torque_coefficient", torqueCoeff)) { 
-      std::cout << "Did not get the torque coefficient from the params, defaulting to 2.6e-7 Nm/(rad/s)^2" << std::endl;
-      torqueCoeff = 2.6e-7;
-  }
-
-  double dragCoeff;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/drag_coefficient", dragCoeff)) { 
-      std::cout << "Did not get the drag coefficient from the params, defaulting to 0.1 N/(m/s)" << std::endl;
-      dragCoeff = 0.1;
-  }
+  double vehicleMass, motorTimeconstant, motorRotationalInertia, momentArm,
+         thrustCoeff, torqueCoeff, dragCoeff;
+  getParameter("vehicle_mass",              vehicleMass,                1.,       "kg");
+  getParameter("motor_time_constant",       motorTimeconstant,          0.02,     "sec");
+  getParameter("motor_rotational_inertia",  motorRotationalInertia,     6.62e-6,  "kg m^2");
+  getParameter("moment_arm",                momentArm,                  0.35,     "m");
+  getParameter("thrust_coefficient",        thrustCoeff,                1.91e-6,  "N/(rad/s)^2");
+  getParameter("torque_coefficient",        torqueCoeff,                2.6e-7,   "Nm/(rad/s)^2");
+  getParameter("drag_coefficient",          dragCoeff,                  0.1,      "N/(m/s)");
 
   Eigen::Matrix3d aeroMomentCoefficient = Eigen::Matrix3d::Zero();
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/aeromoment_coefficient_xx", aeroMomentCoefficient(0,0))) { 
-      std::cout << "Did not get the aeromoment (x) from the params, defaulting to 0.003 Nm/(rad/s)^2" << std::endl;
-      aeroMomentCoefficient(0,0) = 0.003;
-  }
-  
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/aeromoment_coefficient_yy", aeroMomentCoefficient(1,1))) { 
-      std::cout << "Did not get the aeromoment (y) from the params, defaulting to 0.003 Nm/(rad/s)^2" << std::endl;
-      aeroMomentCoefficient(1,1) = 0.003;
-  }
-
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/aeromoment_coefficient_zz", aeroMomentCoefficient(2,2))) { 
-      std::cout << "Did not get the aeromoment (z) from the params, defaulting to 0.003 Nm/(rad/s)^2" << std::endl;
-      aeroMomentCoefficient(2,2) = 0.003;
-  }
+  getParameter("aeromoment_coefficient_xx", aeroMomentCoefficient(0,0),0.003,     "Nm/(rad/s)^2");
+  getParameter("aeromoment_coefficient_yy", aeroMomentCoefficient(1,1),0.003,     "Nm/(rad/s)^2");
+  getParameter("aeromoment_coefficient_zz", aeroMomentCoefficient(2,2),0.003,     "Nm/(rad/s)^2");
 
   Eigen::Matrix3d vehicleInertia = Eigen::Matrix3d::Zero();
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/vehicle_inertia_xx", vehicleInertia(0,0))) { 
-      std::cout << "Did not get the inertia (x) from the params, defaulting to 0.0049 kg m^2" << std::endl;
-      vehicleInertia(0,0) = 0.0049;
-  }
+  getParameter("vehicle_inertia_xx",        vehicleInertia(0,0),        0.0049,   "kg m^2");
+  getParameter("vehicle_inertia_yy",        vehicleInertia(1,1),        0.0049,   "kg m^2");
+  getParameter("vehicle_inertia_zz",        vehicleInertia(2,2),        0.0069,   "kg m^2");
   
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/vehicle_inertia_yy", vehicleInertia(1,1))) { 
-      std::cout << "Did not get the inertia (y) from the params, defaulting to 0.0049 kg m^2" << std::endl;
-      vehicleInertia(1,1) = 0.0049;
-  }
-
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/vehicle_inertia_zz", vehicleInertia(2,2))) { 
-      std::cout << "Did not get the inertia (z) from the params, defaulting to 0.0069 kg m^2" << std::endl;
-      vehicleInertia(2,2) = 0.0069;
-  }
-
-  double maxPropSpeed;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/max_prop_speed", maxPropSpeed)) { 
-      std::cout << "Did not get the max prop speed from the params, defaulting to 2200 rad/s" << std::endl;
-      maxPropSpeed = 1500;//2200;
-  }
-
-  double momentProcessNoiseAutoCorrelation;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/moment_process_noise", momentProcessNoiseAutoCorrelation)) { 
-      std::cout << "Did not get the moment process noise from the params, defaulting to 1.25e-7 (Nm)^2 s" << std::endl;
-      momentProcessNoiseAutoCorrelation = 1.25e-7;
-  }
-
-  double forceProcessNoiseAutoCorrelation;
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/force_process_noise", forceProcessNoiseAutoCorrelation)) { 
-      std::cout << "Did not get the force process noise from the params, defaulting to 0.0005 N^2 s" << std::endl;
-      forceProcessNoiseAutoCorrelation = 0.0005;
-  }
+  double maxPropSpeed, momentProcessNoiseAutoCorrelation, forceProcessNoiseAutoCorrelation;
+  getParameter("max_prop_speed",            maxPropSpeed,               1500,     "rad/s");
+  getParameter("force_process_noise", forceProcessNoiseAutoCorrelation, 0.0005,   "N^2 s");
 
   std::vector<double> initPose(7);
-  if (!ros::param::get("/uav/innopolis_vtol_dynamics/init_pose", initPose)) {
+  if (!ros::param::get(INNO_DYNAMICS_NS + "init_pose", initPose)) {
     // Start a few meters above the ground.
     std::cout << "Did NOT find initial pose from param file" << std::endl;
 
@@ -213,55 +160,27 @@ node_(nh)
   multicopterSim_->setMotorSpeed(initPropSpeed_);
 
   // Get and set IMU parameters
-  double accBiasProcessNoiseAutoCorrelation;
-  if (!ros::param::get("/uav/flightgoggles_imu/accelerometer_biasprocess", accBiasProcessNoiseAutoCorrelation)) { 
-      std::cout << "Did not get the accelerometer bias process auto corr from the params, defaulting to 1.0e-7 m^2/s^5" << std::endl;
-      accBiasProcessNoiseAutoCorrelation = 1.0e-7;
-  }
-
-  double gyroBiasProcessNoiseAutoCorrelation;
-  if (!ros::param::get("/uav/flightgoggles_imu/gyroscope_biasprocess", gyroBiasProcessNoiseAutoCorrelation)) { 
-      std::cout << "Did not get the gyroscope bias process auto corr from the params, defaulting to 1.0e-7 rad^2/s^3" << std::endl;
-      gyroBiasProcessNoiseAutoCorrelation = 1.0e-7;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_imu/accelerometer_biasinitvar", accBiasInitVar_)) { 
-      std::cout << "Did not get the accelerometer bias initial value var from the params, defaulting to 0.0015 (m/s^2)^2" << std::endl;
-      accBiasInitVar_ = 0.00015;    // was 0.0015
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_imu/gyroscope_biasinitvar", gyroBiasInitVar_)) { 
-      std::cout << "Did not get the gyroscope bias initial value var from the params, defaulting to 0.0013 (rad/s)^2" << std::endl;
-      gyroBiasInitVar_ = 0.00013;   // was 0.0013
-  }
-
-  multicopterSim_->imu_.setBias(accBiasInitVar_, gyroBiasInitVar_, accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation);
-
-  if (!ros::param::get("/uav/flightgoggles_imu/accelerometer_variance", accMeasNoiseVariance_)) { 
-      std::cout << "Did not get the accelerometer variance from the params, defaulting to 0.005 m^2/s^4" << std::endl;
-      accMeasNoiseVariance_ = 0.001;  // was 0.005
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_imu/gyroscope_variance", gyroMeasNoiseVariance_)) { 
-      std::cout << "Did not get the gyroscope variance from the params, defaulting to 0.003 rad^2/s^2" << std::endl;
-      gyroMeasNoiseVariance_ = 0.001; // was 0.003
-  }
+  double accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation;
+  getParameter("accelerometer_biasprocess", accBiasProcessNoiseAutoCorrelation, 1.0e-7, "m^2/s^5");
+  getParameter("gyroscope_biasprocess",     accBiasProcessNoiseAutoCorrelation, 1.0e-7, "rad^2/s^3");
+  getParameter("accelerometer_biasinitvar", accBiasInitVar_,                    0.00015,"(m/s^2)^2");
+  getParameter("gyroscope_biasinitvar",     gyroBiasInitVar_,                   0.00013,"(rad/s)^2");
+  getParameter("accelerometer_variance",    accMeasNoiseVariance_,              0.001,  "m^2/s^4");
+  getParameter("gyroscope_variance",        gyroMeasNoiseVariance_,             0.001,  "rad^2/s^2");
+  multicopterSim_->imu_.setBias(accBiasInitVar_, gyroBiasInitVar_,
+                                accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation);
   multicopterSim_->imu_.setNoiseVariance(accMeasNoiseVariance_, gyroMeasNoiseVariance_);
 
-  #ifdef START_LOCATION_INNOPOLIS
-  double latRef = 55.7544426;
-  double lonRef = 48.742684;
-  double altRef = -6.5;
-  #else
-  double latRef = 47.3977420;
-  double lonRef = 8.5455940;
-  double altRef = 488.157;
-  #endif
-  multicopterSim_->geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
+  // Get home (reference) position
+  getParameter("lat_ref",                   latRef_,                            47.3977420);
+  getParameter("lon_ref",                   lonRef_,                            8.5455940);
+  getParameter("alt_ref",                   altRef_,                            488.157);
+
+  multicopterSim_->geodetic_converter_.initialiseReference(latRef_, lonRef_, altRef_);
 
   // Only enable clock scaling when simtime is enabled.
   if (useSimTime_) {
-    if (!ros::param::get("/uav/innopolis_vtol_dynamics/clockscale", clockScale)) {
+    if (!ros::param::get(INNO_DYNAMICS_NS + "clockscale", clockScale)) {
       std::cout << "Using sim_time and did not get a clock scaling value. Defaulting to automatic clock scaling." << std::endl;
       useAutomaticClockscale_ = true;
     }
@@ -298,7 +217,7 @@ node_(nh)
     currentTime_ = ros::Time::now();
   }
 
-  px4 = new PX4Communicator();
+  px4 = new PX4Communicator(altRef_);
   int px4id = 0;
   if (px4->Init(px4id, multicopterSim_) != 0) {
 		std::cerr << "Unable to Init PX4 Communication" << std::endl;
@@ -668,80 +587,29 @@ void Uav_LowPassFilter::resetState(void){
  * 
  */
 Uav_Pid::Uav_Pid(){
+  getParameter("gain_p_roll",         propGain_[0],       propGain_[0]);
+  getParameter("gain_i_roll",         intGain_[0],        intGain_[0]);
+  getParameter("gain_d_roll",         derGain_[0],        derGain_[0]);
 
-  // Set parameters
+  getParameter("gain_p_pitch",        propGain_[1],       propGain_[1]);
+  getParameter("gain_i_pitch",        intGain_[1],        intGain_[1]);
+  getParameter("gain_d_pitch",        derGain_[1],        derGain_[1]);
 
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_p_roll", propGain_[0])) { 
-      std::cout << "Did not get the PID gain p roll from the params, defaulting to 9.0" << std::endl;
-  }
+  getParameter("gain_p_yaw",          propGain_[2],       propGain_[2]);
+  getParameter("gain_i_yaw",          intGain_[2],        intGain_[2]);
+  getParameter("gain_d_yaw",          derGain_[2],        derGain_[2]);
 
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_i_roll", intGain_[0])) { 
-      std::cout << "Did not get the PID gain i roll from the params, defaulting to 3.0" << std::endl;
-  }
+  getParameter("int_bound_roll",      intBound_[0],       intBound_[0]);
+  getParameter("int_bound_pitch",     intBound_[1],       intBound_[1]);
+  getParameter("int_bound_yaw",       intBound_[2],       intBound_[2]);
 
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_d_roll", derGain_[0])) { 
-      std::cout << "Did not get the PID gain d roll from the params, defaulting to 0.3" << std::endl;
-  }
+  getParameter("vehicle_inertia_xx",  vehicleInertia_[0], vehicleInertia_[0]);
+  getParameter("vehicle_inertia_yy",  vehicleInertia_[1], vehicleInertia_[1]);
+  getParameter("vehicle_inertia_zz",  vehicleInertia_[2], vehicleInertia_[2]);
 
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_p_pitch", propGain_[1])) { 
-      std::cout << "Did not get the PID gain p pitch from the params, defaulting to 9.0" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_i_pitch", intGain_[1])) { 
-      std::cout << "Did not get the PID gain i pitch from the params, defaulting to 3.0" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_d_pitch", derGain_[1])) { 
-      std::cout << "Did not get the PID gain d pitch from the params, defaulting to 0.3" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_p_yaw", propGain_[2])) { 
-      std::cout << "Did not get the PID gain p yaw from the params, defaulting to 9.0" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_i_yaw", intGain_[2])) { 
-      std::cout << "Did not get the PID gain i yaw from the params, defaulting to 3.0" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/gain_d_yaw", derGain_[2])) { 
-      std::cout << "Did not get the PID gain d yaw from the params, defaulting to 0.3" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/int_bound_roll", intBound_[0])) { 
-      std::cout << "Did not get the PID roll integrator bound from the params, defaulting to 1000.0" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/int_bound_pitch", intBound_[1])) { 
-      std::cout << "Did not get the PID pitch integrator bound from the params, defaulting to 1000.0" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/int_bound_yaw", intBound_[2])) { 
-      std::cout << "Did not get the PID yaw integrator bound from the params, defaulting to 1000.0" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/vehicle_inertia_xx", vehicleInertia_[0])) { 
-      std::cout << "Did not get the PID inertia (x) from the params, defaulting to 0.0049 kg m^2" << std::endl;
-  }
-  
-  if (!ros::param::get("/uav/flightgoggles_pid/vehicle_inertia_yy", vehicleInertia_[1])) { 
-      std::cout << "Did not get the PID inertia (y) from the params, defaulting to 0.0049 kg m^2" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/vehicle_inertia_zz", vehicleInertia_[2])) { 
-      std::cout << "Did not get the PID inertia (z) from the params, defaulting to 0.0069 kg m^2" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/moment_arm", momentArm_)) { 
-      std::cout << "Did not get the PID moment arm from the params, defaulting to 0.08 m" << std::endl;
-  }
-
-  if (!ros::param::get("/uav/flightgoggles_pid/thrust_coefficient", thrustCoeff_)) { 
-      std::cout << "Did not get the PID thrust coefficient from the params, defaulting to 1.91e-6 N/(rad/s)^2" << std::endl;
-  }
-  
-  if (!ros::param::get("/uav/flightgoggles_pid/torque_coefficient", torqueCoeff_)) { 
-      std::cout << "Did not get the PID torque coefficient from the params, defaulting to 2.6e-7 Nm/(rad/s)^2" << std::endl;
-  }
+  getParameter("moment_arm",          momentArm_,         momentArm_);
+  getParameter("thrust_coefficient",  thrustCoeff_,       thrustCoeff_);
+  getParameter("torque_coefficient",  torqueCoeff_,       torqueCoeff_);
 }
 
 /**
@@ -811,4 +679,3 @@ void Uav_Pid::resetState(void){
     intState_[ind] = 0.;
   }
 }
-
