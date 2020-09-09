@@ -1,0 +1,7 @@
+# for inno_sim_interface
+futures
+bson
+pymongo
+protobuf
+Pillow
+twisted

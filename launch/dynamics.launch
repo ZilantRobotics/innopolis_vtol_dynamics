@@ -25,4 +25,8 @@
         <arg name="value" value="vehicle:=$(arg vehicle)" />
     </include>
 
+    <!-- 3. Run dynamic simulation -->
+    <rosparam file="$(find innopolis_vtol_dynamics)/config/inno_vtol_dynamics.yaml" command="load" ns="uav/innopolis_vtol_dynamics" />
+    <node pkg="innopolis_vtol_dynamics" type="node" name="node" output="screen">
+    </node>
 </launch>
