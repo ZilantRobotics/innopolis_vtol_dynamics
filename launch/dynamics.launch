@@ -8,7 +8,6 @@
 
     <!-- Gazebo settings -->
     <arg name="gui"                 default="true"/>
-    <param name="/use_sim_time"     value="false"/>
 
     <!-- 1. Launch the simulation and connect ROS to it via MAVROS -->
     <include file="$(find mavros)/launch/px4.launch">

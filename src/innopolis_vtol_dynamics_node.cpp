@@ -8,6 +8,7 @@
  * 
  */
 
+#include <cmath>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include "innopolis_vtol_dynamics_node.hpp"
@@ -72,58 +73,47 @@ void getParameter(std::string name, double& parameter, double default_value, std
  * @param nh ROS Nodehandle
  */
 Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh):
-// Node handle
 node_(nh)
 {
+  // Simulator parameters
   getParameter("ignore_collisions",         ignoreCollisions_,          false);
   getParameter("use_ratethrust_controller", useRateThrustController_,   true);
   getParameter("use_rungekutta4integrator", useRungeKutta4Integrator_,  false);
-  getParameter("/use_sim_time",             useSimTime_,                true);
+  getParameter("use_sim_time",              useSimTime_,                false);
 
-  getParameter("ignore_collisions",         ignoreCollisions_,          false);
-  getParameter("use_ratethrust_controller", useRateThrustController_,   true);
-  getParameter("use_rungekutta4integrator", useRungeKutta4Integrator_,  false);
-  getParameter("use_sim_time",              useSimTime_,                true);
-
+  // Vehicle parameters
   double vehicleMass, motorTimeconstant, motorRotationalInertia, momentArm,
          thrustCoeff, torqueCoeff, dragCoeff;
   getParameter("vehicle_mass",              vehicleMass,                1.,       "kg");
   getParameter("motor_time_constant",       motorTimeconstant,          0.02,     "sec");
   getParameter("motor_rotational_inertia",  motorRotationalInertia,     6.62e-6,  "kg m^2");
-  getParameter("moment_arm",                momentArm,                  0.35,     "m");
+  getParameter("moment_arm",                momentArm,                  0.08,     "m");
   getParameter("thrust_coefficient",        thrustCoeff,                1.91e-6,  "N/(rad/s)^2");
   getParameter("torque_coefficient",        torqueCoeff,                2.6e-7,   "Nm/(rad/s)^2");
   getParameter("drag_coefficient",          dragCoeff,                  0.1,      "N/(m/s)");
 
   Eigen::Matrix3d aeroMomentCoefficient = Eigen::Matrix3d::Zero();
-  getParameter("aeromoment_coefficient_xx", aeroMomentCoefficient(0,0),0.003,     "Nm/(rad/s)^2");
-  getParameter("aeromoment_coefficient_yy", aeroMomentCoefficient(1,1),0.003,     "Nm/(rad/s)^2");
-  getParameter("aeromoment_coefficient_zz", aeroMomentCoefficient(2,2),0.003,     "Nm/(rad/s)^2");
+  getParameter("aeromoment_coefficient_xx", aeroMomentCoefficient(0,0), 0.003,    "Nm/(rad/s)^2");
+  getParameter("aeromoment_coefficient_yy", aeroMomentCoefficient(1,1), 0.003,    "Nm/(rad/s)^2");
+  getParameter("aeromoment_coefficient_zz", aeroMomentCoefficient(2,2), 0.003,    "Nm/(rad/s)^2");
 
   Eigen::Matrix3d vehicleInertia = Eigen::Matrix3d::Zero();
   getParameter("vehicle_inertia_xx",        vehicleInertia(0,0),        0.0049,   "kg m^2");
   getParameter("vehicle_inertia_yy",        vehicleInertia(1,1),        0.0049,   "kg m^2");
   getParameter("vehicle_inertia_zz",        vehicleInertia(2,2),        0.0069,   "kg m^2");
   
-  double maxPropSpeed, momentProcessNoiseAutoCorrelation, forceProcessNoiseAutoCorrelation;
-  getParameter("max_prop_speed",            maxPropSpeed,               1500,     "rad/s");
+  double minPropSpeed, maxPropSpeed, momentProcessNoiseAutoCorrelation, forceProcessNoiseAutoCorrelation;
+  minPropSpeed = 0.0;
+  getParameter("max_prop_speed",            maxPropSpeed,               2200,     "rad/s");
+  getParameter("moment_process_noise",momentProcessNoiseAutoCorrelation,1.25e-7,  "(Nm)^2 s");
   getParameter("force_process_noise", forceProcessNoiseAutoCorrelation, 0.0005,   "N^2 s");
-
-  std::vector<double> initPose(7);
-  if (!ros::param::get(INNO_DYNAMICS_NS + "init_pose", initPose)) {
-    // Start a few meters above the ground.
-    std::cout << "Did NOT find initial pose from param file" << std::endl;
-
-    initPose.at(2) = 0.2;
-    initPose.at(6) = 1.0;
-  }
 
   // Set gravity vector according to ROS reference axis system, see header file
   Eigen::Vector3d gravity(0.,0.,-9.81);
 
   // Create quadcopter simulator
   multicopterSim_ = new MulticopterDynamicsSim(4, thrustCoeff, torqueCoeff,
-                        0., maxPropSpeed, motorTimeconstant, motorRotationalInertia,
+                        minPropSpeed, maxPropSpeed, motorTimeconstant, motorRotationalInertia,
                         vehicleMass, vehicleInertia,
                         aeroMomentCoefficient, dragCoeff, momentProcessNoiseAutoCorrelation,
                         forceProcessNoiseAutoCorrelation, gravity);
@@ -151,22 +141,34 @@ node_(nh)
   publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor3", motorFrame);
 
   // Set initial conditions
+  std::vector<double> initPose(7);
+  if (!ros::param::get(INNO_DYNAMICS_NS + "init_pose", initPose)) {
+    // Start a few meters above the ground.
+    std::cout << "Did NOT find initial pose from param file" << std::endl;
+
+    initPose.at(2) = 0.2;
+    initPose.at(6) = 1.0;
+  }
   initPosition_ << initPose.at(0), initPose.at(1), initPose.at(2);
-  initAttitude_.coeffs() << initPose.at(3), initPose.at(4), initPose.at(5), initPose.at(6);
+  initAttitude_.x() = initPose.at(3);
+  initAttitude_.y() = initPose.at(4);
+  initAttitude_.z() = initPose.at(5);
+  initAttitude_.w() = initPose.at(6);
   initAttitude_.normalize();
   initPropSpeed_ = sqrt(vehicleMass/4.*9.81/thrustCoeff);
 
   multicopterSim_->setVehiclePosition(initPosition_,initAttitude_);
+  multicopterSim_->setVehicleInitialAttitude(initAttitude_);
   multicopterSim_->setMotorSpeed(initPropSpeed_);
 
   // Get and set IMU parameters
   double accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation;
   getParameter("accelerometer_biasprocess", accBiasProcessNoiseAutoCorrelation, 1.0e-7, "m^2/s^5");
   getParameter("gyroscope_biasprocess",     accBiasProcessNoiseAutoCorrelation, 1.0e-7, "rad^2/s^3");
-  getParameter("accelerometer_biasinitvar", accBiasInitVar_,                    0.00015,"(m/s^2)^2");
-  getParameter("gyroscope_biasinitvar",     gyroBiasInitVar_,                   0.00013,"(rad/s)^2");
-  getParameter("accelerometer_variance",    accMeasNoiseVariance_,              0.001,  "m^2/s^4");
-  getParameter("gyroscope_variance",        gyroMeasNoiseVariance_,             0.001,  "rad^2/s^2");
+  getParameter("accelerometer_biasinitvar", accBiasInitVar_,                    0.005,  "(m/s^2)^2");
+  getParameter("gyroscope_biasinitvar",     gyroBiasInitVar_,                   0.003,  "(rad/s)^2");
+  getParameter("accelerometer_variance",    accMeasNoiseVariance_,              0.005,  "m^2/s^4");
+  getParameter("gyroscope_variance",        gyroMeasNoiseVariance_,             0.003,  "rad^2/s^2");
   multicopterSim_->imu_.setBias(accBiasInitVar_, gyroBiasInitVar_,
                                 accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation);
   multicopterSim_->imu_.setNoiseVariance(accMeasNoiseVariance_, gyroMeasNoiseVariance_);
@@ -298,10 +300,7 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
 
 
   // Only propagate simulation if armed
-  if (true /*armed_*/) {  
-
-    
-
+  if (armed_) {
     // if(useRateThrustController_){
     //   // Proceed LPF state based on gyro measurement
     //   lpf_.proceedState(imuGyroOutput_, dt_secs);
@@ -470,16 +469,31 @@ void Uav_Dynamics::publishIMUMeasurement(void){
  * @brief Publish position message
  */
 void Uav_Dynamics::publishUavPosition(void){
-    auto position = multicopterSim_->getVehiclePosition().transpose();
-    auto euler_angles = multicopterSim_->getVehicleAttitude().toRotationMatrix().eulerAngles(0, 1, 2);
-  
     geometry_msgs::Pose pose;
+
+    auto position = multicopterSim_->getVehiclePosition().transpose();
     pose.position.x = position[0];
     pose.position.y = position[1];
     pose.position.z = position[2];
+
+    auto quant = multicopterSim_->getVehicleAttitude();
+    auto euler_angles = quant.toRotationMatrix().eulerAngles(1, 0, 2);
+    for(int idx = 0; idx < 3; idx++){
+        euler_angles[idx] = euler_angles[idx] * 180 / 3.14;
+        if(euler_angles[idx] > 360){
+            euler_angles[idx] -= 360;
+        }else if(euler_angles[idx] < 0){
+            euler_angles[idx] += 360;
+        }
+    }
     pose.orientation.x = euler_angles[0];
     pose.orientation.y = euler_angles[1];
     pose.orientation.z = euler_angles[2];
+    // pose.orientation.x = quant.x();
+    // pose.orientation.y = quant.y();
+    // pose.orientation.z = quant.z();
+    // pose.orientation.w = quant.w();
+
     positionPub_.publish(pose);
 }
 
@@ -607,7 +621,7 @@ Uav_Pid::Uav_Pid(){
   getParameter("vehicle_inertia_yy",  vehicleInertia_[1], vehicleInertia_[1]);
   getParameter("vehicle_inertia_zz",  vehicleInertia_[2], vehicleInertia_[2]);
 
-  getParameter("moment_arm",          momentArm_,         momentArm_);
+  getParameter("moment_arm",          momentArm_,         0.08);
   getParameter("thrust_coefficient",  thrustCoeff_,       thrustCoeff_);
   getParameter("torque_coefficient",  torqueCoeff_,       torqueCoeff_);
 }

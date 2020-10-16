@@ -200,7 +200,6 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     // Input data:
     Eigen::Vector3d pos_enu = sim->getVehiclePosition();
     Eigen::Quaterniond q_enu_flu = sim->getVehicleAttitude();
-    float pose_n_z = -pos_enu.z(); // convert Z-component from ENU to NED
 
     // Output data
     mavlink_hil_sensor_t sensor_msg;
@@ -238,7 +237,7 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     // calculate abs_pressure using an ISA model for the tropsphere (valid up to 11km above MSL)
     const float LAPSE_RATE = 0.0065f; // reduction in temperature with altitude (Kelvin/m)
     const float TEMPERATURE_MSL = 288.0f; // temperature at MSL (Kelvin)
-    float alt_msl = ALT_HOME - pose_n_z;
+    float alt_msl = ALT_HOME + pos_enu.z();
 
     float temperature_local = TEMPERATURE_MSL - LAPSE_RATE * alt_msl;
     float pressure_ratio = powf((TEMPERATURE_MSL/temperature_local), 5.256f);
@@ -280,13 +279,13 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
 
     if (time_usec - last_mag_time_usec > 10e6/100)
     {
-        sensor_msg.fields_updated = sensor_msg.fields_updated | SENS_MAG;
+        sensor_msg.fields_updated |= SENS_MAG;
         last_mag_time_usec = time_usec;
     }
 
     if (time_usec - last_baro_time_usec > 10e6/100)
     {
-        sensor_msg.fields_updated = sensor_msg.fields_updated | SENS_BARO | SENS_DIFF_PRESS;
+        sensor_msg.fields_updated |= SENS_BARO | SENS_DIFF_PRESS;
         last_baro_time_usec = time_usec;
     }
 
@@ -339,6 +338,7 @@ int PX4Communicator::SendHilGps(unsigned int time_usec){
 
     // Course over ground
     double cog = -std::atan2(hil_gps_msg.vn, hil_gps_msg.ve) * 180 / 3.141592654 + 90;
+
     if (cog < 0) {
         cog += 360;
     }

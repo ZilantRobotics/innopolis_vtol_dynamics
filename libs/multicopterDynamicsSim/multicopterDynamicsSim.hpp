@@ -46,6 +46,7 @@ class MulticopterDynamicsSim{
         void setMotorSpeed(double motorSpeed);
         void resetMotorSpeeds(void);
         void setVehiclePosition(const Eigen::Vector3d & position,const Eigen::Quaterniond & attitude);
+        void setVehicleInitialAttitude(const Eigen::Quaterniond & attitude);
         void setVehicleState(const Eigen::Vector3d & position,
                              const Eigen::Vector3d & velocity,
                              const Eigen::Vector3d & angularVelocity,
@@ -126,6 +127,7 @@ class MulticopterDynamicsSim{
         Eigen::Vector3d position_ = Eigen::Vector3d::Zero(); // m
         Eigen::Vector3d angularVelocity_ = Eigen::Vector3d::Zero(); // rad/s
         Eigen::Quaterniond attitude_ = Eigen::Quaterniond::Identity();
+        Eigen::Quaterniond default_attitude_ = Eigen::Quaterniond::Identity();
         //@}
 
         /* Vehicle stochastic force vector (in world frame) is maintained

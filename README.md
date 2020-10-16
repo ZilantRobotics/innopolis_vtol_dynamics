@@ -51,7 +51,7 @@ roscd inno_sim_interface/cfg
 ~/software/InnoSimulator-Linux64-2020.1.2/InnoSimulator.x86_64 --config config.yaml
 ```
 
-1. To bridge data between dynamics and InnoSimulator:
+4. To bridge data between dynamics and InnoSimulator:
 ```roslaunch innopolis_vtol_dynamics visualization_using_inno_sim.launch```
 
 # How to use Gazebo simulator:

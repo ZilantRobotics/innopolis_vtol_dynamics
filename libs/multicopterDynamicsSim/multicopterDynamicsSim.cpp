@@ -245,6 +245,10 @@ void MulticopterDynamicsSim::setVehiclePosition(const Eigen::Vector3d & position
     resetMotorSpeeds();
 }
 
+void MulticopterDynamicsSim::setVehicleInitialAttitude(const Eigen::Quaterniond & attitude){
+    default_attitude_ = attitude;
+}
+
 /**
  * @brief Set vehicle state
  * 
@@ -416,14 +420,14 @@ Eigen::Vector3d MulticopterDynamicsSim::getDragForce(const Eigen::Vector3d & vel
  * @param gyroOutput Ouput gyroscope measurement
  */
 void MulticopterDynamicsSim::getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput){
-    imu_.getMeasurement(accOutput, gyroOutput, getTotalForce(), angularVelocity_);
-
     if( position_.z() < 0.1){
         Eigen::Vector3d zero_force;
         zero_force.setZero();
         imu_.getMeasurement(accOutput, gyroOutput, zero_force, angularVelocity_);
+        accOutput = accOutput - attitude_.inverse()*gravity_;
+    }else{
+        imu_.getMeasurement(accOutput, gyroOutput, getVehicleSpecificForce(), angularVelocity_);
     }
-    accOutput = accOutput - attitude_.inverse()*gravity_;
 }
 
 /**
@@ -477,7 +481,7 @@ void MulticopterDynamicsSim::proceedState_ExplicitEuler(double dt_secs, const st
         position_[2] = 0.00;
         velocity_ << 0.0, 0.0, 0.0;
         angularVelocity_ << 0.0, 0.0, 0.0;
-        attitude_ = Eigen::Quaterniond(1, 0,0,0);
+        attitude_ = default_attitude_;
     }
 
     stochForce_ << sqrt(forceProcessNoiseAutoCorrelation_)*standardNormalDistribution_(randomNumberGenerator_),

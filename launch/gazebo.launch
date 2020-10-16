@@ -3,7 +3,7 @@
         Prerequirements:
         DONT_RUN=1 make px4_sitl_default gazebo
      -->
-    <arg name="vehicle"             default="standard_vtol" doc="[standard_vtol, iris]"/>
+    <arg name="vehicle"             default="iris" doc="[standard_vtol, iris]"/>
     <arg name="fcu_url"             default="udp://:14540@127.0.0.1:14557" doc="[udp://:14560@127.0.0.1:14558]"/>
 
     <!-- Gazebo settings -->
