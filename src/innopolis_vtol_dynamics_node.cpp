@@ -12,6 +12,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include "innopolis_vtol_dynamics_node.hpp"
+#include "vtolDynamicsSim.hpp"
 
 /**
  * @brief Global function designated start of UAV dynamics node
@@ -101,6 +102,8 @@ node_(nh), propSpeedCommand_(4, 0.)
                         vehicleMass, vehicleInertia,
                         aeroMomentCoefficient, dragCoeff, momentProcessNoiseAutoCorrelation,
                         forceProcessNoiseAutoCorrelation, gravity);
+  
+  volatile VtolDynamicsSim* vtolSim = new VtolDynamicsSim();
 
   // Set and publish motor transforms for the four motors
   Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();

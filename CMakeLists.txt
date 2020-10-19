@@ -143,6 +143,8 @@ include_directories(
 
 add_library(inertialMeasurementSim libs/multicopterDynamicsSim/inertialMeasurementSim.cpp)
 add_library(multicopterDynamicsSim libs/multicopterDynamicsSim/multicopterDynamicsSim.cpp)
+add_library(${PROJECT_NAME} src/vtolDynamicsSim.cpp)
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
