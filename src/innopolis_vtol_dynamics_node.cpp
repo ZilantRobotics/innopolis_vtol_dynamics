@@ -44,17 +44,8 @@ int main(int argc, char **argv)
 }
 
 static const std::string INNO_DYNAMICS_NS = "/uav/innopolis_vtol_dynamics/";
-void getParameter(std::string name, bool& parameter, bool default_value){
-  if (!ros::param::get(INNO_DYNAMICS_NS + name, parameter)){
-    std::cout << "Did not get bool "
-              << name
-              << " from the params, defaulting to "
-              << default_value
-              << std::endl;
-    parameter = default_value;
-  }
-}
-void getParameter(std::string name, double& parameter, double default_value, std::string unit=""){
+template <class T>
+void getParameter(std::string name, T& parameter, T default_value, std::string unit=""){
   if (!ros::param::get(INNO_DYNAMICS_NS + name, parameter)){
     std::cout << "Did not get "
               << name
@@ -73,21 +64,14 @@ void getParameter(std::string name, double& parameter, double default_value, std
  * @param nh ROS Nodehandle
  */
 Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh):
-node_(nh)
+node_(nh), propSpeedCommand_(4, 0.)
 {
-  // Simulator parameters
-  getParameter("ignore_collisions",         ignoreCollisions_,          false);
-  getParameter("use_ratethrust_controller", useRateThrustController_,   true);
-  getParameter("use_rungekutta4integrator", useRungeKutta4Integrator_,  false);
-  getParameter("use_sim_time",              useSimTime_,                false);
-
   // Vehicle parameters
-  double vehicleMass, motorTimeconstant, motorRotationalInertia, momentArm,
+  double vehicleMass, motorTimeconstant, motorRotationalInertia,
          thrustCoeff, torqueCoeff, dragCoeff;
   getParameter("vehicle_mass",              vehicleMass,                1.,       "kg");
   getParameter("motor_time_constant",       motorTimeconstant,          0.02,     "sec");
   getParameter("motor_rotational_inertia",  motorRotationalInertia,     6.62e-6,  "kg m^2");
-  getParameter("moment_arm",                momentArm,                  0.08,     "m");
   getParameter("thrust_coefficient",        thrustCoeff,                1.91e-6,  "N/(rad/s)^2");
   getParameter("torque_coefficient",        torqueCoeff,                2.6e-7,   "Nm/(rad/s)^2");
   getParameter("drag_coefficient",          dragCoeff,                  0.1,      "N/(m/s)");
@@ -104,7 +88,7 @@ node_(nh)
   
   double minPropSpeed, maxPropSpeed, momentProcessNoiseAutoCorrelation, forceProcessNoiseAutoCorrelation;
   minPropSpeed = 0.0;
-  getParameter("max_prop_speed",            maxPropSpeed,               2200,     "rad/s");
+  getParameter("max_prop_speed",            maxPropSpeed,               2200.0,   "rad/s");
   getParameter("moment_process_noise",momentProcessNoiseAutoCorrelation,1.25e-7,  "(Nm)^2 s");
   getParameter("force_process_noise", forceProcessNoiseAutoCorrelation, 0.0005,   "N^2 s");
 
@@ -120,32 +104,29 @@ node_(nh)
 
   // Set and publish motor transforms for the four motors
   Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
+  double momentArm;
+  getParameter("moment_arm",                momentArm,                  0.08,     "m");
+
   motorFrame.translation() = Eigen::Vector3d(momentArm,momentArm,0.);
   multicopterSim_->setMotorFrame(motorFrame,1,0);
-
   publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor0", motorFrame);
 
   motorFrame.translation() = Eigen::Vector3d(-momentArm,momentArm,0.);
   multicopterSim_->setMotorFrame(motorFrame,-1,1);
-
   publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor1", motorFrame);
 
   motorFrame.translation() = Eigen::Vector3d(-momentArm,-momentArm,0.);
   multicopterSim_->setMotorFrame(motorFrame,1,2);
-
   publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor2", motorFrame);
 
   motorFrame.translation() = Eigen::Vector3d(momentArm,-momentArm,0.);
   multicopterSim_->setMotorFrame(motorFrame,-1,3);
-
   publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor3", motorFrame);
 
   // Set initial conditions
   std::vector<double> initPose(7);
   if (!ros::param::get(INNO_DYNAMICS_NS + "init_pose", initPose)) {
-    // Start a few meters above the ground.
     std::cout << "Did NOT find initial pose from param file" << std::endl;
-
     initPose.at(2) = 0.2;
     initPose.at(6) = 1.0;
   }
@@ -180,15 +161,19 @@ node_(nh)
 
   multicopterSim_->geodetic_converter_.initialiseReference(latRef_, lonRef_, altRef_);
 
-  // Only enable clock scaling when simtime is enabled.
+  // Simulator parameters
+  getParameter("ignore_collisions",         ignoreCollisions_,          false);
+  getParameter("use_ratethrust_controller", useRateThrustController_,   true);
+  getParameter("use_rungekutta4integrator", useRungeKutta4Integrator_,  false);
+  getParameter("use_sim_time",              useSimTime_,                false);
+
   if (useSimTime_) {
-    if (!ros::param::get(INNO_DYNAMICS_NS + "clockscale", clockScale)) {
+    if (!ros::param::get(INNO_DYNAMICS_NS + "clockscale", clockScale_)) {
       std::cout << "Using sim_time and did not get a clock scaling value. Defaulting to automatic clock scaling." << std::endl;
       useAutomaticClockscale_ = true;
     }
   }
 
-  // Print several parameters to terminal
   std::cout << "Ignore collisions: " << ignoreCollisions_ << std::endl;
   std::cout << "Initial position: " << initPosition_(0) << ", "
                                     << initPosition_(1) << ", "
@@ -226,8 +211,23 @@ node_(nh)
 	}
 
   // Init main simulation loop
-  simulationLoopTimer_ = node_.createWallTimer(ros::WallDuration(dt_secs/clockScale), &Uav_Dynamics::simulationLoopTimerCallback, this);
+  simulationLoopTimer_ = node_.createWallTimer(ros::WallDuration(dt_secs/clockScale_), &Uav_Dynamics::simulationLoopTimerCallback, this);
   simulationLoopTimer_.start();
+
+  proceedDynamicsTask = std::thread(&Uav_Dynamics::proceedQuadcopterDynamics, this, dt_secs);
+  proceedDynamicsTask.detach();
+
+  sendHilGpsTask = std::thread(&Uav_Dynamics::sendHilGps, this, 0.1);
+  sendHilGpsTask.detach();
+
+  sendHilSensorTask = std::thread(&Uav_Dynamics::sendHilSensor, this, 0.001);
+  sendHilSensorTask.detach();
+
+  receiveTask = std::thread(&Uav_Dynamics::receive, this, 0.001);
+  receiveTask.detach();
+
+  publishToRosTask = std::thread(&Uav_Dynamics::publishToRos, this, 0.05);
+  publishToRosTask.detach();
 }
 
 /**
@@ -235,7 +235,7 @@ node_(nh)
  * @param msg Float msg of frame rate in sim time from unity
  */
 void Uav_Dynamics::fpsCallback(std_msgs::Float32::Ptr msg) { 
-  actualFps = msg->data; 
+  actualFps_ = msg->data;
 }
 
 /**
@@ -266,88 +266,155 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
     return;
   }
 
-  std::vector<double> propSpeedCommand(4, 0.);
-
-  // The sequence of steps for lockstep are:
-  // The simulation sends a sensor message HIL_SENSOR including a timestamp time_usec to update the sensor state and time of PX4.
-  // PX4 receives this and does one iteration of state estimation, controls, etc. and eventually sends an actuator message HIL_ACTUATOR_CONTROLS.
-  // The simulation waits until it receives the actuator/motor message, then simulates the physics and calculates the next sensor message to send to PX4 again.
-  // The system starts with a "freewheeling" period where the simulation sends sensor messages including time and therefore runs PX4 until it has initialized and responds with an actautor message.
-
-	bool px4Recved = false;
-  // std::vector<double> commandPercent(4, 0.0);
-  
-  px4->Send(currentTime_.toNSec() / 1000);
-  if(receivedPX4Actuator)
-  {
-    for (size_t i = 0; i < 1; i++)
-    {
-      px4Recved = (px4->Receive(false, armed_, propSpeedCommand) == 1);
-      // usleep(500);
-      if(px4Recved)
-        break;
-    }
-  }
-  else
-  {
-    px4Recved = (px4->Receive(false, armed_, propSpeedCommand) == 1);
-    if(px4Recved)
-      receivedPX4Actuator = true;
-  }
-
-  if(!px4Recved)
-    return;
-
-
-  // Only propagate simulation if armed
-  if (armed_) {
-    // if(useRateThrustController_){
-    //   // Proceed LPF state based on gyro measurement
-    //   lpf_.proceedState(imuGyroOutput_, dt_secs);
-
-    //   // PID compute motor speed commands
-    //   if(lastCommandMsg_){
-    //     pid_.controlUpdate(lastCommandMsg_->angular_rates, lastCommandMsg_->thrust.z,
-    //                       lpf_.filterState_, lpf_.filterStateDer_,
-    //                       propSpeedCommand, dt_secs);
-    //   }
-    // }
-    // else{
-    //   if(lastMotorspeedCommandMsg_){
-    //     for (size_t motorIndx = 0; motorIndx < 4; motorIndx++){
-    //       propSpeedCommand.at(motorIndx) = lastMotorspeedCommandMsg_->angular_velocities[motorIndx];
-    //     }
-    //   }
-    // }
-
-    // Proceed quadcopter dynamics
-    if(useRungeKutta4Integrator_){
-      multicopterSim_->proceedState_RK4(dt_secs, propSpeedCommand, true); 
-    }
-    else{
-      multicopterSim_->proceedState_ExplicitEuler(dt_secs, propSpeedCommand, true);
-    }
-
-    // Get IMU measurements
-    multicopterSim_->getIMUMeasurement(imuAccOutput_, imuGyroOutput_);
-
-    // Publish IMU measurements
-    publishIMUMeasurement();
-  }
-  publishUavPosition();
-  publishUavSpeed();
-
-  // Publish quadcopter state
-  publishState();
-  // std::cout << "[" << currentTime_ <<"]: position " << multicopterSim_->getVehiclePosition().transpose() << std::endl;
 
   // Update clockscale if necessary
-  if (actualFps != -1 && actualFps < 1e3 && useSimTime_ && useAutomaticClockscale_) {
-     clockScale =  (actualFps / 55.0);
+  if (actualFps_ != -1 && actualFps_ < 1e3 && useSimTime_ && useAutomaticClockscale_) {
+     clockScale_ =  (actualFps_ / 55.0);
      simulationLoopTimer_.stop();
-     simulationLoopTimer_.setPeriod(ros::WallDuration(dt_secs / clockScale));
+     simulationLoopTimer_.setPeriod(ros::WallDuration(dt_secs / clockScale_));
      simulationLoopTimer_.start();
   }
+}
+
+void Uav_Dynamics::sendHilSensor(double period){
+    while(ros::ok()){
+        auto crnt_time = std::chrono::system_clock::now();
+        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto time_point = crnt_time + sleed_period;
+
+        static auto prev_time = std::chrono::system_clock::now();
+        static uint8_t counter = 0;
+        counter++;
+        auto time_now = std::chrono::system_clock::now();
+        if(counter > 50){
+            std::chrono::duration<double> delta_time = time_now - prev_time;
+            std::cout << "Uav_Dynamics::sendHilSensor:" << delta_time.count() << std::endl;
+            counter = 0;
+        }
+        prev_time = std::chrono::system_clock::now();
+
+
+        int send_status = px4->SendHilSensor(currentTime_.toNSec() / 1000);
+        if(send_status == -1){
+            ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Sent to PX4 failed" << strerror(errno));
+        }
+
+
+        std::this_thread::sleep_until(time_point);
+    }
+}
+
+void Uav_Dynamics::sendHilGps(double period){
+    while(ros::ok()){
+        auto crnt_time = std::chrono::system_clock::now();
+        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto time_point = crnt_time + sleed_period;
+
+        int send_status = px4->SendHilGps(currentTime_.toNSec() / 1000);
+        if(send_status == -1){
+            ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Send to PX4 failed" << strerror(errno));
+        }
+        std::this_thread::sleep_until(time_point);
+    }
+}
+
+void Uav_Dynamics::publishToRos(double period){
+    while(ros::ok()){
+        auto crnt_time = std::chrono::system_clock::now();
+        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto time_point = crnt_time + sleed_period;
+        std::this_thread::sleep_until(time_point);
+    }
+}
+
+// The sequence of steps for lockstep are:
+// The simulation sends a sensor message HIL_SENSOR including a timestamp time_usec to update
+// the sensor state and time of PX4.
+// PX4 receives this and does one iteration of state estimation, controls, etc. and eventually
+// sends an actuator message HIL_ACTUATOR_CONTROLS.
+// The simulation waits until it receives the actuator/motor message, then simulates the physics
+// and calculates the next sensor message to send to PX4 again.
+// The system starts with a "freewheeling" period where the simulation sends sensor messages
+// including time and therefore runs PX4 until it has initialized and responds with an actautor message.
+void Uav_Dynamics::receive(double period){
+    while(ros::ok()){
+        auto crnt_time = std::chrono::system_clock::now();
+        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto time_point = crnt_time + sleed_period;
+
+        if(receivedPX4Actuator_){
+            for (size_t i = 0; i < 1; i++){
+                if(px4->Receive(false, armed_, propSpeedCommand_) == 1){
+
+                static auto prev_time = std::chrono::system_clock::now();
+                static uint8_t counter = 0;
+                counter++;
+                auto time_now = std::chrono::system_clock::now();
+                if(counter > 50){
+                    std::chrono::duration<double> delta_time = time_now - prev_time;
+                    std::cout << "Uav_Dynamics::receive:" << delta_time.count() << std::endl;
+                    counter = 0;
+                }
+                prev_time = std::chrono::system_clock::now();
+
+                    break;
+                }
+            }
+        }else if(px4->Receive(false, armed_, propSpeedCommand_) == 1){
+            receivedPX4Actuator_ = true;
+        }
+
+        std::this_thread::sleep_until(time_point);
+    }
+}
+
+void Uav_Dynamics::proceedQuadcopterDynamics(double period){
+    while(ros::ok()){
+        auto crnt_time = std::chrono::system_clock::now();
+        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto time_point = crnt_time + sleed_period;
+
+        if(receivedPX4Actuator_ && armed_){
+            // if(useRateThrustController_){
+            //   // Proceed LPF state based on gyro measurement
+            //   lpf_.proceedState(imuGyroOutput_, dt_secs);
+
+            //   // PID compute motor speed commands
+            //   if(lastCommandMsg_){
+            //     pid_.controlUpdate(lastCommandMsg_->angular_rates, lastCommandMsg_->thrust.z,
+            //                       lpf_.filterState_, lpf_.filterStateDer_,
+            //                       propSpeedCommand_, dt_secs);
+            //   }
+            // }
+            // else{
+            //   if(lastMotorspeedCommandMsg_){
+            //     for (size_t motorIndx = 0; motorIndx < 4; motorIndx++){
+            //       propSpeedCommand_.at(motorIndx) = lastMotorspeedCommandMsg_->angular_velocities[motorIndx];
+            //     }
+            //   }
+            // }
+
+            static auto prev_time = std::chrono::system_clock::now();
+            static uint8_t counter = 0;
+            counter++;
+            auto time_now = std::chrono::system_clock::now();
+            if(counter > 50){
+                std::chrono::duration<double> delta_time = time_now - prev_time;
+                std::cout << "Uav_Dynamics::proceedQuadcopterDynamics:" << delta_time.count() << std::endl;
+                counter = 0;
+            }
+            prev_time = std::chrono::system_clock::now();
+
+            if(useRungeKutta4Integrator_){
+                multicopterSim_->proceedState_RK4(dt_secs, propSpeedCommand_, true);
+            }
+            else{
+                multicopterSim_->proceedState_ExplicitEuler(dt_secs, propSpeedCommand_, true);
+            }
+        }
+
+        std::this_thread::sleep_until(time_point);
+    }
 }
 
 /**
@@ -489,10 +556,6 @@ void Uav_Dynamics::publishUavPosition(void){
     pose.orientation.x = euler_angles[0];
     pose.orientation.y = euler_angles[1];
     pose.orientation.z = euler_angles[2];
-    // pose.orientation.x = quant.x();
-    // pose.orientation.y = quant.y();
-    // pose.orientation.z = quant.z();
-    // pose.orientation.w = quant.w();
 
     positionPub_.publish(pose);
 }

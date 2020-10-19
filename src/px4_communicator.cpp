@@ -175,26 +175,6 @@ int PX4Communicator::Clean()
     return 0;
 }
 
-
-int PX4Communicator::Send(unsigned int time_usec)
-{
-    if(SendHilSensor(time_usec) == -1)
-    {
-        ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Sent to PX4 failed" << strerror(errno));
-        return -1;
-    }
-
-    last_gps_time_usec = time_usec;
-    if(SendHilGps(time_usec) == -1)
-    {
-        ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Send to PX4 failed" << strerror(errno));
-        return -1;
-    }
-
-    return 0;
-}
-
-
 int PX4Communicator::SendHilSensor(unsigned int time_usec)
 {
     // Input data:
@@ -217,6 +197,8 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     sensor_msg.xgyro = gyro_frd[0];
     sensor_msg.ygyro = gyro_frd[1];
     sensor_msg.zgyro = gyro_frd[2];
+    // TODO: bit 31: full reset of attitude/position/velocities/etc was performed in sim.
+    sensor_msg.fields_updated = SENS_ACCEL | SENS_GYRO;
 
     // Fill Magnetc field
     double latitude_deg = 0;
@@ -233,6 +215,13 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     sensor_msg.xmag = mag_frd[0] + mag_nois * standard_normal_distribution_(random_generator_);
     sensor_msg.ymag = mag_frd[1] + mag_nois * standard_normal_distribution_(random_generator_);
     sensor_msg.zmag = mag_frd[2] + mag_nois * standard_normal_distribution_(random_generator_);
+    if(last_mag_time_usec < 0)
+        last_mag_time_usec = 0;
+    if (time_usec - last_mag_time_usec > 1e6/10)
+    {
+        sensor_msg.fields_updated |= SENS_MAG;
+        last_mag_time_usec = time_usec;
+    }
 
     // calculate abs_pressure using an ISA model for the tropsphere (valid up to 11km above MSL)
     const float LAPSE_RATE = 0.0065f; // reduction in temperature with altitude (Kelvin/m)
@@ -269,25 +258,14 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     sensor_msg.pressure_alt = pressure_altitude + baro_alt_nois * standard_normal_distribution_(random_generator_);
     sensor_msg.diff_pressure = diff_pressure + diff_pressure_nois * standard_normal_distribution_(random_generator_) ;
 
-    // TODO: bit 31: full reset of attitude/position/velocities/etc was performed in sim.
-    sensor_msg.fields_updated = SENS_ACCEL | SENS_GYRO;
-
-    if(last_mag_time_usec < 0)
-        last_mag_time_usec = 0;
     if(last_baro_time_usec < 0)
         last_baro_time_usec = 0;
-
-    if (time_usec - last_mag_time_usec > 10e6/100)
-    {
-        sensor_msg.fields_updated |= SENS_MAG;
-        last_mag_time_usec = time_usec;
-    }
-
-    if (time_usec - last_baro_time_usec > 10e6/100)
+    if (time_usec - last_baro_time_usec > 1e6/10)
     {
         sensor_msg.fields_updated |= SENS_BARO | SENS_DIFF_PRESS;
         last_baro_time_usec = time_usec;
     }
+
 
     mavlink_message_t msg;
     uint8_t buffer[MAVLINK_MAX_PACKET_LEN];

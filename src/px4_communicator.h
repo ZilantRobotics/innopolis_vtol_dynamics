@@ -120,9 +120,6 @@ private:
 
     float ALT_HOME;
 
-    int SendHilSensor(unsigned int time_usec);
-    int SendHilGps(unsigned int time_usec);
-
 public:
     PX4Communicator(float lat_home);
 
@@ -136,7 +133,8 @@ public:
     /**
      * @brief Send hil_sensor (#107) and hil_gps (#113) to PX4 via mavlink
      */
-    int Send(unsigned int time_usec);
+    int SendHilSensor(unsigned int time_usec);
+    int SendHilGps(unsigned int time_usec);
 
 
     /**

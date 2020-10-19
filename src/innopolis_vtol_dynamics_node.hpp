@@ -10,6 +10,8 @@
 #ifndef UAV_DYNAMICS_HPP
 #define UAV_DYNAMICS_HPP
 
+#include <thread>
+
 // ROS includes
 #include <ros/ros.h>
 #include <ros/time.h>
@@ -105,7 +107,7 @@ class Uav_Dynamics {
     public:
         /// @name Constructor
         Uav_Dynamics(ros::NodeHandle nh);
-        
+
         /// @name Node handle
         ros::NodeHandle node_;
 
@@ -126,9 +128,10 @@ class Uav_Dynamics {
         void publishIMUMeasurement(void);
         void publishUavPosition(void);
         void publishUavSpeed(void);
-        void publishStaticMotorTransform(
-            const ros::Time & timeStamp, const char * frame_id,
-            const char * child_frame_id, const Eigen::Isometry3d & motorFrame);
+        void publishStaticMotorTransform(const ros::Time & timeStamp,
+                                         const char * frame_id,
+                                         const char * child_frame_id,
+                                         const Eigen::Isometry3d & motorFrame);
         //@}
 
         /// @name Subscribers
@@ -168,8 +171,8 @@ class Uav_Dynamics {
         ros::Time currentTime_;
         double dt_secs = 1.0f/960.;
         bool useAutomaticClockscale_ = false;
-        double clockScale = 1.0;
-        double actualFps  = -1;
+        double clockScale_ = 1.0;
+        double actualFps_  = -1;
         bool useSimTime_ = false;
         //@}
 
@@ -183,7 +186,7 @@ class Uav_Dynamics {
         bool useRungeKutta4Integrator_ = false;
         //@}
 
-        bool receivedPX4Actuator = false;
+        bool receivedPX4Actuator_ = false;
 
         void resetState(void);
 
@@ -227,6 +230,20 @@ class Uav_Dynamics {
         double latRef_;
         double lonRef_;
         double altRef_;
+
+        std::vector<double> propSpeedCommand_;
+
+    private:
+        void proceedQuadcopterDynamics(double period);
+        void sendHilGps(double period);
+        void sendHilSensor(double period);
+        void receive(double period);
+        void publishToRos(double period);
+        std::thread proceedDynamicsTask;
+        std::thread sendHilGpsTask;
+        std::thread sendHilSensorTask;
+        std::thread receiveTask;
+        std::thread publishToRosTask;
 
 };
 

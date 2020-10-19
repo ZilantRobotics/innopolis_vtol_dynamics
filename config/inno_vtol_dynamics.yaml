@@ -14,9 +14,15 @@ alt_ref : -6.5
 init_pose: [0.00, 0.00, 0.0,
             0.00, 0.00, +0.00, +1.00]  # roll, pitch, yaw, weight
 
-# 3. odel settings
-vehicle_mass : 1.5
-max_prop_speed : 2200
+# 3. vehicle settings
+vehicle_mass :              1.5       # kg
+motor_time_constant:        0.02      # sec
+motor_rotational_inertia:   6.62e-6   # kg m^2
+moment_arm:                 0.08      # m ???
+thrust_coefficient:         1.91e-6   # N/(rad/s)^2"
+torque_coefficient:         2.6e-7    # Nm/(rad/s)^2
+drag_coefficient:           0.1       # N/(m/s)
+max_prop_speed :            2200      # rad/s
 
 # 4. Imu noise
 accelerometer_variance:     0.0001    # 0.001
