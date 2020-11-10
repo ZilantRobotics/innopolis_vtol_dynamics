@@ -57,3 +57,24 @@ roscd inno_sim_interface/cfg
 # How to use Gazebo simulator:
 
 - Instead of `innopolis_vtol_dynamics dynamics.launch` use `roslaunch innopolis_vtol_dynamics gazebo.launch vehicle:=iris`
+
+# Tests
+For tests we use [GoogleTest](https://github.com/google/googletest/tree/master/googletest)
+To install this you should follow official instruction or this sequence:
+
+```
+git clone https://github.com/google/googletest.git -b release-1.10.0
+cd googletest               # Main directory of the cloned repository.
+mkdir build                 # Create a directory to hold the build output.
+cd build
+cmake .. -DBUILD_GMOCK=OFF  # Generate build scripts for GoogleTest without GoogleMock.
+make
+sudo make install           # Install in /usr/local/ by default
+```
+
+To run test, type (and read [here](http://wiki.ros.org/gtest) and [here](https://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html#building-and-running-tests) if you don't configured and launched accordingly gtest from ros yet):
+
+```
+roscd innopolis_vtol_dynamics
+catkin run_tests --no-deps --this
+```

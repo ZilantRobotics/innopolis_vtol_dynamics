@@ -7,11 +7,11 @@
 #ifndef VTOL_DYNAMICS_SIM_H
 #define VTOL_DYNAMICS_SIM_H
 
-// #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <vector>
 #include <array>
-// #include <geographiclib_conversions/geodetic_conv.hpp>
+#include <random>
+
 
 struct VtolParameters{
     double mass;                                    // kg
@@ -57,6 +57,10 @@ struct SystemState{
     Eigen::Vector3d estAngularAcceleration;         // rad/sec^2, in body CS
     Eigen::Vector3d estLinearVelocity;              // m/sec, in body CS
     Eigen::Vector3d estLinearAcceleration;          // m/sec^2, in body CS
+
+    double windVariance;
+    double guVariance;
+
 };
 
 struct CommandedState{
@@ -99,18 +103,30 @@ struct Control{
 
 /**
  * @brief Vtol dynamics simulator class
- * 
  */
 class VtolDynamicsSim{
     public:
-        VtolDynamicsSim() {};
-        void process();        
+        VtolDynamicsSim();
+        void init();
+        void processStep();
+
+        typedef uint64_t Time_t;
+        Eigen::Vector3d calculateWind();
+        Eigen::Matrix3d calculateRotationMatrix();
+
+        void setWindParameter(Eigen::Vector3d windMeanVelocity,
+                              double wind_velocityVariance);
+        void setEulerAngles(Eigen::Vector3d eulerAngles);
     private:
+
         VtolParameters params_;
         SystemState sysState_;
         CommandedState cmdState_;
         SystemConstraints sysConstraints_;
         Control control_;
+
+        std::default_random_engine generator_;
+        std::normal_distribution<double> distribution_;
 };
 
 #endif // VTOL_DYNAMICS_SIM_H

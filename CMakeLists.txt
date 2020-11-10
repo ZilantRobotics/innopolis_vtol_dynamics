@@ -172,7 +172,8 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
-  ${catkin_LIBRARIES}
+    ${PROJECT_NAME}
+    ${catkin_LIBRARIES}
 )
 
 target_link_libraries(multicopterDynamicsSim inertialMeasurementSim)
@@ -216,12 +217,8 @@ target_link_libraries(${PROJECT_NAME}_node multicopterDynamicsSim)
 #############
 ## Testing ##
 #############
+catkin_add_gtest(${PROJECT_NAME}-test src/tests/test_vtol_dynamics.cpp)
 
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_innopolis_vtol_dynamics.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+if(TARGET ${PROJECT_NAME}-test)
+  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+endif()
