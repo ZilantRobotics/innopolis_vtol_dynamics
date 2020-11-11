@@ -112,7 +112,14 @@ class VtolDynamicsSim{
 
         typedef uint64_t Time_t;
         Eigen::Vector3d calculateWind();
-        Eigen::Matrix3d calculateRotationMatrix();
+        Eigen::Matrix3d calculateRotationMatrix() const;
+        Eigen::Vector3d calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,
+                                          const Eigen::Vector3d& estimatedVelocity,
+                                          const Eigen::Vector3d& windSpeed);
+        double calculateDynamicPressure(double airSpeedMod);
+        double calculateAnglesOfAtack(const Eigen::Vector3d& airSpeed) const;
+        double calculateAnglesOfSideslip(const Eigen::Vector3d& airSpeed) const;
+
 
         void setWindParameter(Eigen::Vector3d windMeanVelocity,
                               double wind_velocityVariance);
