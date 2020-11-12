@@ -108,7 +108,9 @@ class VtolDynamicsSim{
     public:
         VtolDynamicsSim();
         void init();
-        void processStep();
+        void processStep(double dt_secs,
+                         const std::vector<double> & motorSpeedCommandIn,
+                         bool isCmdPercent);
 
         typedef uint64_t Time_t;
         Eigen::Vector3d calculateWind();
@@ -119,6 +121,29 @@ class VtolDynamicsSim{
         double calculateDynamicPressure(double airSpeedMod);
         double calculateAnglesOfAtack(const Eigen::Vector3d& airSpeed) const;
         double calculateAnglesOfSideslip(const Eigen::Vector3d& airSpeed) const;
+
+        void calculateAerodynamics(const Eigen::Vector3d& airspeed,
+                                   double dynamicPressure,
+                                   double AoA,
+                                   double AoS,
+                                   double aileron_pos,
+                                   double elevator_pos,
+                                   double rudder_pos,
+                                   Eigen::Vector3d& Faero,
+                                   Eigen::Vector3d& Maero,
+                                   double& Cmx_a,
+                                   double& Cmy_e,
+                                   double& Cmz_r);
+
+        void calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
+        void calculateCDPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
+        void calculatePolynomialUsingTable(const Eigen::MatrixXf& table,
+                                           double airSpeedMod,
+                                           Eigen::VectorXd& polynomialCoeffs);
+
+        size_t findRow(const Eigen::MatrixXf& table, double value) const;
+        double lerp(double a, double b, double f) const;
+        double polyval(const Eigen::VectorXd& poly, double val) const;
 
 
         void setWindParameter(Eigen::Vector3d windMeanVelocity,
