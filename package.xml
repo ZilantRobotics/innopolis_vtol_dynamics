@@ -54,6 +54,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>roscpp</depend>
+
   <!-- Message types used -->
   <depend>std_msgs</depend>
   <depend>mav_msgs</depend>
@@ -64,12 +65,14 @@
   <!-- Libraries -->
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
+  <depend>yaml-cpp</depend>
 
   <!-- Other deps -->
   <build_depend>message_generation</build_depend>
   <build_export_depend>message_runtime</build_export_depend>
   <exec_depend>message_runtime</exec_depend>
-
+  <build_depend>roslib</build_depend>
+  <exec_depend>roslib</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

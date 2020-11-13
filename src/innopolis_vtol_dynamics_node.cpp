@@ -103,7 +103,8 @@ node_(nh), propSpeedCommand_(4, 0.)
                         aeroMomentCoefficient, dragCoeff, momentProcessNoiseAutoCorrelation,
                         forceProcessNoiseAutoCorrelation, gravity);
   
-  volatile VtolDynamicsSim* vtolSim = new VtolDynamicsSim();
+  VtolDynamicsSim* vtolSim = new VtolDynamicsSim();
+  vtolSim->init();
 
   // Set and publish motor transforms for the four motors
   Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();

@@ -101,6 +101,19 @@ struct Control{
     double K_zeta;                                  // gain is tuned by trial-and-error method
 };
 
+struct TablesWithCoeffs{
+    Eigen::MatrixXd CS_rudder;
+    Eigen::MatrixXd actuator;
+    Eigen::MatrixXd airspeed;
+
+    Eigen::MatrixXd CLPolynomial;
+    Eigen::MatrixXd CSPolynomial;
+    Eigen::MatrixXd CDPolynomial;
+    Eigen::MatrixXd CmxPolynomial;
+    Eigen::MatrixXd CmyPolynomial;
+    Eigen::MatrixXd CmzPolynomial;
+};
+
 /**
  * @brief Vtol dynamics simulator class
  */
@@ -136,18 +149,32 @@ class VtolDynamicsSim{
                                    double& Cmz_r);
 
         void calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
+        void calculateCSPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
         void calculateCDPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
-        void calculatePolynomialUsingTable(const Eigen::MatrixXf& table,
+        void calculateCmxPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
+        void calculateCmyPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
+        void calculateCmzPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
+        void calculatePolynomialUsingTable(const Eigen::MatrixXd& table,
                                            double airSpeedMod,
                                            Eigen::VectorXd& polynomialCoeffs);
 
-        size_t findRow(const Eigen::MatrixXf& table, double value) const;
+        double calculateCSRudder(double rudder_pos, double airspeed) const;
+
+        size_t findRow(const Eigen::MatrixXd& table, double value) const;
         double lerp(double a, double b, double f) const;
+        /**
+         * @note Similar to https://www.mathworks.com/help/matlab/ref/griddata.html
+         * Implementation from https://en.wikipedia.org/wiki/Bilinear_interpolation
+         */
+        double griddata(const Eigen::MatrixXd& x,
+                        const Eigen::MatrixXd& y,
+                        const Eigen::MatrixXd& z,
+                        double xi,
+                        double yi) const;
         double polyval(const Eigen::VectorXd& poly, double val) const;
 
 
-        void setWindParameter(Eigen::Vector3d windMeanVelocity,
-                              double wind_velocityVariance);
+        void setWindParameter(Eigen::Vector3d windMeanVelocity, double wind_velocityVariance);
         void setEulerAngles(Eigen::Vector3d eulerAngles);
     private:
 
@@ -156,6 +183,7 @@ class VtolDynamicsSim{
         CommandedState cmdState_;
         SystemConstraints sysConstraints_;
         Control control_;
+        TablesWithCoeffs tables_;
 
         std::default_random_engine generator_;
         std::normal_distribution<double> distribution_;

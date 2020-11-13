@@ -71,7 +71,7 @@ TEST(VtolDynamicsSim, calculateAnglesOfSideslip){
 
 TEST(VtolDynamicsSim, findRow){
     VtolDynamicsSim vtolDynamicsSim;
-    Eigen::MatrixXf table(8, 8);
+    Eigen::MatrixXd table(8, 8);
     table << 5, -2.758e-11, 8.139e-09, 1.438e-07, -3.095e-05, -0.0003512, 0.05557, 0.4132,
             10, -3.934e-11, 8.204e-09, 1.935e-07, -3.075e-05, -0.0004209, 0.0552,  0.4438,
             15, -5.464e-11, 7.747e-09, 2.369e-07, -2.918e-05, -0.0004564, 0.05447, 0.4545,
@@ -93,6 +93,7 @@ TEST(VtolDynamicsSim, findRow){
 
 TEST(VtolDynamicsSim, calculateCLPolynomial){
     VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
     Eigen::VectorXd calculatedpolynomialCoeffs(7);
     Eigen::VectorXd expectedPolynomialCoeffs(7);
     Eigen::VectorXd diff(7);
@@ -128,6 +129,46 @@ TEST(VtolDynamicsSim, polyval){
     poly << 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7;
     value = 0.5;
     ASSERT_TRUE(std::abs(vtolDynamicsSim.polyval(poly, value) - 3.1859) < 0.001);
+}
+
+TEST(VtolDynamicsSim, griddata){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    Eigen::MatrixXd x(1, 3);
+    Eigen::MatrixXd y(1, 4);
+    Eigen::MatrixXd f(4, 3);
+    double x_value;
+    double y_value;
+    double result;
+
+    x << 1, 2, 3;
+    y << 2, 3, 4, 5;
+    f << 2.5, 3.0, 3.5,
+         3.0, 3.5, 4.0,
+         3.5, 4.0, 4.5,
+         4.0, 4.5, 5.0;
+
+    x_value = 2.25;
+    y_value = 3.75;
+    ASSERT_TRUE(std::abs(vtolDynamicsSim.griddata(x, y, f, x_value, y_value) - 4.0) < 0.001);
+
+    x_value = 1.1;
+    y_value = 4.75;
+    result = vtolDynamicsSim.griddata(x, y, f, x_value, y_value);
+    ASSERT_TRUE(std::abs(result - 3.9250) < 0.001);
+}
+
+TEST(VtolDynamicsSim, calculateCSRudder){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double rudder_position;
+    double airspeed;
+    double result;
+
+    rudder_position = 15;
+    airspeed = 10;
+    result = vtolDynamicsSim.calculateCSRudder(rudder_position, airspeed);
+    ASSERT_TRUE(std::abs(result - 0.028345) < 0.001);
 }
 
 int main(int argc, char *argv[]){

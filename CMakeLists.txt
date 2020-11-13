@@ -16,6 +16,7 @@ SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
     roscpp
+    roslib
     std_msgs
     mav_msgs
     sensor_msgs
@@ -119,7 +120,7 @@ find_package(mavlink)
 catkin_package(
 #  INCLUDE_DIRS include
     LIBRARIES innopolis_vtol_dynamics
-    CATKIN_DEPENDS roscpp std_msgs mav_msgs sensor_msgs geometry_msgs tf2 tf2_ros 
+    CATKIN_DEPENDS roscpp std_msgs mav_msgs sensor_msgs geometry_msgs tf2 tf2_ros roslib
 #  DEPENDS system_lib
 )
 
@@ -178,6 +179,7 @@ target_link_libraries(${PROJECT_NAME}_node
 
 target_link_libraries(multicopterDynamicsSim inertialMeasurementSim)
 target_link_libraries(${PROJECT_NAME}_node multicopterDynamicsSim)
+target_link_libraries(${PROJECT_NAME} yaml-cpp)
 
 #############
 ## Install ##
@@ -220,5 +222,5 @@ target_link_libraries(${PROJECT_NAME}_node multicopterDynamicsSim)
 catkin_add_gtest(${PROJECT_NAME}-test src/tests/test_vtol_dynamics.cpp)
 
 if(TARGET ${PROJECT_NAME}-test)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
 endif()
