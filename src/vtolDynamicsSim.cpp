@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <boost/algorithm/clamp.hpp>
+#include <algorithm>
 #include "yaml-cpp/yaml.h"
 #include "vtolDynamicsSim.hpp"
 #include <ros/package.h>
@@ -17,12 +18,26 @@ VtolDynamicsSim::VtolDynamicsSim():
 }
 
 void VtolDynamicsSim::init(){
-    std::string path = ros::package::getPath("innopolis_vtol_dynamics") + "/config/aerodynamics_coeffs.yaml";
+    std::string configPath = ros::package::getPath("innopolis_vtol_dynamics") + "/config/";
+    loadTables(configPath + "aerodynamics_coeffs.yaml");
+    loadParams(configPath + "vtol_params.yaml");
+}
+
+void VtolDynamicsSim::loadTables(const std::string& path){
     YAML::Node config = YAML::LoadFile(path);
     std::vector<double> vectorTable;
 
     vectorTable = config["CS_rudder_table"].as< std::vector<double> >();
     tables_.CS_rudder = Eigen::Map<Eigen::Matrix<double, 8, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 20);
+
+    vectorTable = config["CS_beta"].as< std::vector<double> >();
+    tables_.CS_beta = Eigen::Map<Eigen::Matrix<double, 8, 90, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 90);
+
+    vectorTable = config["AoA"].as< std::vector<double> >();
+    tables_.AoA = Eigen::Map<Eigen::Matrix<double, 1, 47, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 47);
+
+    vectorTable = config["AoS"].as< std::vector<double> >();
+    tables_.AoS = Eigen::Map<Eigen::Matrix<double, 1, 90, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 90);
 
     vectorTable = config["actuator_table"].as< std::vector<double> >();
     tables_.actuator = Eigen::Map<Eigen::Matrix<double, 1, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 20);
@@ -37,7 +52,7 @@ void VtolDynamicsSim::init(){
     tables_.CSPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
 
     vectorTable = config["CDPolynomial"].as< std::vector<double> >();
-    tables_.CDPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
+    tables_.CDPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 6, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 6);
 
     vectorTable = config["CmxPolynomial"].as< std::vector<double> >();
     tables_.CmxPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
@@ -47,6 +62,15 @@ void VtolDynamicsSim::init(){
 
     vectorTable = config["CmzPolynomial"].as< std::vector<double> >();
     tables_.CmzPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
+}
+
+void VtolDynamicsSim::loadParams(const std::string& path){
+    YAML::Node config = YAML::LoadFile(path);
+    params_.mass = config["mass"].as<double>();
+    params_.gravity = config["gravity"].as<double>();
+    params_.atmoRho = config["atmoRho"].as<double>();
+    params_.wingArea = config["wingArea"].as<double>();
+    params_.characteristicLength = config["characteristicLength"].as<double>();
 }
 
 void VtolDynamicsSim::processStep(double dt_secs,
@@ -138,19 +162,33 @@ void VtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
                                             double& Cmx_a,
                                             double& Cmy_e,
                                             double& Cmz_r){
+    // 0. Common computation
     double AoA_deg = boost::algorithm::clamp(AoA * 180 / 3.1415, -45.0, +45.0);
     double AoS_deg = boost::algorithm::clamp(AoS * 180 / 3.1415, -90.0, +90.0);
     double airspeedMod = boost::algorithm::clamp(airspeed.norm(), 5, 40);
 
-    Eigen::VectorXd polynomialCoeffs;
+    // 1. Calculate aero force
+    Eigen::VectorXd polynomialCoeffs(7);
 
     calculateCLPolynomial(airspeedMod, polynomialCoeffs);
-    double CL = polyval(polynomialCoeffs, airspeedMod);
+    double CL = polyval(polynomialCoeffs, AoA_deg);
 
     calculateCSPolynomial(airspeedMod, polynomialCoeffs);
-    double CS = polyval(polynomialCoeffs, airspeedMod);
+    double CS = polyval(polynomialCoeffs, AoA_deg);
 
-    double CS_r = calculateCSRudder(rudder_pos, airspeedMod);
+    double CS_rudder = calculateCSRudder(rudder_pos, airspeedMod);
+    double CS_beta = calculateCSBeta(AoS_deg, airspeedMod);
+
+    calculateCDPolynomial(airspeedMod, polynomialCoeffs);
+    double CD = polyval(polynomialCoeffs.block<5, 1>(0, 0), AoA_deg);
+
+    Eigen::Vector3d FL = (Eigen::Vector3d(0, 1, 0).cross(airspeed.normalized()));
+    FL = FL * CL;
+    Eigen::Vector3d FS = airspeed.cross(Eigen::Vector3d(0, 1, 0).cross(airspeed.normalized())) * (CS + CS_rudder + CS_beta);
+    Eigen::Vector3d FD = (-1 * airspeed);
+    FD = FD.normalized();
+    FD *= CD;
+    Faero = 0.5 * dynamicPressure * (FL + FS + FD);
 }
 
 void VtolDynamicsSim::calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
@@ -168,7 +206,8 @@ void VtolDynamicsSim::calculateCSPolynomial(double airSpeedMod, Eigen::VectorXd&
 }
 
 void VtolDynamicsSim::calculateCDPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
-    if(tables_.CDPolynomial.size() != 64){
+    if(tables_.CDPolynomial.size() != 48){
+        std::cerr << "WRONG CD SIZE! Actual size is " << tables_.CDPolynomial.size() << std::endl;
         return;
     }
     calculatePolynomialUsingTable(tables_.CDPolynomial, airSpeedMod, polynomialCoeffs);
@@ -197,14 +236,19 @@ void VtolDynamicsSim::calculateCmzPolynomial(double airSpeedMod, Eigen::VectorXd
 
 
 double VtolDynamicsSim::calculateCSRudder(double rudder_pos, double airspeed) const{
-    return griddata(-tables_.actuator, tables_.airspeed, tables_.CS_rudder, rudder_pos, airspeed);
+    return griddata(-tables_.actuator.transpose(), tables_.airspeed.transpose(), tables_.CS_rudder, rudder_pos, airspeed);
+}
+
+double VtolDynamicsSim::calculateCSBeta(double AoS_deg, double airspeed) const{
+    auto result = griddata(-(tables_.AoS), tables_.airspeed, tables_.CS_beta, AoS_deg, airspeed);
+    return result;
 }
 
 
 void VtolDynamicsSim::calculatePolynomialUsingTable(const Eigen::MatrixXd& table,
                                                     double airSpeedMod,
                                                     Eigen::VectorXd& polynomialCoeffs){
-    size_t prevRowIdx = findRow(table, airSpeedMod);
+    size_t prevRowIdx = findRowForPolynomial(table, airSpeedMod);
     if(prevRowIdx + 2 <= table.rows()){
         size_t nextRowIdx = prevRowIdx + 1;
         Eigen::MatrixXd prevRow = table.row(prevRowIdx);
@@ -220,7 +264,32 @@ void VtolDynamicsSim::calculatePolynomialUsingTable(const Eigen::MatrixXd& table
     }
 }
 
-size_t VtolDynamicsSim::findRow(const Eigen::MatrixXd& table, double value) const{
+// size should be greater or equel than 2
+size_t VtolDynamicsSim::search(const Eigen::MatrixXd& matrix, double key) const{
+    size_t row_idx;
+    // increase
+    if(matrix(matrix.rows() - 1, 0) > matrix(0, 0)){
+        for(row_idx = 1; row_idx < matrix.rows() - 1; row_idx++){
+            if(key <= matrix(row_idx, 0)){
+                break;
+            }
+        }
+        row_idx--;
+    }
+    // decrease
+    else{
+        for(row_idx = 1; row_idx < matrix.rows() - 1; row_idx++){
+            if(key >= matrix(row_idx, 0)){
+                break;
+            }
+        }
+        row_idx--;
+    }
+    return row_idx;
+}
+
+// first collomn of the table must be sorted!
+size_t VtolDynamicsSim::findRowForPolynomial(const Eigen::MatrixXd& table, double value) const{
     size_t row;
     for(row = 0; row < table.rows() - 2; row++){
         if(value <= table((row + 1), 0)){
@@ -239,10 +308,10 @@ double VtolDynamicsSim::griddata(const Eigen::MatrixXd& x,
                                  const Eigen::MatrixXd& z,
                                  double x_value,
                                  double y_value) const{
-    size_t x1_idx = findRow(x, x_value);
-    size_t y1_idx = findRow(y, y_value);
-    size_t x2_idx = findRow(x, x_value) + 1;
-    size_t y2_idx = findRow(y, y_value) + 1;
+    size_t x1_idx = search(x, x_value);
+    size_t y1_idx = search(y, y_value);
+    size_t x2_idx = x1_idx + 1;
+    size_t y2_idx = y1_idx + 1;
     double Q11 = z(y1_idx, x1_idx);
     double Q12 = z(y2_idx, x1_idx);
     double Q21 = z(y1_idx, x2_idx);

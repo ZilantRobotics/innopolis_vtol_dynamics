@@ -69,7 +69,7 @@ TEST(VtolDynamicsSim, calculateAnglesOfSideslip){
     ASSERT_TRUE((vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed) - 0) < 0.001);
 }
 
-TEST(VtolDynamicsSim, findRow){
+TEST(VtolDynamicsSim, findRowForPolynomial){
     VtolDynamicsSim vtolDynamicsSim;
     Eigen::MatrixXd table(8, 8);
     table << 5, -2.758e-11, 8.139e-09, 1.438e-07, -3.095e-05, -0.0003512, 0.05557, 0.4132,
@@ -80,15 +80,15 @@ TEST(VtolDynamicsSim, findRow){
             30, -4.749e-11, 7.778e-09, 2.219e-07, -2.926e-05, -0.0004567, 0.05433, 0.4599,
             35, -5.911e-11, 7.879e-09, 2.574e-07, -2.961e-05, -0.0004838, 0.05458, 0.4637,
             40, -5.911e-11, 7.879e-09, 2.574e-07, -2.961e-05, -0.0004838, 0.05458, 0.4637;
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, -1) + 1 == 1);
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, 10) + 1 == 1);
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, 10.1) + 1 == 2);
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, 15.1) + 1 == 3);
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, 34.9) + 1 == 6);
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, 35.1) + 1 == 7);
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, 39.9) + 1 == 7);
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, 40.1) + 1 == 7);
-    ASSERT_TRUE(vtolDynamicsSim.findRow(table, 50.0) + 1 == 7);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, -1) + 1 == 1);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 10) + 1 == 1);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 10.1) + 1 == 2);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 15.1) + 1 == 3);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 34.9) + 1 == 6);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 35.1) + 1 == 7);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 39.9) + 1 == 7);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 40.1) + 1 == 7);
+    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 50.0) + 1 == 7);
 }
 
 TEST(VtolDynamicsSim, calculateCLPolynomial){
@@ -169,6 +169,39 @@ TEST(VtolDynamicsSim, calculateCSRudder){
     airspeed = 10;
     result = vtolDynamicsSim.calculateCSRudder(rudder_position, airspeed);
     ASSERT_TRUE(std::abs(result - 0.028345) < 0.001);
+}
+
+TEST(VtolDynamicsSim, calculateAerodynamics){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    Eigen::Vector3d diff;
+    Eigen::Vector3d expectedResult;
+    auto isZeroComparator = [](double a) {return a < 0.0001;};
+
+    Eigen::Vector3d airspeed(0.000001, -9.999999, 0.000001);
+    double dynamicPressure = 44.399991;
+    double AoA = 0.958191;
+    double AoS = -1.570796;
+    double aileron_pos = 0.000000;
+    double elevator_pos = 0.000000;
+    double rudder_pos = 0.000000;
+    Eigen::Vector3d Faero;
+    Eigen::Vector3d Maero;
+    double Cmx_a;
+    double Cmy_e;
+    double Cmz_r;
+
+    expectedResult = Eigen::Vector3d(0.000001, 29.513404, -0.000006);
+    vtolDynamicsSim.calculateAerodynamics(airspeed, dynamicPressure, AoA, AoS, aileron_pos, elevator_pos, rudder_pos, Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    diff = expectedResult - Faero;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+}
+
+TEST(VtolDynamicsSim, search){
+    VtolDynamicsSim vtolDynamicsSim;
+    Eigen::MatrixXd matrix(6, 1);
+
+    matrix << 1, 2, 4, 7, 9, 11;
 }
 
 int main(int argc, char *argv[]){

@@ -103,6 +103,11 @@ struct Control{
 
 struct TablesWithCoeffs{
     Eigen::MatrixXd CS_rudder;
+    Eigen::MatrixXd CS_beta;
+
+    Eigen::MatrixXd AoA;
+    Eigen::MatrixXd AoS;
+
     Eigen::MatrixXd actuator;
     Eigen::MatrixXd airspeed;
 
@@ -159,8 +164,9 @@ class VtolDynamicsSim{
                                            Eigen::VectorXd& polynomialCoeffs);
 
         double calculateCSRudder(double rudder_pos, double airspeed) const;
+        double calculateCSBeta(double AoS_deg, double airspeed) const;
 
-        size_t findRow(const Eigen::MatrixXd& table, double value) const;
+        size_t findRowForPolynomial(const Eigen::MatrixXd& table, double value) const;
         double lerp(double a, double b, double f) const;
         /**
          * @note Similar to https://www.mathworks.com/help/matlab/ref/griddata.html
@@ -172,11 +178,14 @@ class VtolDynamicsSim{
                         double xi,
                         double yi) const;
         double polyval(const Eigen::VectorXd& poly, double val) const;
+        size_t search(const Eigen::MatrixXd& matrix, double key) const;
 
 
         void setWindParameter(Eigen::Vector3d windMeanVelocity, double wind_velocityVariance);
         void setEulerAngles(Eigen::Vector3d eulerAngles);
     private:
+        void loadTables(const std::string& path);
+        void loadParams(const std::string& path);
 
         VtolParameters params_;
         SystemState sysState_;

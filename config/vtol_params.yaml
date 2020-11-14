@@ -1,0 +1,16 @@
+mass:                   7.0         # kg
+gravity:                9.80665     # n/sec^2
+atmoRho:                1.2         # air density (kg/m^3)
+# std::array<double, 5> forceCoeff;
+# std::array<double, 5> torqueCoeff;
+wingArea:               0.37        # m^2
+characteristicLength:   1.50        # m
+# double VmodConversion;                          // m/s
+# Eigen::Matrix3d inertia;                        // kg*m^2
+# Eigen::Vector3d propellerShift;                 // m
+
+# double dyn_press_conversion;                    // calculate conversion velocity pressure
+# std::array<double, 15> propellersLocation;      // calculate
+
+# double massUncertainty;                         // mass multiplier
+# double inertiaUncertainty;                      // mass multiplier
