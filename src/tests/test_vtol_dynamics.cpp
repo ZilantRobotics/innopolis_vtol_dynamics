@@ -191,10 +191,17 @@ TEST(VtolDynamicsSim, calculateAerodynamics){
     double Cmy_e;
     double Cmz_r;
 
+    vtolDynamicsSim.calculateAerodynamics(airspeed, dynamicPressure, AoA, AoS, aileron_pos, elevator_pos, rudder_pos,
+                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
     expectedResult = Eigen::Vector3d(0.000001, 29.513404, -0.000006);
-    vtolDynamicsSim.calculateAerodynamics(airspeed, dynamicPressure, AoA, AoS, aileron_pos, elevator_pos, rudder_pos, Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
     diff = expectedResult - Faero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    expectedResult = Eigen::Vector3d(0.21470, 0.69480, -0.31633);
+    diff = expectedResult - Maero;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    ASSERT_TRUE(abs(Cmx_a - 0.011426) < 0.00001);
+    ASSERT_TRUE(abs(Cmy_e - 0.0049566) < 0.00001);
+    ASSERT_TRUE(abs(Cmz_r - 0.0022183) < 0.00001);
 }
 
 TEST(VtolDynamicsSim, search){

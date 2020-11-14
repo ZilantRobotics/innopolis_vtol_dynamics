@@ -117,6 +117,11 @@ struct TablesWithCoeffs{
     Eigen::MatrixXd CmxPolynomial;
     Eigen::MatrixXd CmyPolynomial;
     Eigen::MatrixXd CmzPolynomial;
+
+    Eigen::MatrixXd CmxAileron;
+    Eigen::MatrixXd CmyElevator;
+    Eigen::MatrixXd CmzRudder;
+
 };
 
 /**
@@ -165,6 +170,9 @@ class VtolDynamicsSim{
 
         double calculateCSRudder(double rudder_pos, double airspeed) const;
         double calculateCSBeta(double AoS_deg, double airspeed) const;
+        double calculateCmxAileron(double aileron_pos, double airspeed) const;
+        double calculateCmyElevator(double elevator_pos, double airspeed) const;
+        double calculateCmzRudder(double rudder_pos, double airspeed) const;
 
         size_t findRowForPolynomial(const Eigen::MatrixXd& table, double value) const;
         double lerp(double a, double b, double f) const;

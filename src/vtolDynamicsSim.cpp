@@ -41,9 +41,11 @@ void VtolDynamicsSim::loadTables(const std::string& path){
 
     vectorTable = config["actuator_table"].as< std::vector<double> >();
     tables_.actuator = Eigen::Map<Eigen::Matrix<double, 1, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 20);
+    tables_.actuator = tables_.actuator.transpose();
 
     vectorTable = config["airspeed_table"].as< std::vector<double> >();
     tables_.airspeed = Eigen::Map<Eigen::Matrix<double, 1, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 8);
+    tables_.airspeed = tables_.airspeed.transpose();
 
     vectorTable = config["CLPolynomial"].as< std::vector<double> >();
     tables_.CLPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
@@ -62,6 +64,15 @@ void VtolDynamicsSim::loadTables(const std::string& path){
 
     vectorTable = config["CmzPolynomial"].as< std::vector<double> >();
     tables_.CmzPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
+
+    vectorTable = config["CmxAileron"].as< std::vector<double> >();
+    tables_.CmxAileron = Eigen::Map<Eigen::Matrix<double, 8, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 20);
+    
+    vectorTable = config["CmyElevator"].as< std::vector<double> >();
+    tables_.CmyElevator = Eigen::Map<Eigen::Matrix<double, 8, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 20);
+
+    vectorTable = config["CmzRudder"].as< std::vector<double> >();
+    tables_.CmzRudder = Eigen::Map<Eigen::Matrix<double, 8, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 20);
 }
 
 void VtolDynamicsSim::loadParams(const std::string& path){
@@ -159,9 +170,9 @@ void VtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
                                             double rudder_pos,
                                             Eigen::Vector3d& Faero,
                                             Eigen::Vector3d& Maero,
-                                            double& Cmx_a,
-                                            double& Cmy_e,
-                                            double& Cmz_r){
+                                            double& Cmx_aileron,
+                                            double& Cmy_elevator,
+                                            double& Cmx_rudder){
     // 0. Common computation
     double AoA_deg = boost::algorithm::clamp(AoA * 180 / 3.1415, -45.0, +45.0);
     double AoS_deg = boost::algorithm::clamp(AoS * 180 / 3.1415, -90.0, +90.0);
@@ -182,68 +193,67 @@ void VtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     calculateCDPolynomial(airspeedMod, polynomialCoeffs);
     double CD = polyval(polynomialCoeffs.block<5, 1>(0, 0), AoA_deg);
 
-    Eigen::Vector3d FL = (Eigen::Vector3d(0, 1, 0).cross(airspeed.normalized()));
-    FL = FL * CL;
+    Eigen::Vector3d FL = (Eigen::Vector3d(0, 1, 0).cross(airspeed.normalized())) * CL;
     Eigen::Vector3d FS = airspeed.cross(Eigen::Vector3d(0, 1, 0).cross(airspeed.normalized())) * (CS + CS_rudder + CS_beta);
     Eigen::Vector3d FD = (-1 * airspeed);
     FD = FD.normalized();
     FD *= CD;
     Faero = 0.5 * dynamicPressure * (FL + FS + FD);
+
+    // 2. Calculate aero moment
+    calculateCmxPolynomial(airspeedMod, polynomialCoeffs);
+    auto Cmx = polyval(polynomialCoeffs, AoA_deg);
+
+    calculateCmyPolynomial(airspeedMod, polynomialCoeffs);
+    auto Cmy = polyval(polynomialCoeffs, AoA_deg);
+
+    calculateCmzPolynomial(airspeedMod, polynomialCoeffs);
+    auto Cmz = -polyval(polynomialCoeffs, AoA_deg);
+
+    Cmx_aileron = calculateCmxAileron(aileron_pos, airspeedMod);
+    Cmy_elevator = calculateCmyElevator(elevator_pos, airspeedMod);
+    Cmx_rudder = calculateCmzRudder(rudder_pos, airspeedMod);
+
+    auto Mx = Cmx + Cmx_aileron * aileron_pos;
+    auto My = Cmy + Cmy_elevator * elevator_pos;
+    auto Mz = Cmz + Cmx_rudder * rudder_pos;
+
+    Maero = 0.5 * dynamicPressure * params_.characteristicLength * Eigen::Vector3d(Mx, My, Mz);
 }
 
 void VtolDynamicsSim::calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
-    if(tables_.CLPolynomial.size() != 64){
-        return;
-    }
     calculatePolynomialUsingTable(tables_.CLPolynomial, airSpeedMod, polynomialCoeffs);
 }
-
 void VtolDynamicsSim::calculateCSPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
-    if(tables_.CSPolynomial.size() != 64){
-        return;
-    }
     calculatePolynomialUsingTable(tables_.CSPolynomial, airSpeedMod, polynomialCoeffs);
 }
-
 void VtolDynamicsSim::calculateCDPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
-    if(tables_.CDPolynomial.size() != 48){
-        std::cerr << "WRONG CD SIZE! Actual size is " << tables_.CDPolynomial.size() << std::endl;
-        return;
-    }
     calculatePolynomialUsingTable(tables_.CDPolynomial, airSpeedMod, polynomialCoeffs);
 }
-
 void VtolDynamicsSim::calculateCmxPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
-    if(tables_.CmxPolynomial.size() != 64){
-        return;
-    }
     calculatePolynomialUsingTable(tables_.CmxPolynomial, airSpeedMod, polynomialCoeffs);
 }
-
 void VtolDynamicsSim::calculateCmyPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
-    if(tables_.CmyPolynomial.size() != 64){
-        return;
-    }
     calculatePolynomialUsingTable(tables_.CmyPolynomial, airSpeedMod, polynomialCoeffs);
 }
-
 void VtolDynamicsSim::calculateCmzPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
-    if(tables_.CmzPolynomial.size() != 64){
-        return;
-    }
     calculatePolynomialUsingTable(tables_.CmzPolynomial, airSpeedMod, polynomialCoeffs);
 }
-
-
 double VtolDynamicsSim::calculateCSRudder(double rudder_pos, double airspeed) const{
-    return griddata(-tables_.actuator.transpose(), tables_.airspeed.transpose(), tables_.CS_rudder, rudder_pos, airspeed);
+    return griddata(-tables_.actuator, tables_.airspeed, tables_.CS_rudder, rudder_pos, airspeed);
 }
-
 double VtolDynamicsSim::calculateCSBeta(double AoS_deg, double airspeed) const{
-    auto result = griddata(-(tables_.AoS), tables_.airspeed, tables_.CS_beta, AoS_deg, airspeed);
-    return result;
+    return griddata(-(tables_.AoS), tables_.airspeed, tables_.CS_beta, AoS_deg, airspeed);
 }
-
+double VtolDynamicsSim::calculateCmxAileron(double aileron_pos, double airspeed) const{
+    return griddata(tables_.actuator, tables_.airspeed, tables_.CmxAileron, aileron_pos, airspeed);
+}
+double VtolDynamicsSim::calculateCmyElevator(double elevator_pos, double airspeed) const{
+    return griddata(tables_.actuator, tables_.airspeed, tables_.CmyElevator, elevator_pos, airspeed);
+}
+double VtolDynamicsSim::calculateCmzRudder(double rudder_pos, double airspeed) const{
+    return griddata(tables_.actuator, tables_.airspeed, tables_.CmzRudder, rudder_pos, airspeed);
+}
 
 void VtolDynamicsSim::calculatePolynomialUsingTable(const Eigen::MatrixXd& table,
                                                     double airSpeedMod,
