@@ -26,20 +26,23 @@ struct VtolParameters{
     Eigen::Vector3d propellerShift;                 // m
 
     double dyn_press_conversion;                    // calculate conversion velocity pressure
-    std::array<double, 15> propellersLocation;      // calculate
+    std::array<Eigen::Vector3d, 5> propellersLocation;  // calculate
 
     double massUncertainty;                         // mass multiplier
     double inertiaUncertainty;                      // mass multiplier
 };
 
-struct SystemState{
+struct State{
+    Eigen::Vector3d position;                       // meters
+    Eigen::Vector3d linearVel;                      // m/sec, in body CS
+    Eigen::Vector3d linearAccel;                    // m/sec^2, in body CS
+
     Eigen::Vector3d eulerAngles;                    // rad
-    Eigen::Quaterniond attitude;
     Eigen::Matrix3d rotationIB;                     // inertial CS to body CS
-    Eigen::Vector3d angularVelocity;                // rad/sec, in body CS
-    Eigen::Vector3d angularAcceleration;            // rad/sec^2, in body CS
-    Eigen::Vector3d linearVelocity;                 // m/sec, in body CS
-    Eigen::Vector3d linearAcceleration;             // m/sec^2, in body CS
+    Eigen::Quaterniond attitude;
+    Eigen::Vector3d angularVel;                     // rad/sec, in body CS
+    Eigen::Vector3d angularAccel;                   // rad/sec^2, in body CS
+
     Eigen::Vector3d windVelocity;                   // m/sec^2
     Eigen::Vector3d gustVelocity;                   // m/sec^2
     Eigen::Vector3d accelBias;
@@ -54,13 +57,12 @@ struct SystemState{
     Eigen::Quaterniond estdAttitude;
     Eigen::Matrix3d estRotationIB;                  // inertial CS to body CS
     Eigen::Vector3d estAngularVelocity;             // rad/sec, in body CS
-    Eigen::Vector3d estAngularAcceleration;         // rad/sec^2, in body CS
-    Eigen::Vector3d estLinearVelocity;              // m/sec, in body CS
-    Eigen::Vector3d estLinearAcceleration;          // m/sec^2, in body CS
+    Eigen::Vector3d estAngularAccel;                // rad/sec^2, in body CS
+    Eigen::Vector3d estLinearVel;                   // m/sec, in body CS
+    Eigen::Vector3d estLinearAccel;                 // m/sec^2, in body CS
 
     double windVariance;
     double guVariance;
-
 };
 
 struct CommandedState{
@@ -70,15 +72,15 @@ struct CommandedState{
     double chi;  // what is it?
     double FPA;                                     // flight path angle, rad
 
-    Eigen::Vector3d linearVelocity;                 // m/sec, in body CS
-    
+    Eigen::Vector3d linearVel;                      // m/sec, in body CS
+
     bool controlPhi;
     bool controlTheta;
     bool controlPsi;
     bool controlAoS;
     bool controlAoA;
 
-    double gamma; // weight to prioritize minimization of virtual control allocation error over minimization of actuators deviation
+    double gamma;  // weight to prioritize minimization of virtual control allocation error over minimization of actuators deviation
 
     std::array<double, 8> currentControl;           // rad/sec
     std::array<double, 8> previousControl;          // rad/sec
@@ -122,6 +124,7 @@ struct TablesWithCoeffs{
     Eigen::MatrixXd CmyElevator;
     Eigen::MatrixXd CmzRudder;
 
+    Eigen::MatrixXd prop;
 };
 
 /**
@@ -144,6 +147,12 @@ class VtolDynamicsSim{
         double calculateDynamicPressure(double airSpeedMod);
         double calculateAnglesOfAtack(const Eigen::Vector3d& airSpeed) const;
         double calculateAnglesOfSideslip(const Eigen::Vector3d& airSpeed) const;
+        void thruster(double actuator,
+                      double& thrust, double& torque, double& kf, double& km) const;
+        void calculateNewState(const Eigen::Vector3d& Maero,
+                               const Eigen::Vector3d& Faero,
+                               Eigen::VectorXd actuator,
+                               Time_t dt);
 
         void calculateAerodynamics(const Eigen::Vector3d& airspeed,
                                    double dynamicPressure,
@@ -174,7 +183,7 @@ class VtolDynamicsSim{
         double calculateCmyElevator(double elevator_pos, double airspeed) const;
         double calculateCmzRudder(double rudder_pos, double airspeed) const;
 
-        size_t findRowForPolynomial(const Eigen::MatrixXd& table, double value) const;
+        size_t findRow(const Eigen::MatrixXd& table, double value) const;
         double lerp(double a, double b, double f) const;
         /**
          * @note Similar to https://www.mathworks.com/help/matlab/ref/griddata.html
@@ -191,12 +200,20 @@ class VtolDynamicsSim{
 
         void setWindParameter(Eigen::Vector3d windMeanVelocity, double wind_velocityVariance);
         void setEulerAngles(Eigen::Vector3d eulerAngles);
+
+        Eigen::Vector3d getAngularAcceleration() const;
+        Eigen::Vector3d getAngularVelocity() const;
+        Eigen::Quaterniond getAttitude() const;
+        Eigen::Vector3d getLinearAcceleration() const;
+        Eigen::Vector3d getLinearVelocity() const;
+        Eigen::Vector3d getPosition() const;
+
     private:
         void loadTables(const std::string& path);
         void loadParams(const std::string& path);
 
         VtolParameters params_;
-        SystemState sysState_;
+        State state_;
         CommandedState cmdState_;
         SystemConstraints sysConstraints_;
         Control control_;
@@ -206,4 +223,4 @@ class VtolDynamicsSim{
         std::normal_distribution<double> distribution_;
 };
 
-#endif // VTOL_DYNAMICS_SIM_H
+#endif  // VTOL_DYNAMICS_SIM_H

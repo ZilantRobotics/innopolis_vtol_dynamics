@@ -69,7 +69,7 @@ TEST(VtolDynamicsSim, calculateAnglesOfSideslip){
     ASSERT_TRUE((vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed) - 0) < 0.001);
 }
 
-TEST(VtolDynamicsSim, findRowForPolynomial){
+TEST(VtolDynamicsSim, findRow){
     VtolDynamicsSim vtolDynamicsSim;
     Eigen::MatrixXd table(8, 8);
     table << 5, -2.758e-11, 8.139e-09, 1.438e-07, -3.095e-05, -0.0003512, 0.05557, 0.4132,
@@ -80,15 +80,15 @@ TEST(VtolDynamicsSim, findRowForPolynomial){
             30, -4.749e-11, 7.778e-09, 2.219e-07, -2.926e-05, -0.0004567, 0.05433, 0.4599,
             35, -5.911e-11, 7.879e-09, 2.574e-07, -2.961e-05, -0.0004838, 0.05458, 0.4637,
             40, -5.911e-11, 7.879e-09, 2.574e-07, -2.961e-05, -0.0004838, 0.05458, 0.4637;
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, -1) + 1 == 1);
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 10) + 1 == 1);
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 10.1) + 1 == 2);
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 15.1) + 1 == 3);
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 34.9) + 1 == 6);
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 35.1) + 1 == 7);
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 39.9) + 1 == 7);
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 40.1) + 1 == 7);
-    ASSERT_TRUE(vtolDynamicsSim.findRowForPolynomial(table, 50.0) + 1 == 7);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, -1) + 1,   1);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, 10) + 1,   1);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, 10.1) + 1, 2);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, 15.1) + 1, 3);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, 34.9) + 1, 6);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, 35.1) + 1, 7);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, 39.9) + 1, 7);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, 40.1) + 1, 7);
+    ASSERT_EQ(vtolDynamicsSim.findRow(table, 50.0) + 1, 7);
 }
 
 TEST(VtolDynamicsSim, calculateCLPolynomial){
@@ -99,22 +99,26 @@ TEST(VtolDynamicsSim, calculateCLPolynomial){
     Eigen::VectorXd diff(7);
     auto isZeroComparator = [](double a) { return a < 0.00001;};
 
-    expectedPolynomialCoeffs << -3.9340e-11, 8.2040e-09, 1.9350e-07, -3.0750e-05, -4.2090e-04, 0.055200, 0.44380;
+    expectedPolynomialCoeffs << -3.9340e-11, 8.2040e-09, 1.9350e-07, -3.0750e-05,
+                                -4.2090e-04, 0.055200, 0.44380;
     vtolDynamicsSim.calculateCLPolynomial(10, calculatedpolynomialCoeffs);
     diff = expectedPolynomialCoeffs - calculatedpolynomialCoeffs;
     ASSERT_TRUE(std::for_each(&diff[0], &diff[6], isZeroComparator));
 
-    expectedPolynomialCoeffs << -1.5820e-11, 8.0740e-09, 9.4100e-08, -3.1150e-05, -2.8150e-04, 0.055940, 0.38260;
+    expectedPolynomialCoeffs << -1.5820e-11, 8.0740e-09, 9.4100e-08, -3.1150e-05,
+                                -2.8150e-04, 0.055940, 0.38260;
     vtolDynamicsSim.calculateCLPolynomial(0, calculatedpolynomialCoeffs);
     diff = expectedPolynomialCoeffs - calculatedpolynomialCoeffs;
     ASSERT_TRUE(std::for_each(&diff[0], &diff[6], isZeroComparator));
 
-    expectedPolynomialCoeffs << 7.7000e-12, 7.9440e-09, -5.3000e-09, -3.1550e-05, -1.4210e-04, 0.056680, 0.32140;
+    expectedPolynomialCoeffs << 7.7000e-12, 7.9440e-09, -5.3000e-09, -3.1550e-05,
+                                -1.4210e-04, 0.056680, 0.32140;
     vtolDynamicsSim.calculateCLPolynomial(-10, calculatedpolynomialCoeffs);
     diff = expectedPolynomialCoeffs - calculatedpolynomialCoeffs;
     ASSERT_TRUE(std::for_each(&diff[0], &diff[6], isZeroComparator));
 
-    expectedPolynomialCoeffs << -5.9110e-11, 7.8790e-09, 2.5740e-07, -2.9610e-05, -4.8380e-04, 0.054580, 0.46370;
+    expectedPolynomialCoeffs << -5.9110e-11, 7.8790e-09, 2.5740e-07, -2.9610e-05,
+                                -4.8380e-04, 0.054580, 0.46370;
     vtolDynamicsSim.calculateCLPolynomial(45, calculatedpolynomialCoeffs);
     diff = expectedPolynomialCoeffs - calculatedpolynomialCoeffs;
     ASSERT_TRUE(std::for_each(&diff[0], &diff[6], isZeroComparator));
@@ -191,7 +195,13 @@ TEST(VtolDynamicsSim, calculateAerodynamics){
     double Cmy_e;
     double Cmz_r;
 
-    vtolDynamicsSim.calculateAerodynamics(airspeed, dynamicPressure, AoA, AoS, aileron_pos, elevator_pos, rudder_pos,
+    vtolDynamicsSim.calculateAerodynamics(airspeed,
+                                          dynamicPressure,
+                                          AoA,
+                                          AoS,
+                                          aileron_pos,
+                                          elevator_pos,
+                                          rudder_pos,
                                           Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
     expectedResult = Eigen::Vector3d(0.000001, 29.513404, -0.000006);
     diff = expectedResult - Faero;
@@ -210,6 +220,130 @@ TEST(VtolDynamicsSim, search){
 
     matrix << 1, 2, 4, 7, 9, 11;
 }
+
+TEST(VtolDynamicsSim, thruster){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double thrust, torque, kf, km;
+
+    vtolDynamicsSim.thruster(500.004648, thrust, torque, kf, km);
+    ASSERT_TRUE(abs(thrust -    15.893) <       0.001);
+    ASSERT_TRUE(abs(torque -    0.27273) <      0.00001);
+    ASSERT_TRUE(abs(kf -        6.3572e-05) <   0.0001e-05);
+    ASSERT_TRUE(abs(km -        1.0909e-06) <   0.0001e-06);
+
+
+    vtolDynamicsSim.thruster(134.254698, thrust, torque, kf, km);
+    ASSERT_TRUE(abs(thrust -    3.5908) <       0.0001);
+    ASSERT_TRUE(abs(torque -    0.013696) <     0.000001);
+    ASSERT_TRUE(abs(kf -        1.9922e-04) <   0.0001e-04);
+    ASSERT_TRUE(abs(km -        7.5984e-07) <   0.0001e-07);
+}
+
+TEST(VtolDynamicsSim, calculateNewStateCase1){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double thrust, torque, kf, km;
+    Eigen::VectorXd actuators(8);
+    double dt;
+    Eigen::Vector3d Maero, Faero;
+    Eigen::Vector3d angAccel, expectedAngAccel, linAccel, expectedLinAccel;
+    Eigen::Vector3d diff;
+    auto isZeroComparator = [](double a) {return a < 0.005;};
+
+    Maero << 0.214696, 0.694801, -0.316328;
+    Faero << 0.000001, 29.513404, -0.000006;
+    actuators << 500.004648, 500.004642, 500.004642, 500.004648, 499.996299;
+    dt = 0.002500;
+    expectedAngAccel << -0.092575, 1.078215, -0.250573;
+    expectedLinAccel << 2.269798, 3.606441, -9.081935;
+    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
+    angAccel = vtolDynamicsSim.getAngularAcceleration();
+    linAccel = vtolDynamicsSim.getLinearAcceleration();
+    diff = expectedAngAccel - angAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = expectedLinAccel - linAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+}
+
+TEST(VtolDynamicsSim, calculateNewStateCase2){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double thrust, torque, kf, km;
+    Eigen::VectorXd actuators(8);
+    double dt;
+    Eigen::Vector3d Maero, Faero;
+    Eigen::Vector3d angAccel, expectedAngAccel, linAccel, expectedLinAccel;
+    Eigen::Vector3d diff;
+    auto isZeroComparator = [](double a) {return a < 0.005;};
+
+    dt = 0.002500;
+    actuators << 536.531827, 538.489208, 525.044884, 525.536421, 347.800086;
+    Faero << -0.001072, 2.613334, 0.025745;
+    Maero << -0.040602, -0.261505, 0.144286;
+    expectedAngAccel << -0.344888, -0.443714, 0.124357;
+    expectedLinAccel << 1.538951, 0.373333, -9.673509;
+    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
+    angAccel = vtolDynamicsSim.getAngularAcceleration();
+    linAccel = vtolDynamicsSim.getLinearAcceleration();
+    diff = expectedAngAccel - angAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = expectedLinAccel - linAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+}
+
+TEST(VtolDynamicsSim, calculateNewStateCase3){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double thrust, torque, kf, km;
+    Eigen::VectorXd actuators(8);
+    double dt;
+    Eigen::Vector3d Maero, Faero;
+    Eigen::Vector3d angAccel, expectedAngAccel, linAccel, expectedLinAccel;
+    Eigen::Vector3d diff;
+    auto isZeroComparator = [](double a) {return a < 0.005;};
+
+    dt = 0.002500;
+    actuators << 536.290629, 536.364288, 548.801545, 548.760315, 134.254698;
+    Faero << 0.003523, 5.987078, 0.243899;
+    Maero << 0.050760, -0.368924, -0.097870;
+    expectedAngAccel << 0.061218, -0.573332, -0.087807;
+    expectedLinAccel << 0.513480, 0.855297, -9.846482;
+    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
+    angAccel = vtolDynamicsSim.getAngularAcceleration();
+    linAccel = vtolDynamicsSim.getLinearAcceleration();
+    diff = expectedAngAccel - angAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = expectedLinAccel - linAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+}
+
+TEST(VtolDynamicsSim, calculateNewStateCase4){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double thrust, torque, kf, km;
+    Eigen::VectorXd actuators(8);
+    double dt;
+    Eigen::Vector3d Maero, Faero;
+    Eigen::Vector3d angAccel, expectedAngAccel, linAccel, expectedLinAccel;
+    Eigen::Vector3d diff;
+    auto isZeroComparator = [](double a) {return a < 0.005;};
+
+    dt = 0.002500;
+    actuators << 554.749216, 540.151723, 551.423881, 536.991875, 50.994790;
+    Faero << 0.034923, 12.694998, 0.574634;
+    Maero << 0.022023, -0.178818, -0.080145;
+    expectedAngAccel << -0.021943, 0.187184, -0.061194;
+    expectedLinAccel << 0.127499, 1.813571, -9.862261;
+    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
+    angAccel = vtolDynamicsSim.getAngularAcceleration();
+    linAccel = vtolDynamicsSim.getLinearAcceleration();
+    diff = expectedAngAccel - angAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = expectedLinAccel - linAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+}
+
 
 int main(int argc, char *argv[]){
     testing::InitGoogleTest(&argc, argv);

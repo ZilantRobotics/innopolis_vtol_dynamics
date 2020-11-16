@@ -6,11 +6,15 @@ atmoRho:                1.2         # air density (kg/m^3)
 wingArea:               0.37        # m^2
 characteristicLength:   1.50        # m
 # double VmodConversion;                          // m/s
-# Eigen::Matrix3d inertia;                        // kg*m^2
+inertia:                [0.62684, 0,      0,
+                         0,       0.6444, 0,
+                         0,       0,      1.26242]  # kg*m^2
 # Eigen::Vector3d propellerShift;                 // m
 
 # double dyn_press_conversion;                    // calculate conversion velocity pressure
-# std::array<double, 15> propellersLocation;      // calculate
+propellersLocationX:    0.445       # m
+propellersLocationY:    0.422       # m
+propellersLocationZ:    -0.031      # m
 
 # double massUncertainty;                         // mass multiplier
 # double inertiaUncertainty;                      // mass multiplier
