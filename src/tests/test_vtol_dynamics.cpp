@@ -244,7 +244,6 @@ TEST(VtolDynamicsSim, calculateNewStateCase1){
     VtolDynamicsSim vtolDynamicsSim;
     vtolDynamicsSim.init();
     double thrust, torque, kf, km;
-    Eigen::VectorXd actuators(8);
     double dt;
     Eigen::Vector3d Maero, Faero;
     Eigen::Vector3d angAccel, expectedAngAccel, linAccel, expectedLinAccel;
@@ -253,7 +252,7 @@ TEST(VtolDynamicsSim, calculateNewStateCase1){
 
     Maero << 0.214696, 0.694801, -0.316328;
     Faero << 0.000001, 29.513404, -0.000006;
-    actuators << 500.004648, 500.004642, 500.004642, 500.004648, 499.996299;
+    std::vector<double> actuators{500.004648, 500.004642, 500.004642, 500.004648, 499.996299};
     dt = 0.002500;
     expectedAngAccel << -0.092575, 1.078215, -0.250573;
     expectedLinAccel << 2.269798, 3.606441, -9.081935;
@@ -270,7 +269,6 @@ TEST(VtolDynamicsSim, calculateNewStateCase2){
     VtolDynamicsSim vtolDynamicsSim;
     vtolDynamicsSim.init();
     double thrust, torque, kf, km;
-    Eigen::VectorXd actuators(8);
     double dt;
     Eigen::Vector3d Maero, Faero;
     Eigen::Vector3d angAccel, expectedAngAccel, linAccel, expectedLinAccel;
@@ -278,7 +276,7 @@ TEST(VtolDynamicsSim, calculateNewStateCase2){
     auto isZeroComparator = [](double a) {return a < 0.005;};
 
     dt = 0.002500;
-    actuators << 536.531827, 538.489208, 525.044884, 525.536421, 347.800086;
+    std::vector<double> actuators{536.531827, 538.489208, 525.044884, 525.536421, 347.800086};
     Faero << -0.001072, 2.613334, 0.025745;
     Maero << -0.040602, -0.261505, 0.144286;
     expectedAngAccel << -0.344888, -0.443714, 0.124357;
@@ -296,7 +294,6 @@ TEST(VtolDynamicsSim, calculateNewStateCase3){
     VtolDynamicsSim vtolDynamicsSim;
     vtolDynamicsSim.init();
     double thrust, torque, kf, km;
-    Eigen::VectorXd actuators(8);
     double dt;
     Eigen::Vector3d Maero, Faero;
     Eigen::Vector3d angAccel, expectedAngAccel, linAccel, expectedLinAccel;
@@ -304,7 +301,7 @@ TEST(VtolDynamicsSim, calculateNewStateCase3){
     auto isZeroComparator = [](double a) {return a < 0.005;};
 
     dt = 0.002500;
-    actuators << 536.290629, 536.364288, 548.801545, 548.760315, 134.254698;
+    std::vector<double> actuators{536.290629, 536.364288, 548.801545, 548.760315, 134.254698};
     Faero << 0.003523, 5.987078, 0.243899;
     Maero << 0.050760, -0.368924, -0.097870;
     expectedAngAccel << 0.061218, -0.573332, -0.087807;
@@ -322,7 +319,6 @@ TEST(VtolDynamicsSim, calculateNewStateCase4){
     VtolDynamicsSim vtolDynamicsSim;
     vtolDynamicsSim.init();
     double thrust, torque, kf, km;
-    Eigen::VectorXd actuators(8);
     double dt;
     Eigen::Vector3d Maero, Faero;
     Eigen::Vector3d angAccel, expectedAngAccel, linAccel, expectedLinAccel;
@@ -330,7 +326,7 @@ TEST(VtolDynamicsSim, calculateNewStateCase4){
     auto isZeroComparator = [](double a) {return a < 0.005;};
 
     dt = 0.002500;
-    actuators << 554.749216, 540.151723, 551.423881, 536.991875, 50.994790;
+    std::vector<double> actuators{554.749216, 540.151723, 551.423881, 536.991875, 50.994790};
     Faero << 0.034923, 12.694998, 0.574634;
     Maero << 0.022023, -0.178818, -0.080145;
     expectedAngAccel << -0.021943, 0.187184, -0.061194;

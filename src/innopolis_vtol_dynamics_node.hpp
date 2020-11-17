@@ -11,13 +11,14 @@
 #define UAV_DYNAMICS_HPP
 
 #include <thread>
+#include <sstream>
+#include <random>
 
 // ROS includes
 #include <ros/ros.h>
 #include <ros/time.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/static_transform_broadcaster.h>
 
 // Messages
 #include <mav_msgs/RateThrust.h>
@@ -29,11 +30,9 @@
 #include <std_msgs/Empty.h>
 #include <rosgraph_msgs/Clock.h>
 
-#include "../libs/multicopterDynamicsSim/multicopterDynamicsSim.hpp"
 #include "px4_communicator.h"
-
-#include <sstream>
-#include <random>
+#include "uavDynamicsSimBase.hpp"
+#include "multicopterDynamicsSimWrapper.hpp"
 
 /**
  * @brief Low-pass filter class used for angular rate control.
@@ -101,7 +100,6 @@ class Uav_Pid {
 
 /**
  * @brief UAV Dynamics class used for dynamics, IMU, and angular rate control simulation node
- * 
  */
 class Uav_Dynamics {
     public:
@@ -114,7 +112,6 @@ class Uav_Dynamics {
         /// @name Transform Publishers
         //@{
         tf2_ros::TransformBroadcaster tfPub_;
-        tf2_ros::StaticTransformBroadcaster staticTfPub_;
         //@}
 
         /// @name Publishers
@@ -206,7 +203,7 @@ class Uav_Dynamics {
         /* Motors are numbered counterclockwise (look at quadcopter from above) with
            motor 1 in the positive quadrant of the X-Y plane (i.e. front left). */
 
-        MulticopterDynamicsSim * multicopterSim_;
+        UavDynamicsSimBase* uavDynamicsSim_;
         PX4Communicator *px4;
         //@}
 
@@ -244,7 +241,6 @@ class Uav_Dynamics {
         std::thread sendHilSensorTask;
         std::thread receiveTask;
         std::thread publishToRosTask;
-
 };
 
 #endif

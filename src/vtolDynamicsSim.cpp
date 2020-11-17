@@ -5,7 +5,6 @@
  * 
  */
 #include <iostream>
-// #include <chrono>
 #include <cmath>
 #include <boost/algorithm/clamp.hpp>
 #include <algorithm>
@@ -19,15 +18,19 @@ VtolDynamicsSim::VtolDynamicsSim():
     distribution_(0.0, 1.0){
 }
 
-void VtolDynamicsSim::init(){
+int8_t VtolDynamicsSim::init(){
     std::string configPath = ros::package::getPath("innopolis_vtol_dynamics") + "/config/";
     loadTables(configPath + "aerodynamics_coeffs.yaml");
     loadParams(configPath + "vtol_params.yaml");
 
+    double latRef, lonRef, altRef;
+    geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
+
     /**
-     * @todo now it is zero because it interferes on processStep(), load in in future
+     * @todo now it is zero because it interferes on process(), load in in future
      */
     state_.angularVel.setZero();
+    return 0;
 }
 
 void VtolDynamicsSim::loadTables(const std::string& path){
@@ -116,11 +119,14 @@ void VtolDynamicsSim::loadParams(const std::string& path){
     std::vector<double> vectorTable;
     vectorTable = config["inertia"].as< std::vector<double> >();
     params_.inertia = Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor>>((double*)&vectorTable[0], 3, 3);
+
+    params_.actuatorMin = config["actuatorMin"].as< std::vector<double> >();
+    params_.actuatorMax = config["actuatorMax"].as< std::vector<double> >();
 }
 
-void VtolDynamicsSim::processStep(double dt_secs,
-                                  const std::vector<double> & motorSpeedCommandIn,
-                                  bool isCmdPercent){
+void VtolDynamicsSim::process(double dt_secs,
+                              const std::vector<double>& motorCmd,
+                              bool isCmdPercent){
     Eigen::Vector3d vel_w = calculateWind();
     Eigen::Matrix3d rotationMatrix = calculateRotationMatrix();
     Eigen::Vector3d airSpeed = calculateAirSpeed(rotationMatrix, state_.estLinearVel, vel_w);
@@ -128,7 +134,11 @@ void VtolDynamicsSim::processStep(double dt_secs,
     double dynPressure = calculateDynamicPressure(airSpeedMod);
     double AoA = calculateAnglesOfAtack(airSpeed);
     double AoS = calculateAnglesOfSideslip(airSpeed);
-    // [Faero, Maero, Cmx_a, Cmy_e, Cmz_r, AoA_min, AoA_max] = aerodynamics(V_mod, Va_b, dyn_press, AoA, AoS, atmo_rho, l, u_0(6), u_0(7), u_0(8));
+    Eigen::Vector3d Faero, Maero;
+    double Cmx_a, Cmy_e, Cmz_r;
+    calculateAerodynamics(airSpeed, dynPressure, AoA, AoS, motorCmd[5], motorCmd[6], motorCmd[7],
+                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    calculateNewState(Maero, Faero, motorCmd, dt_secs);
 }
 
 Eigen::Vector3d VtolDynamicsSim::calculateWind(){
@@ -281,7 +291,7 @@ void VtolDynamicsSim::thruster(double actuator, double& thrust, double& torque, 
 
 void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
                                         const Eigen::Vector3d& Faero,
-                                        Eigen::VectorXd actuator,
+                                        const std::vector<double>& actuator,
                                         Time_t dt){
     // control min max
 
@@ -450,31 +460,39 @@ double VtolDynamicsSim::polyval(const Eigen::VectorXd& poly, double val) const{
     return result;
 }
 
+
 void VtolDynamicsSim::setWindParameter(Eigen::Vector3d windMeanVelocity,
                                        double windVariance){
     state_.windVelocity = windMeanVelocity;
     state_.windVariance = windVariance;
 }
-
 void VtolDynamicsSim::setEulerAngles(Eigen::Vector3d eulerAngles){
     state_.eulerAngles = eulerAngles;
 }
 
+
 Eigen::Vector3d VtolDynamicsSim::getAngularAcceleration() const{
     return state_.angularAccel;
 }
-Eigen::Vector3d VtolDynamicsSim::getAngularVelocity() const{
+Eigen::Vector3d VtolDynamicsSim::getVehicleAngularVelocity() const{
     return state_.angularVel;
 }
-Eigen::Quaterniond VtolDynamicsSim::getAttitude() const{
+Eigen::Quaterniond VtolDynamicsSim::getVehicleAttitude() const{
     return state_.attitude;
 }
 Eigen::Vector3d VtolDynamicsSim::getLinearAcceleration() const{
     return state_.linearAccel;
 }
-Eigen::Vector3d VtolDynamicsSim::getLinearVelocity() const{
+Eigen::Vector3d VtolDynamicsSim::getVehicleVelocity() const{
     return state_.linearVel;
 }
-Eigen::Vector3d VtolDynamicsSim::getPosition() const{
+Eigen::Vector3d VtolDynamicsSim::getVehiclePosition() const{
     return state_.position;
+}
+void VtolDynamicsSim::enu2Geodetic(double east, double north, double up,
+                                   double *latitude, double *longitude, double *altitude){
+    geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
+}
+void VtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut) const{
+    asm("NOP");
 }

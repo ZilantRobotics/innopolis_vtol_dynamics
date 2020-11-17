@@ -23,7 +23,6 @@
  */
 int main(int argc, char **argv)
 {
-
   ros::init(argc, argv, "innopolis_vtol_dynamics_node");
   if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
     ros::console::notifyLoggerLevelsChanged();
@@ -35,7 +34,6 @@ int main(int argc, char **argv)
    * NodeHandle destructed will close down the node.
    */
   ros::NodeHandle n;
-  // Init class
   Uav_Dynamics uav_dynamics_node(n);
 
   // Spin
@@ -46,7 +44,7 @@ int main(int argc, char **argv)
 
 static const std::string INNO_DYNAMICS_NS = "/uav/innopolis_vtol_dynamics/";
 template <class T>
-void getParameter(std::string name, T& parameter, T default_value, std::string unit=""){
+static void getParameter(std::string name, T& parameter, T default_value, std::string unit=""){
   if (!ros::param::get(INNO_DYNAMICS_NS + name, parameter)){
     std::cout << "Did not get "
               << name
@@ -67,103 +65,14 @@ void getParameter(std::string name, T& parameter, T default_value, std::string u
 Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh):
 node_(nh), propSpeedCommand_(4, 0.)
 {
-  // Vehicle parameters
-  double vehicleMass, motorTimeconstant, motorRotationalInertia,
-         thrustCoeff, torqueCoeff, dragCoeff;
-  getParameter("vehicle_mass",              vehicleMass,                1.,       "kg");
-  getParameter("motor_time_constant",       motorTimeconstant,          0.02,     "sec");
-  getParameter("motor_rotational_inertia",  motorRotationalInertia,     6.62e-6,  "kg m^2");
-  getParameter("thrust_coefficient",        thrustCoeff,                1.91e-6,  "N/(rad/s)^2");
-  getParameter("torque_coefficient",        torqueCoeff,                2.6e-7,   "Nm/(rad/s)^2");
-  getParameter("drag_coefficient",          dragCoeff,                  0.1,      "N/(m/s)");
-
-  Eigen::Matrix3d aeroMomentCoefficient = Eigen::Matrix3d::Zero();
-  getParameter("aeromoment_coefficient_xx", aeroMomentCoefficient(0,0), 0.003,    "Nm/(rad/s)^2");
-  getParameter("aeromoment_coefficient_yy", aeroMomentCoefficient(1,1), 0.003,    "Nm/(rad/s)^2");
-  getParameter("aeromoment_coefficient_zz", aeroMomentCoefficient(2,2), 0.003,    "Nm/(rad/s)^2");
-
-  Eigen::Matrix3d vehicleInertia = Eigen::Matrix3d::Zero();
-  getParameter("vehicle_inertia_xx",        vehicleInertia(0,0),        0.0049,   "kg m^2");
-  getParameter("vehicle_inertia_yy",        vehicleInertia(1,1),        0.0049,   "kg m^2");
-  getParameter("vehicle_inertia_zz",        vehicleInertia(2,2),        0.0069,   "kg m^2");
-  
-  double minPropSpeed, maxPropSpeed, momentProcessNoiseAutoCorrelation, forceProcessNoiseAutoCorrelation;
-  minPropSpeed = 0.0;
-  getParameter("max_prop_speed",            maxPropSpeed,               2200.0,   "rad/s");
-  getParameter("moment_process_noise",momentProcessNoiseAutoCorrelation,1.25e-7,  "(Nm)^2 s");
-  getParameter("force_process_noise", forceProcessNoiseAutoCorrelation, 0.0005,   "N^2 s");
-
-  // Set gravity vector according to ROS reference axis system, see header file
-  Eigen::Vector3d gravity(0.,0.,-9.81);
-
-  // Create quadcopter simulator
-  multicopterSim_ = new MulticopterDynamicsSim(4, thrustCoeff, torqueCoeff,
-                        minPropSpeed, maxPropSpeed, motorTimeconstant, motorRotationalInertia,
-                        vehicleMass, vehicleInertia,
-                        aeroMomentCoefficient, dragCoeff, momentProcessNoiseAutoCorrelation,
-                        forceProcessNoiseAutoCorrelation, gravity);
-  
-  VtolDynamicsSim* vtolSim = new VtolDynamicsSim();
-  vtolSim->init();
-
-  // Set and publish motor transforms for the four motors
-  Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
-  double momentArm;
-  getParameter("moment_arm",                momentArm,                  0.08,     "m");
-
-  motorFrame.translation() = Eigen::Vector3d(momentArm,momentArm,0.);
-  multicopterSim_->setMotorFrame(motorFrame,1,0);
-  publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor0", motorFrame);
-
-  motorFrame.translation() = Eigen::Vector3d(-momentArm,momentArm,0.);
-  multicopterSim_->setMotorFrame(motorFrame,-1,1);
-  publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor1", motorFrame);
-
-  motorFrame.translation() = Eigen::Vector3d(-momentArm,-momentArm,0.);
-  multicopterSim_->setMotorFrame(motorFrame,1,2);
-  publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor2", motorFrame);
-
-  motorFrame.translation() = Eigen::Vector3d(momentArm,-momentArm,0.);
-  multicopterSim_->setMotorFrame(motorFrame,-1,3);
-  publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor3", motorFrame);
-
-  // Set initial conditions
-  std::vector<double> initPose(7);
-  if (!ros::param::get(INNO_DYNAMICS_NS + "init_pose", initPose)) {
-    std::cout << "Did NOT find initial pose from param file" << std::endl;
-    initPose.at(2) = 0.2;
-    initPose.at(6) = 1.0;
+  // Init dynamics simulator
+  const auto MULTICOPTER_INSTEAD_OF_VTOL = true;
+  if(MULTICOPTER_INSTEAD_OF_VTOL){
+    uavDynamicsSim_ = new MulticopterDynamicsWrapper;
+  }else{
+    uavDynamicsSim_ = new VtolDynamicsSim;
   }
-  initPosition_ << initPose.at(0), initPose.at(1), initPose.at(2);
-  initAttitude_.x() = initPose.at(3);
-  initAttitude_.y() = initPose.at(4);
-  initAttitude_.z() = initPose.at(5);
-  initAttitude_.w() = initPose.at(6);
-  initAttitude_.normalize();
-  initPropSpeed_ = sqrt(vehicleMass/4.*9.81/thrustCoeff);
-
-  multicopterSim_->setVehiclePosition(initPosition_,initAttitude_);
-  multicopterSim_->setVehicleInitialAttitude(initAttitude_);
-  multicopterSim_->setMotorSpeed(initPropSpeed_);
-
-  // Get and set IMU parameters
-  double accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation;
-  getParameter("accelerometer_biasprocess", accBiasProcessNoiseAutoCorrelation, 1.0e-7, "m^2/s^5");
-  getParameter("gyroscope_biasprocess",     accBiasProcessNoiseAutoCorrelation, 1.0e-7, "rad^2/s^3");
-  getParameter("accelerometer_biasinitvar", accBiasInitVar_,                    0.005,  "(m/s^2)^2");
-  getParameter("gyroscope_biasinitvar",     gyroBiasInitVar_,                   0.003,  "(rad/s)^2");
-  getParameter("accelerometer_variance",    accMeasNoiseVariance_,              0.005,  "m^2/s^4");
-  getParameter("gyroscope_variance",        gyroMeasNoiseVariance_,             0.003,  "rad^2/s^2");
-  multicopterSim_->imu_.setBias(accBiasInitVar_, gyroBiasInitVar_,
-                                accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation);
-  multicopterSim_->imu_.setNoiseVariance(accMeasNoiseVariance_, gyroMeasNoiseVariance_);
-
-  // Get home (reference) position
-  getParameter("lat_ref",                   latRef_,                            47.3977420);
-  getParameter("lon_ref",                   lonRef_,                            8.5455940);
-  getParameter("alt_ref",                   altRef_,                            488.157);
-
-  multicopterSim_->geodetic_converter_.initialiseReference(latRef_, lonRef_, altRef_);
+  uavDynamicsSim_->init();
 
   // Simulator parameters
   getParameter("ignore_collisions",         ignoreCollisions_,          false);
@@ -207,10 +116,10 @@ node_(nh), propSpeedCommand_(4, 0.)
     // Get the current time if we are using wall time. Otherwise, use 0 as initial clock.
     currentTime_ = ros::Time::now();
   }
-
+  
   px4 = new PX4Communicator(altRef_);
   int px4id = 0;
-  if (px4->Init(px4id, multicopterSim_) != 0) {
+  if (px4->Init(px4id, uavDynamicsSim_) != 0) {
 		std::cerr << "Unable to Init PX4 Communication" << std::endl;
 	}
 
@@ -404,17 +313,17 @@ void Uav_Dynamics::proceedQuadcopterDynamics(double period){
             auto time_now = std::chrono::system_clock::now();
             if(counter > 50){
                 std::chrono::duration<double> delta_time = time_now - prev_time;
-                std::cout << "Uav_Dynamics::proceedQuadcopterDynamics:" << delta_time.count() << std::endl;
                 counter = 0;
             }
             prev_time = std::chrono::system_clock::now();
 
-            if(useRungeKutta4Integrator_){
-                multicopterSim_->proceedState_RK4(dt_secs, propSpeedCommand_, true);
-            }
-            else{
-                multicopterSim_->proceedState_ExplicitEuler(dt_secs, propSpeedCommand_, true);
-            }
+            uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
+            // if(useRungeKutta4Integrator_){
+            //     uavDynamicsSim_->proceedState_RK4(dt_secs, propSpeedCommand_, true);
+            // }
+            // else{
+            //     uavDynamicsSim_->proceedState_ExplicitEuler(dt_secs, propSpeedCommand_, true);
+            // }
         }
 
         std::this_thread::sleep_until(time_point);
@@ -465,9 +374,7 @@ void Uav_Dynamics::collisionCallback(std_msgs::Empty::Ptr msg){
  * @brief Reset state to initial
  */
 void Uav_Dynamics::resetState(void){
-  multicopterSim_->setVehiclePosition(initPosition_,initAttitude_);
-  multicopterSim_->setMotorSpeed(initPropSpeed_);
-  multicopterSim_->imu_.setBias(accBiasInitVar_, gyroBiasInitVar_);
+  // do nothing now
 }
 
 /**
@@ -479,8 +386,8 @@ void Uav_Dynamics::publishState(void){
   transform.header.stamp = currentTime_;
   transform.header.frame_id = "world";
 
-  Eigen::Vector3d position = multicopterSim_->getVehiclePosition();
-  Eigen::Quaterniond attitude = multicopterSim_->getVehicleAttitude();
+  Eigen::Vector3d position = uavDynamicsSim_->getVehiclePosition();
+  Eigen::Quaterniond attitude = uavDynamicsSim_->getVehicleAttitude();
 
   transform.transform.translation.x = position(0);
   transform.transform.translation.y = position(1);
@@ -542,12 +449,12 @@ void Uav_Dynamics::publishIMUMeasurement(void){
 void Uav_Dynamics::publishUavPosition(void){
     geometry_msgs::Pose pose;
 
-    auto position = multicopterSim_->getVehiclePosition().transpose();
+    auto position = uavDynamicsSim_->getVehiclePosition().transpose();
     pose.position.x = position[0];
     pose.position.y = position[1];
     pose.position.z = position[2];
 
-    auto quant = multicopterSim_->getVehicleAttitude();
+    auto quant = uavDynamicsSim_->getVehicleAttitude();
     auto euler_angles = quant.toRotationMatrix().eulerAngles(1, 0, 2);
     for(int idx = 0; idx < 3; idx++){
         euler_angles[idx] = euler_angles[idx] * 180 / 3.14;
@@ -568,8 +475,8 @@ void Uav_Dynamics::publishUavPosition(void){
  * @brief Publish position message
  */
 void Uav_Dynamics::publishUavSpeed(void){
-    auto velocity = multicopterSim_->getVehicleVelocity();
-    auto angular_velocity = multicopterSim_->getVehicleAngularVelocity();
+    auto velocity = uavDynamicsSim_->getVehicleVelocity();
+    auto angular_velocity = uavDynamicsSim_->getVehicleAngularVelocity();
 
     geometry_msgs::Twist speed;
     speed.linear.x = velocity[0];
@@ -579,37 +486,6 @@ void Uav_Dynamics::publishUavSpeed(void){
     speed.angular.y = angular_velocity[1];
     speed.angular.z = angular_velocity[2];
     speedPub_.publish(speed);
-}
-
-/**
- * @brief Publish static transform from UAV centroid to motor
- * 
- * @param timeStamp Tf timestamp
- * @param frame_id Parent (UAV) frame ID
- * @param child_frame_id Child (motor) frame ID
- * @param motorFrame Transformation
- */
-void Uav_Dynamics::publishStaticMotorTransform(
-                  const ros::Time & timeStamp, const char * frame_id,
-                  const char * child_frame_id, const Eigen::Isometry3d & motorFrame){
-
-  geometry_msgs::TransformStamped transformMotor;
-
-  transformMotor.header.stamp = timeStamp;
-  transformMotor.header.frame_id = frame_id;
-  transformMotor.transform.translation.x = motorFrame.translation()(0);
-  transformMotor.transform.translation.y = motorFrame.translation()(1);
-  transformMotor.transform.translation.z = motorFrame.translation()(2);
-
-  Eigen::Quaterniond motorAttitude(motorFrame.linear());
-
-  transformMotor.transform.rotation.x = motorAttitude.x();
-  transformMotor.transform.rotation.y = motorAttitude.y();
-  transformMotor.transform.rotation.z = motorAttitude.z();
-  transformMotor.transform.rotation.w = motorAttitude.w();
-  transformMotor.child_frame_id = child_frame_id;
-
-  staticTfPub_.sendTransform(transformMotor);
 }
 
 /**

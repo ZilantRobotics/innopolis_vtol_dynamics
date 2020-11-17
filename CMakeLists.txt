@@ -142,9 +142,11 @@ include_directories(
 #   src/${PROJECT_NAME}/innopolis_vtol_dynamics.cpp
 # )
 
-add_library(inertialMeasurementSim libs/multicopterDynamicsSim/inertialMeasurementSim.cpp)
-add_library(multicopterDynamicsSim libs/multicopterDynamicsSim/multicopterDynamicsSim.cpp)
-add_library(${PROJECT_NAME} src/vtolDynamicsSim.cpp)
+add_library(${PROJECT_NAME} src/vtolDynamicsSim.cpp
+                            src/multicopterDynamicsSimWrapper.cpp
+                            libs/multicopterDynamicsSim/multicopterDynamicsSim.cpp
+                            libs/multicopterDynamicsSim/inertialMeasurementSim.cpp)
+
 
 
 ## Add cmake target dependencies of the library
@@ -177,8 +179,6 @@ target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
 )
 
-target_link_libraries(multicopterDynamicsSim inertialMeasurementSim)
-target_link_libraries(${PROJECT_NAME}_node multicopterDynamicsSim)
 target_link_libraries(${PROJECT_NAME} yaml-cpp)
 
 #############

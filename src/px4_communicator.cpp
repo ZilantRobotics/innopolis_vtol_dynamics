@@ -62,7 +62,7 @@ PX4Communicator::PX4Communicator(float alt_home) :
     last_gps_time_usec = -1;
 }
 
-int PX4Communicator::Init(int portOffset, MulticopterDynamicsSim *s)
+int PX4Communicator::Init(int portOffset, UavDynamicsSimBase *s)
 {
     sim = s;
 
@@ -204,8 +204,8 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     double latitude_deg = 0;
     double longitude_deg = 0;
     double altitude_m = 0;
-    sim->geodetic_converter_.enu2Geodetic(pos_enu.x(), pos_enu.y(), pos_enu.z(),
-                                          &latitude_deg, &longitude_deg, &altitude_m);
+    sim->enu2Geodetic(pos_enu.x(), pos_enu.y(), pos_enu.z(),
+                      &latitude_deg, &longitude_deg, &altitude_m);
 
     double enu_x = 0, enu_y = 0, enu_z = 0;
     geographiclib_conversions::MagneticField(latitude_deg, longitude_deg, altitude_m, enu_x, enu_y, enu_z);
@@ -298,8 +298,8 @@ int PX4Communicator::SendHilGps(unsigned int time_usec){
     double east = pos_enu.x();
     double north = pos_enu.y();
     double up = pos_enu.z();
-    sim->geodetic_converter_.enu2Geodetic(east, north, up,
-                                          &latitude_deg, &longitude_deg, &altitude_m);
+    sim->enu2Geodetic(east, north, up,
+                      &latitude_deg, &longitude_deg, &altitude_m);
 
     mavlink_hil_gps_t hil_gps_msg;
     hil_gps_msg.time_usec = time_usec;// fgData.elapsed_sec * 1e6;

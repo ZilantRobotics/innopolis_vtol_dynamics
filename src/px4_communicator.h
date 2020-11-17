@@ -63,6 +63,9 @@
 #include <random>
 
 #include "../libs/multicopterDynamicsSim/multicopterDynamicsSim.hpp"
+#include "uavDynamicsSimBase.hpp"
+#include "multicopterDynamicsSimWrapper.hpp"
+
 
 #define TIMEOUTS 5
 #define TIMEOUTUS 0
@@ -97,7 +100,7 @@ class PX4Communicator
 {
 
 private:
-    MulticopterDynamicsSim *sim;
+    UavDynamicsSimBase *sim;
 
     struct sockaddr_in  px4_mavlink_addr;
     struct sockaddr_in  simulator_mavlink_addr;
@@ -126,7 +129,7 @@ public:
     /**
      * @brief Init connection with PX4 using TCP
      */
-    int Init(int portOffset, MulticopterDynamicsSim *s);
+    int Init(int portOffset, UavDynamicsSimBase *s);
 
     int Clean();
 

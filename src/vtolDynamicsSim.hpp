@@ -11,6 +11,9 @@
 #include <vector>
 #include <array>
 #include <random>
+#include <geographiclib_conversions/geodetic_conv.hpp>
+#include "uavDynamicsSimBase.hpp"
+
 
 
 struct VtolParameters{
@@ -30,6 +33,12 @@ struct VtolParameters{
 
     double massUncertainty;                         // mass multiplier
     double inertiaUncertainty;                      // mass multiplier
+
+    std::vector<double> actuatorMin;                // rad/sec
+    std::vector<double> actuatorMax;                // rad/sec
+    std::array<double, 8> deltaControlMax;          // rad/sec^2
+    std::array<double, 8> timeConstant;             // sec
+    std::array<double, 8> desiredControl;           // rad/sec
 };
 
 struct State{
@@ -86,23 +95,6 @@ struct CommandedState{
     std::array<double, 8> previousControl;          // rad/sec
 };
 
-struct SystemConstraints{
-    std::array<double, 8> controlMin;               // rad/sec
-    std::array<double, 8> controlMax;               // rad/sec
-    std::array<double, 8> deltaControlMax;          // rad/sec^2
-    std::array<double, 8> timeConstant;             // sec
-    std::array<double, 8> desiredControl;           // rad/sec
-};
-
-struct Control{
-    std::array<double, 6> W_v;                      // virtual control input priority
-    std::array<double, 8> W_u;                      // actuator control input priority
-    Eigen::Matrix3d K_angle;                        // gain are calculated by using PZP.m
-    Eigen::Matrix3d K_omega;                        // gain are calculated by using PZP.m
-    Eigen::Matrix3d K_vel;                          // gains are tuned by trial-and-error method
-    double K_zeta;                                  // gain is tuned by trial-and-error method
-};
-
 struct TablesWithCoeffs{
     Eigen::MatrixXd CS_rudder;
     Eigen::MatrixXd CS_beta;
@@ -130,13 +122,23 @@ struct TablesWithCoeffs{
 /**
  * @brief Vtol dynamics simulator class
  */
-class VtolDynamicsSim{
+class VtolDynamicsSim : public UavDynamicsSimBase{
     public:
         VtolDynamicsSim();
-        void init();
-        void processStep(double dt_secs,
-                         const std::vector<double> & motorSpeedCommandIn,
-                         bool isCmdPercent);
+        virtual int8_t init();
+        virtual void process(double dt_secs,
+                             const std::vector<double>& motorSpeedCommandIn,
+                             bool isCmdPercent);
+
+        virtual Eigen::Vector3d getVehiclePosition() const;
+        virtual Eigen::Quaterniond getVehicleAttitude() const;
+        virtual Eigen::Vector3d getVehicleVelocity(void) const;
+        virtual Eigen::Vector3d getVehicleAngularVelocity(void) const;
+
+        virtual void getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut) const;
+        virtual void enu2Geodetic(double east, double north, double up,
+                                  double *latitude, double *longitude, double *altitude);
+
 
         typedef uint64_t Time_t;
         Eigen::Vector3d calculateWind();
@@ -151,7 +153,7 @@ class VtolDynamicsSim{
                       double& thrust, double& torque, double& kf, double& km) const;
         void calculateNewState(const Eigen::Vector3d& Maero,
                                const Eigen::Vector3d& Faero,
-                               Eigen::VectorXd actuator,
+                               const std::vector<double>& actuator,
                                Time_t dt);
 
         void calculateAerodynamics(const Eigen::Vector3d& airspeed,
@@ -202,11 +204,7 @@ class VtolDynamicsSim{
         void setEulerAngles(Eigen::Vector3d eulerAngles);
 
         Eigen::Vector3d getAngularAcceleration() const;
-        Eigen::Vector3d getAngularVelocity() const;
-        Eigen::Quaterniond getAttitude() const;
         Eigen::Vector3d getLinearAcceleration() const;
-        Eigen::Vector3d getLinearVelocity() const;
-        Eigen::Vector3d getPosition() const;
 
     private:
         void loadTables(const std::string& path);
@@ -215,12 +213,11 @@ class VtolDynamicsSim{
         VtolParameters params_;
         State state_;
         CommandedState cmdState_;
-        SystemConstraints sysConstraints_;
-        Control control_;
         TablesWithCoeffs tables_;
 
         std::default_random_engine generator_;
         std::normal_distribution<double> distribution_;
+        geodetic_converter::GeodeticConverter geodetic_converter_;
 };
 
 #endif  // VTOL_DYNAMICS_SIM_H
