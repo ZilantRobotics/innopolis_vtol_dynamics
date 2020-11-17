@@ -34,88 +34,22 @@
 #include "uavDynamicsSimBase.hpp"
 #include "multicopterDynamicsSimWrapper.hpp"
 
-/**
- * @brief Low-pass filter class used for angular rate control.
- * 
- */
-class Uav_LowPassFilter{
-    public:
-        /// @name Constructor
-        Uav_LowPassFilter();
-
-        void proceedState(Eigen::Vector3d & input, double dt);
-        void resetState(void);
-
-        /// @name Low-Pass Filter State Vector and Derivative
-        //@{
-        double filterState_[3] = {0.,0.,0.};
-        double filterStateDer_[3] = {0.,0.,0.};
-        //@}
-
-    private:
-        /// @name Low-Pass Filter Gains
-        //@{
-        double gainP_ = 35530.5758439217;
-        double gainQ_ = 266.572976289502;
-        //@}
-};
-
-/**
- * @brief PID controller class used for angular rate control.
- * 
- */
-class Uav_Pid {
-    public:
-        /// @name Constructor
-        Uav_Pid();
-
-        void controlUpdate(geometry_msgs::Vector3 & command, double thrustCommand,
-                      double * curval, double * curder,
-                      std::vector<double> & propSpeedCommand, double dt);
-        void resetState(void);
-        void thrustMixing(std::vector<double> & propSpeedCommand, double * angAccCommand, double thrustCommand);
-
-    private:
-        /// @name PID Controller Gains
-        //@{
-        double propGain_[3] = {9.0, 9.0, 9.0};
-        double intGain_[3] = {3.0, 3.0, 3.0};
-        double derGain_[3] = {0.3, 0.3, 0.3};
-        //@}
-
-        /// @name PID Controller Integrator State and Bound
-        //@{
-        double intState_[3] = {0.,0.,0.};
-        double intBound_[3] = {1000.,1000.,1000.};
-        //@}
-
-        /// @name PID Controller Vehicle Parameters
-        //@{
-        double vehicleInertia_[3] = {0.0049, 0.0049, 0.0069};
-        double momentArm_ = 0.08;
-        double thrustCoeff_ = 1.91e-6;
-        double torqueCoeff_ = 2.6e-7;
-        //@}
-};
 
 /**
  * @brief UAV Dynamics class used for dynamics, IMU, and angular rate control simulation node
  */
 class Uav_Dynamics {
     public:
-        /// @name Constructor
         Uav_Dynamics(ros::NodeHandle nh);
+        /**
+         * @return -1 if error occured, else 0
+         */
+        int8_t init();
 
-        /// @name Node handle
         ros::NodeHandle node_;
 
-        /// @name Transform Publishers
-        //@{
         tf2_ros::TransformBroadcaster tfPub_;
-        //@}
 
-        /// @name Publishers
-        //@{
         ros::Publisher imuPub_;
         ros::Publisher positionPub_;
         ros::Publisher speedPub_;
@@ -129,7 +63,6 @@ class Uav_Dynamics {
                                          const char * frame_id,
                                          const char * child_frame_id,
                                          const Eigen::Isometry3d & motorFrame);
-        //@}
 
         /// @name Subscribers
         //@{
@@ -187,12 +120,6 @@ class Uav_Dynamics {
 
         void resetState(void);
 
-        /// @name Angular rate control PID controller and LPF
-        //@{
-        Uav_Pid pid_;
-        Uav_LowPassFilter lpf_;
-        //@}
-
         /// @name Vehicle dynamics simulator
         //@{
         /* As standard in ROS:
@@ -205,13 +132,6 @@ class Uav_Dynamics {
 
         UavDynamicsSimBase* uavDynamicsSim_;
         PX4Communicator *px4;
-        //@}
-
-        /// @name Initial conditions
-        //@{
-        Eigen::Vector3d initPosition_;
-        Eigen::Quaterniond initAttitude_;
-        double initPropSpeed_;
         //@}
 
         /// @name IMU measurements and variances

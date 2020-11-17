@@ -5,8 +5,6 @@
      -->
     <arg name="vehicle"             default="iris" doc="[standard_vtol]"/>
     <arg name="fcu_url"             default="udp://:14540@127.0.0.1:14557" doc="[udp://:14560@127.0.0.1:14558]"/>
-
-    <!-- Gazebo settings -->
     <arg name="gui"                 default="true"/>
 
     <!-- 1. Launch the simulation and connect ROS to it via MAVROS -->
@@ -25,7 +23,7 @@
     </include>
 
     <!-- 3. Run dynamic simulation -->
-    <rosparam file="$(find innopolis_vtol_dynamics)/config/inno_vtol_dynamics.yaml" command="load" ns="uav/innopolis_vtol_dynamics" />
-    <node pkg="innopolis_vtol_dynamics" type="node" name="node" output="screen">
-    </node>
+    <rosparam file="$(find innopolis_vtol_dynamics)/config/multicopter_params.yaml" command="load" ns="uav/multicopter_params" />
+    <rosparam file="$(find innopolis_vtol_dynamics)/config/sim_params.yaml" command="load" ns="uav/sim_params" />
+    <node pkg="innopolis_vtol_dynamics" type="node" name="node" output="screen"/>
 </launch>

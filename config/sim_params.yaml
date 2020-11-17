@@ -1,0 +1,18 @@
+# 1. Simulator parameters
+use_sim_time: true
+use_rungekutta4integrator : false
+ignore_collisions: false
+use_ratethrust_controller: false
+clockscale: 1.0
+
+# 2. Drone position and initial state:
+# inno:
+lat_ref : 55.7544426
+lon_ref : 48.742684
+alt_ref : -6.5
+# or as in gazebo:
+# lat_ref : 47.3977420
+# lon_ref : 8.5455940
+# alt_ref : 488.157
+init_pose: [0.00, 0.00, 0.0,
+            0.00, 0.00, +0.00, +1.00]  # roll, pitch, yaw, weight
