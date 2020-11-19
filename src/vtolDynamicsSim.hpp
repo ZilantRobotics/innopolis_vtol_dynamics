@@ -39,6 +39,9 @@ struct VtolParameters{
     std::array<double, 8> deltaControlMax;          // rad/sec^2
     std::array<double, 8> timeConstant;             // sec
     std::array<double, 8> desiredControl;           // rad/sec
+
+    double accVariance;
+    double gyroVariance;
 };
 
 struct State{
@@ -126,6 +129,8 @@ class VtolDynamicsSim : public UavDynamicsSimBase{
     public:
         VtolDynamicsSim();
         virtual int8_t init();
+        virtual void initStaticMotorTransform() override;
+        virtual void setReferencePosition(double latRef, double lonRef, double altRef) override;
         virtual void process(double dt_secs,
                              const std::vector<double>& motorSpeedCommandIn,
                              bool isCmdPercent);
@@ -135,7 +140,7 @@ class VtolDynamicsSim : public UavDynamicsSimBase{
         virtual Eigen::Vector3d getVehicleVelocity(void) const;
         virtual Eigen::Vector3d getVehicleAngularVelocity(void) const;
 
-        virtual void getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut) const;
+        virtual void getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut);
         virtual void enu2Geodetic(double east, double north, double up,
                                   double *latitude, double *longitude, double *altitude);
 

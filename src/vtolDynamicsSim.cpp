@@ -14,22 +14,15 @@
 #include <array>
 
 
-VtolDynamicsSim::VtolDynamicsSim():
-    distribution_(0.0, 1.0){
+VtolDynamicsSim::VtolDynamicsSim(): distribution_(0.0, 1.0){
+    state_.attitude.setIdentity();
+    state_.angularVel.setZero();
 }
 
 int8_t VtolDynamicsSim::init(){
     std::string configPath = ros::package::getPath("innopolis_vtol_dynamics") + "/config/";
     loadTables(configPath + "aerodynamics_coeffs.yaml");
     loadParams(configPath + "vtol_params.yaml");
-
-    double latRef, lonRef, altRef;
-    geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
-
-    /**
-     * @todo now it is zero because it interferes on process(), load in in future
-     */
-    state_.angularVel.setZero();
     return 0;
 }
 
@@ -122,6 +115,29 @@ void VtolDynamicsSim::loadParams(const std::string& path){
 
     params_.actuatorMin = config["actuatorMin"].as< std::vector<double> >();
     params_.actuatorMax = config["actuatorMax"].as< std::vector<double> >();
+    params_.accVariance = config["accVariance"].as<double>();
+    params_.gyroVariance = config["gyroVariance"].as<double>();
+}
+
+void VtolDynamicsSim::setReferencePosition(double latRef, double lonRef, double altRef){
+    geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
+}
+
+void VtolDynamicsSim::initStaticMotorTransform(){
+    Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
+    auto time = ros::Time::now();
+
+    motorFrame.translation() = params_.propellersLocation[0];
+    publishStaticMotorTransform(time, "uav/imu", "uav/motor0", motorFrame);
+
+    motorFrame.translation() = params_.propellersLocation[1];
+    publishStaticMotorTransform(time, "uav/imu", "uav/motor1", motorFrame);
+
+    motorFrame.translation() = params_.propellersLocation[2];
+    publishStaticMotorTransform(time, "uav/imu", "uav/motor2", motorFrame);
+
+    motorFrame.translation() = params_.propellersLocation[3];
+    publishStaticMotorTransform(time, "uav/imu", "uav/motor3", motorFrame);
 }
 
 void VtolDynamicsSim::process(double dt_secs,
@@ -493,6 +509,14 @@ void VtolDynamicsSim::enu2Geodetic(double east, double north, double up,
                                    double *latitude, double *longitude, double *altitude){
     geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
 }
-void VtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut) const{
-    asm("NOP");
+void VtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut){
+    Eigen::Vector3d accNoise(sqrt(params_.accVariance) * distribution_(generator_),
+                             sqrt(params_.accVariance) * distribution_(generator_),
+                             sqrt(params_.accVariance) * distribution_(generator_));
+    Eigen::Vector3d gyroNoise(sqrt(params_.gyroVariance) * distribution_(generator_),
+                             sqrt(params_.gyroVariance) * distribution_(generator_),
+                             sqrt(params_.gyroVariance) * distribution_(generator_));
+    Eigen::Quaterniond imuOrient(1, 0, 0, 0);
+    accOut = imuOrient.inverse() * state_.Fspecific + state_.accelBias + accNoise;
+    gyroOut = imuOrient.inverse() * state_.angularVel + state_.gyroBias + gyroNoise;
 }

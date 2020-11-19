@@ -106,19 +106,10 @@ int8_t MulticopterDynamicsWrapper::init(){
                                   accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation);
     multicopterSim_->imu_.setNoiseVariance(accMeasNoiseVariance, gyroMeasNoiseVariance);
 
+    return 0;
+}
 
-    // Get home (reference) position
-    double latRef, lonRef, altRef;
-    if(!ros::param::get(SIM_PARAMS_NS + "lat_ref", latRef) ||
-       !ros::param::get(SIM_PARAMS_NS + "lon_ref", lonRef) ||
-       !ros::param::get(SIM_PARAMS_NS + "alt_ref", altRef)){
-        ROS_ERROR("There is no some of sim_params parameters.");
-        return -1;
-    }
-    multicopterSim_->geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
-
-
-    // Set and publish motor transforms for the four motors
+void MulticopterDynamicsWrapper::initStaticMotorTransform(){
     Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
     double momentArm;
     getParameter("moment_arm",                momentArm,                  0.08,     "m");
@@ -138,8 +129,10 @@ int8_t MulticopterDynamicsWrapper::init(){
     motorFrame.translation() = Eigen::Vector3d(momentArm, -momentArm, 0.);
     multicopterSim_->setMotorFrame(motorFrame, -1, 3);
     publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor3", motorFrame);
+}
 
-    return 0;
+void MulticopterDynamicsWrapper::setReferencePosition(double latRef, double lonRef, double altRef){
+    multicopterSim_->geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
 }
 
 void MulticopterDynamicsWrapper::process(double dt_secs,
@@ -160,43 +153,10 @@ Eigen::Vector3d MulticopterDynamicsWrapper::getVehicleVelocity(void) const{
 Eigen::Vector3d MulticopterDynamicsWrapper::getVehicleAngularVelocity(void) const{
     return multicopterSim_->getVehicleAngularVelocity();
 }
-void MulticopterDynamicsWrapper::getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput) const{
+void MulticopterDynamicsWrapper::getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput){
     return multicopterSim_->getIMUMeasurement(accOutput, gyroOutput);
 }
-
-
 void MulticopterDynamicsWrapper::enu2Geodetic(double east, double north, double up,
-                                             double *latitude, double *longitude, double *altitude){
+                                              double *latitude, double *longitude, double *altitude){
     multicopterSim_->geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
-}
-
-/**
- * @brief Publish static transform from UAV centroid to motor
- * 
- * @param timeStamp Tf timestamp
- * @param frame_id Parent (UAV) frame ID
- * @param child_frame_id Child (motor) frame ID
- * @param motorFrame Transformation
- */
-void MulticopterDynamicsWrapper::publishStaticMotorTransform(
-                  const ros::Time & timeStamp, const char * frame_id,
-                  const char * child_frame_id, const Eigen::Isometry3d & motorFrame){
-
-  geometry_msgs::TransformStamped transformMotor;
-
-  transformMotor.header.stamp = timeStamp;
-  transformMotor.header.frame_id = frame_id;
-  transformMotor.transform.translation.x = motorFrame.translation()(0);
-  transformMotor.transform.translation.y = motorFrame.translation()(1);
-  transformMotor.transform.translation.z = motorFrame.translation()(2);
-
-  Eigen::Quaterniond motorAttitude(motorFrame.linear());
-
-  transformMotor.transform.rotation.x = motorAttitude.x();
-  transformMotor.transform.rotation.y = motorAttitude.y();
-  transformMotor.transform.rotation.z = motorAttitude.z();
-  transformMotor.transform.rotation.w = motorAttitude.w();
-  transformMotor.child_frame_id = child_frame_id;
-
-  staticTfPub_.sendTransform(transformMotor);
 }

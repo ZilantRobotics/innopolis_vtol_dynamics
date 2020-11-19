@@ -36,6 +36,16 @@ Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), propSpeedCommand_(4, 
 
 
 int8_t Uav_Dynamics::init(){
+    // Get Simulator parameters
+    const std::string SIM_PARAMS_PATH = "/uav/sim_params/";
+    if(!ros::param::get(SIM_PARAMS_PATH + "ignore_collisions",  ignoreCollisions_)  ||
+       !ros::param::get(SIM_PARAMS_PATH + "use_sim_time",       useSimTime_ ) ||
+       !ros::param::get(SIM_PARAMS_PATH + "lat_ref",            latRef_) ||
+       !ros::param::get(SIM_PARAMS_PATH + "lon_ref",            lonRef_) ||
+       !ros::param::get(SIM_PARAMS_PATH + "alt_ref",            altRef_)){
+        ROS_ERROR("There is no at least one of required simulator parameters.");
+        return -1;
+    }
     /**
      * @brief Init dynamics simulator
      * @todo it's better to use some build method instead of manually call new
@@ -50,17 +60,9 @@ int8_t Uav_Dynamics::init(){
         ROS_ERROR("Can't init uav dynamics sim. Shutdown.");
         return -1;
     }
+    uavDynamicsSim_->initStaticMotorTransform();
+    uavDynamicsSim_->setReferencePosition(latRef_, lonRef_, altRef_);
 
-    // Get Simulator parameters
-    const std::string SIM_PARAMS_PATH = "/uav/sim_params/";
-    if(!ros::param::get(SIM_PARAMS_PATH + "ignore_collisions",  ignoreCollisions_)  ||
-       !ros::param::get(SIM_PARAMS_PATH + "use_sim_time",       useSimTime_ ) ||
-       !ros::param::get(SIM_PARAMS_PATH + "lat_ref",            latRef_) ||
-       !ros::param::get(SIM_PARAMS_PATH + "lon_ref",            lonRef_) ||
-       !ros::param::get(SIM_PARAMS_PATH + "alt_ref",            altRef_)){
-        ROS_ERROR("There is no at least one of required simulator parameters.");
-        return -1;
-    }
     if(useSimTime_){
         if (!ros::param::get(SIM_PARAMS_PATH + "clockscale", clockScale_)) {
             std::cout << "Using sim_time and did not get a clock scaling value." << 
