@@ -26,6 +26,8 @@ public:
     virtual void initStaticMotorTransform() = 0;
 
     virtual void setReferencePosition(double latRef, double lonRef, double altRef) = 0;
+    virtual void setInitialPosition(const Eigen::Vector3d & position,
+                                    const Eigen::Quaterniond& attitude) = 0;
 
     virtual void process(double dt_secs, const std::vector<double> & motorSpeedCommandIn, bool isCmdPercent) = 0;
 

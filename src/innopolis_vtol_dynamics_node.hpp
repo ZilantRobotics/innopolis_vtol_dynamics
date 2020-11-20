@@ -53,12 +53,17 @@ class Uav_Dynamics {
         ros::Publisher imuPub_;
         ros::Publisher positionPub_;
         ros::Publisher speedPub_;
+        ros::Publisher controlPub_;
         ros::Publisher clockPub_;
+        ros::Publisher threadPub_;
 
-        void publishState(void);
-        void publishIMUMeasurement(void);
-        void publishUavPosition(void);
-        void publishUavSpeed(void);
+
+        void publishState();
+        void publishIMUMeasurement();
+        void publishUavPosition();
+        void publishUavSpeed();
+        void publishControl();
+        void publishThreadsInfo();
         void publishStaticMotorTransform(const ros::Time & timeStamp,
                                          const char * frame_id,
                                          const char * child_frame_id,
@@ -161,6 +166,8 @@ class Uav_Dynamics {
         std::thread sendHilSensorTask;
         std::thread receiveTask;
         std::thread publishToRosTask;
+
+        std::array<int64_t, 6> threadCounter;
 };
 
 #endif

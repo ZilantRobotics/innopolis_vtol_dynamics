@@ -65,6 +65,7 @@ struct State{
     double Cmy_e;   // coefficients for the jacobian
     double Cmz_r;   // coefficients for the jacobian
     Eigen::Vector3d Fspecific;                      // N
+    Eigen::Vector3d Ftotal;
 
     Eigen::Quaterniond estdAttitude;
     Eigen::Matrix3d estRotationIB;                  // inertial CS to body CS
@@ -131,6 +132,8 @@ class VtolDynamicsSim : public UavDynamicsSimBase{
         virtual int8_t init();
         virtual void initStaticMotorTransform() override;
         virtual void setReferencePosition(double latRef, double lonRef, double altRef) override;
+        virtual void setInitialPosition(const Eigen::Vector3d & position,
+                                        const Eigen::Quaterniond& attitude) override;
         virtual void process(double dt_secs,
                              const std::vector<double>& motorSpeedCommandIn,
                              bool isCmdPercent);
@@ -145,7 +148,9 @@ class VtolDynamicsSim : public UavDynamicsSimBase{
                                   double *latitude, double *longitude, double *altitude);
 
 
-        typedef uint64_t Time_t;
+        std::vector<double> mapCmdToActuator(const std::vector<double>& cmd) const;
+
+        typedef double Time_t;
         Eigen::Vector3d calculateWind();
         Eigen::Matrix3d calculateRotationMatrix() const;
         Eigen::Vector3d calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,

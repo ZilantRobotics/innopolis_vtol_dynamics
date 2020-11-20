@@ -68,27 +68,7 @@ int8_t MulticopterDynamicsWrapper::init(){
                         aeroMomentCoefficient, dragCoeff, momentProcessNoiseAutoCorrelation,
                         forceProcessNoiseAutoCorrelation, gravity);
 
-    std::vector<double> initPose(7);
-    const std::string SIM_PARAMS_NS = "/uav/sim_params/";
-    if (!ros::param::get(SIM_PARAMS_NS + "init_pose", initPose)) {
-        std::cout << "Did NOT find initial pose from param file" << std::endl;
-        initPose.at(2) = 0.2;
-        initPose.at(6) = 1.0;
-    }
-
-    Eigen::Vector3d initPosition;
-    initPosition << initPose.at(0), initPose.at(1), initPose.at(2);
-
-    Eigen::Quaterniond initAttitude;
-    initAttitude.x() = initPose.at(3);
-    initAttitude.y() = initPose.at(4);
-    initAttitude.z() = initPose.at(5);
-    initAttitude.w() = initPose.at(6);
-    initAttitude.normalize();
-
     double initPropSpeed = sqrt(vehicleMass/4.*9.81/thrustCoeff);
-    multicopterSim_->setVehiclePosition(initPosition, initAttitude);
-    multicopterSim_->setVehicleInitialAttitude(initAttitude);
     multicopterSim_->setMotorSpeed(initPropSpeed);
 
 
@@ -129,6 +109,11 @@ void MulticopterDynamicsWrapper::initStaticMotorTransform(){
     motorFrame.translation() = Eigen::Vector3d(momentArm, -momentArm, 0.);
     multicopterSim_->setMotorFrame(motorFrame, -1, 3);
     publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor3", motorFrame);
+}
+
+void MulticopterDynamicsWrapper::setInitialPosition(const Eigen::Vector3d & position,
+                                                    const Eigen::Quaterniond& attitude){
+    multicopterSim_->setVehiclePosition(position, attitude);
 }
 
 void MulticopterDynamicsWrapper::setReferencePosition(double latRef, double lonRef, double altRef){

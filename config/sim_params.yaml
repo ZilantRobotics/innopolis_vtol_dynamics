@@ -15,4 +15,5 @@ alt_ref : -6.5
 # lon_ref : 8.5455940
 # alt_ref : 488.157
 init_pose: [0.00, 0.00, 0.0,
-            0.00, 0.00, +0.00, +1.00]  # roll, pitch, yaw, weight
+            0.00, 0.00, +0.00, +1.00]   # roll, pitch, yaw, weight
+dynamics_type: "inno_vtol"              # doc=[inno_vtol, flightgoggles_multicopter]
