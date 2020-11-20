@@ -124,11 +124,15 @@ void VtolDynamicsSim::loadParams(const std::string& path){
 void VtolDynamicsSim::setReferencePosition(double latRef, double lonRef, double altRef){
     geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
 }
-
 void VtolDynamicsSim::setInitialPosition(const Eigen::Vector3d & position,
                                          const Eigen::Quaterniond& attitude){
     state_.position = position;
     state_.attitude = attitude;
+}
+void VtolDynamicsSim::setInitialVelocity(const Eigen::Vector3d & linearVelocity,
+                                         const Eigen::Vector3d& angularVelocity){
+    state_.linearVel = linearVelocity;
+    state_.angularVel = angularVelocity;
 }
 
 void VtolDynamicsSim::initStaticMotorTransform(){
@@ -213,7 +217,7 @@ Eigen::Matrix3d VtolDynamicsSim::calculateRotationMatrix() const{
     Eigen::Quaterniond q_theta(std::cos(theta/2), 0, std::sin(theta/2), 0);
     Eigen::Quaterniond q_psi(std::cos(psi/2), 0, 0, std::sin(psi/2));
     Eigen::Quaterniond q = q_psi * q_theta * q_phi;
-    return q.toRotationMatrix();
+    return q.toRotationMatrix().transpose();
 }
 
 Eigen::Vector3d VtolDynamicsSim::calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,
@@ -348,7 +352,7 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
 
     std::array<Eigen::Vector3d, 5> FmotorInBodyCS;
     for(size_t idx = 0; idx < 4; idx++){
-        FmotorInBodyCS[idx] << 0, 0, thrust[idx];
+        FmotorInBodyCS[idx] << 0, 0, -thrust[idx];
     }
     FmotorInBodyCS[4] << thrust[4], 0, 0;
 
@@ -358,42 +362,30 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     motorTorquesInBodyCS[2] << 0, 0, -torque[2];
     motorTorquesInBodyCS[3] << 0, 0, -torque[3];
     motorTorquesInBodyCS[4] << -torque[4], 0, 0;
-    std::cout << "- motorTorquesInBodyCS: " << motorTorquesInBodyCS[0].transpose() << ", " << motorTorquesInBodyCS[1].transpose() << ", " << motorTorquesInBodyCS[2].transpose() << ", " << motorTorquesInBodyCS[3].transpose() << ", " << motorTorquesInBodyCS[4].transpose() << std::endl;
     std::array<Eigen::Vector3d, 5> MdueToArmOfForceInBodyCS;
     std::array<Eigen::Vector3d, 5> MmotorsTotal;
     for(size_t idx = 0; idx < 5; idx++){
         MdueToArmOfForceInBodyCS[idx] = params_.propellersLocation[idx].cross(FmotorInBodyCS[idx]);
         MmotorsTotal[idx] = motorTorquesInBodyCS[idx] + MdueToArmOfForceInBodyCS[idx];
     }
-    std::cout << "- MdueToArmOfForceInBodyCS: " << MdueToArmOfForceInBodyCS[0].transpose() << ", " << MdueToArmOfForceInBodyCS[1].transpose() << ", " << MdueToArmOfForceInBodyCS[2].transpose() << ", " << MdueToArmOfForceInBodyCS[3].transpose() << ", " << MdueToArmOfForceInBodyCS[4].transpose() << std::endl;
-    std::cout << "- MmotorsTotal: " << MmotorsTotal[0].transpose() << ", " << MmotorsTotal[1].transpose() << ", " << MmotorsTotal[2].transpose() << ", " << MmotorsTotal[3].transpose() << ", " << MmotorsTotal[4].transpose() << std::endl;
 
 
     auto MtotalInBodyCS = std::accumulate(&MmotorsTotal[0], &MmotorsTotal[5], Maero);
-    std::cout << "=> MtotalInBodyCS: " << MtotalInBodyCS.transpose() << std::endl;
-
     state_.angularAccel = params_.inertia.inverse() * (MtotalInBodyCS - state_.angularVel.cross(params_.inertia * state_.angularVel));
     state_.angularVel += state_.angularAccel * dt;
     Eigen::Quaterniond attitudeDelta = state_.attitude * Eigen::Quaterniond(0, state_.angularVel(0), state_.angularVel(1), state_.angularVel(2));
-    attitudeDelta.coeffs() *= 2 * dt;
+    attitudeDelta.coeffs() *= 0.5 * dt;
     state_.attitude.coeffs() += attitudeDelta.coeffs();
     state_.attitude.normalize();
-    auto rotationMatrix = state_.attitude.toRotationMatrix();
 
+    Eigen::Matrix3d rotationMatrix = state_.attitude.toRotationMatrix().transpose();
     Eigen::Vector3d Fspecific = std::accumulate(&FmotorInBodyCS[0], &FmotorInBodyCS[5], Faero);
-    Eigen::Vector3d Ftotal = Fspecific - rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity);
+    Eigen::Vector3d Ftotal = Fspecific + rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity);
 
     state_.Ftotal = Ftotal;
     state_.Fspecific = Fspecific;
     state_.linearAccel = rotationMatrix.inverse() * Ftotal / params_.mass;
-    std::cout << "- FmotorInBodyCS: " << FmotorInBodyCS[0].transpose() << ", " << FmotorInBodyCS[1].transpose() << ", " << FmotorInBodyCS[2].transpose() << ", " << FmotorInBodyCS[3].transpose() << ", " << FmotorInBodyCS[4].transpose() << ", " << std::endl;
-    std::cout << "- Maero=" << Maero.transpose() << std::endl;
-    std::cout << "- Faero=" << Faero.transpose() << std::endl;
-    std::cout << "- Fspecific=" << Fspecific.transpose() << std::endl;
-
-    std::cout << "- Ftotal=" << Ftotal.transpose() << ", dt=" << dt << ", " << ", mass=" << params_.mass << ", state_.linearAccel=" << state_.linearAccel.transpose() << std::endl;
-    std::cout << "- state_.angularAccel: " << state_.angularAccel.transpose() << std::endl;
-
+    
     state_.linearVel += state_.linearAccel * dt;
     state_.position += state_.linearVel * dt;
 

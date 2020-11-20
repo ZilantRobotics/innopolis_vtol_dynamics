@@ -212,6 +212,8 @@ class VtolDynamicsSim : public UavDynamicsSimBase{
 
         void setWindParameter(Eigen::Vector3d windMeanVelocity, double wind_velocityVariance);
         void setEulerAngles(Eigen::Vector3d eulerAngles);
+        void setInitialVelocity(const Eigen::Vector3d & linearVelocity,
+                                const Eigen::Vector3d& angularVelocity);
 
         Eigen::Vector3d getAngularAcceleration() const;
         Eigen::Vector3d getLinearAcceleration() const;
