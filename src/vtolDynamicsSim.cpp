@@ -165,8 +165,6 @@ void VtolDynamicsSim::process(double dt_secs,
     Eigen::Vector3d Faero, Maero;
     double Cmx_a, Cmy_e, Cmz_r;
     auto actuators = isCmdPercent ? mapCmdToActuator(motorCmd) : motorCmd;
-    std::cout << "- input: [" << actuators[0] << ", " << actuators[1] << ", " << actuators[2] << ", " << actuators[3] << ", " << actuators[4] << ", " << actuators[5] << ", " << actuators[6] << ", " << actuators[7] << "]" << std::endl;
-    std::cout << "- vel_w=" << vel_w.transpose() << ", airSpeed" << airSpeed.transpose() << std::endl;
     calculateAerodynamics(airSpeed, dynPressure, AoA, AoS, actuators[5], actuators[6], actuators[7],
                           Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
     calculateNewState(Maero, Faero, actuators, dt_secs);
@@ -210,14 +208,7 @@ Eigen::Vector3d VtolDynamicsSim::calculateWind(){
 }
 
 Eigen::Matrix3d VtolDynamicsSim::calculateRotationMatrix() const{
-    double phi = state_.eulerAngles[0];
-    double theta = state_.eulerAngles[1];
-    double psi = state_.eulerAngles[2];
-    Eigen::Quaterniond q_phi(std::cos(phi/2), std::sin(phi/2), 0, 0);
-    Eigen::Quaterniond q_theta(std::cos(theta/2), 0, std::sin(theta/2), 0);
-    Eigen::Quaterniond q_psi(std::cos(psi/2), 0, 0, std::sin(psi/2));
-    Eigen::Quaterniond q = q_psi * q_theta * q_phi;
-    return q.toRotationMatrix().transpose();
+    return state_.attitude.toRotationMatrix().transpose();
 }
 
 Eigen::Vector3d VtolDynamicsSim::calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,
@@ -352,7 +343,7 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
 
     std::array<Eigen::Vector3d, 5> FmotorInBodyCS;
     for(size_t idx = 0; idx < 4; idx++){
-        FmotorInBodyCS[idx] << 0, 0, -thrust[idx];
+        FmotorInBodyCS[idx] << 0, 0, thrust[idx];
     }
     FmotorInBodyCS[4] << thrust[4], 0, 0;
 
@@ -369,7 +360,6 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
         MmotorsTotal[idx] = motorTorquesInBodyCS[idx] + MdueToArmOfForceInBodyCS[idx];
     }
 
-
     auto MtotalInBodyCS = std::accumulate(&MmotorsTotal[0], &MmotorsTotal[5], Maero);
     state_.angularAccel = params_.inertia.inverse() * (MtotalInBodyCS - state_.angularVel.cross(params_.inertia * state_.angularVel));
     state_.angularVel += state_.angularAccel * dt;
@@ -380,12 +370,11 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
 
     Eigen::Matrix3d rotationMatrix = state_.attitude.toRotationMatrix().transpose();
     Eigen::Vector3d Fspecific = std::accumulate(&FmotorInBodyCS[0], &FmotorInBodyCS[5], Faero);
-    Eigen::Vector3d Ftotal = Fspecific + rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity);
+    Eigen::Vector3d Ftotal = Fspecific - rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity);
 
-    state_.Ftotal = Ftotal;
     state_.Fspecific = Fspecific;
+    state_.Ftotal = Ftotal;
     state_.linearAccel = rotationMatrix.inverse() * Ftotal / params_.mass;
-    
     state_.linearVel += state_.linearAccel * dt;
     state_.position += state_.linearVel * dt;
 
@@ -398,6 +387,37 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
         state_.attitude.y() = 0;
         state_.attitude.z() = 0;
     }
+
+    #define FORCES_LOG false
+    #if FORCES_LOG == true
+    std::cout << "- input: dt = " << dt << std::endl;
+    std::cout << "- input: u = " << actuator[0] << ", " << actuator[1] << ", " << actuator[2] << ", " << actuator[3] << ", " << actuator[4] << std::endl;
+    std::cout << "- input: [" << actuators[0] << ", " << actuators[1] << ", " << actuators[2] << ", " << actuators[3] << ", " << actuators[4] << ", " << actuators[5] << ", " << actuators[6] << ", " << actuators[7] << "]" << std::endl;
+    std::cout << "- input: Faero = " << Faero.transpose() << std::endl;
+    std::cout << "- input: Maero = " << Maero.transpose() << std::endl;
+    std::cout << "- input: state_.angularVel = " << state_.angularVel.transpose() << std::endl;
+    std::cout << "- input: state_.attitude = " << state_.attitude.coeffs() << std::endl;
+
+    std::cout << "- motorTorquesInBodyCS: " << motorTorquesInBodyCS[0].transpose() << ", " << motorTorquesInBodyCS[1].transpose() << ", " << motorTorquesInBodyCS[2].transpose() << ", " << motorTorquesInBodyCS[3].transpose() << ", " << motorTorquesInBodyCS[4].transpose() << std::endl;
+    std::cout << "- MdueToArmOfForceInBodyCS: " << MdueToArmOfForceInBodyCS[0].transpose() << ", " << MdueToArmOfForceInBodyCS[1].transpose() << ", " << MdueToArmOfForceInBodyCS[2].transpose() << ", " << MdueToArmOfForceInBodyCS[3].transpose() << ", " << MdueToArmOfForceInBodyCS[4].transpose() << std::endl;
+    std::cout << "- MmotorsTotal: " << MmotorsTotal[0].transpose() << ", " << MmotorsTotal[1].transpose() << ", " << MmotorsTotal[2].transpose() << ", " << MmotorsTotal[3].transpose() << ", " << MmotorsTotal[4].transpose() << std::endl;
+    std::cout << "- MtotalInBodyCS: " << MtotalInBodyCS.transpose() << std::endl;
+
+    std::cout << "- new rotationMatrix: " << rotationMatrix(0,0) << ", " << rotationMatrix(0,1) << ", " << rotationMatrix(0,2) << ";" << std::endl <<
+                                         rotationMatrix(1,0) << ", " << rotationMatrix(1,1) << ", " << rotationMatrix(1,2) << ";" << std::endl <<
+                                         rotationMatrix(2,0) << ", " << rotationMatrix(2,1) << ", " << rotationMatrix(2,2) << ";" << std::endl;
+    std::cout << "- rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity): " << (rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity))[0] << ", " << (rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity))[1] << ", " << (rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity))[2] << std::endl;
+
+    std::cout << "- FmotorInBodyCS: " << FmotorInBodyCS[0].transpose() << ", " << FmotorInBodyCS[1].transpose() << ", " << FmotorInBodyCS[2].transpose() << ", " << FmotorInBodyCS[3].transpose() << ", " << FmotorInBodyCS[4].transpose() << ", " << std::endl;
+    std::cout << "- Maero=" << Maero.transpose() << std::endl;
+    std::cout << "- Faero=" << Faero.transpose() << std::endl;
+    std::cout << "- Fspecific=" << Fspecific.transpose() << std::endl;
+
+    std::cout << "- Ftotal=" << Ftotal.transpose() << ", dt=" << dt << ", " << ", mass=" << params_.mass << std::endl;
+    std::cout << "- out: state_.linearAccel=" << state_.linearAccel.transpose() << std::endl;
+    std::cout << "- out: state_.angularAccel: " << state_.angularAccel.transpose() << std::endl;
+    std::cout << "- out: state_.angularVel: " << state_.angularVel.transpose() << std::endl;
+    #endif
 }
 
 void VtolDynamicsSim::calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){

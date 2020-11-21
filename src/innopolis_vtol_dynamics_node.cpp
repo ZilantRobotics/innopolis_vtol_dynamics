@@ -9,7 +9,7 @@
 
 #include <cmath>
 #include <geometry_msgs/Pose.h>
-#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Float64MultiArray.h>
 #include "innopolis_vtol_dynamics_node.hpp"
 #include "vtolDynamicsSim.hpp"
@@ -88,7 +88,7 @@ int8_t Uav_Dynamics::init(){
     // This should improve IMU integration methods on slow client nodes (see issue #63)
     imuPub_ = node_.advertise<sensor_msgs::Imu>("/uav/sensors/imu", 96);
     positionPub_ = node_.advertise<geometry_msgs::Pose>("/uav/position", 1);
-    speedPub_ = node_.advertise<geometry_msgs::Twist>("/uav/speed", 1);
+    speedPub_ = node_.advertise<geometry_msgs::TwistStamped>("/uav/speed", 1);
     controlPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/control", 1);
     threadPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/threads_info", 1);
     inputCommandSub_ = node_.subscribe("/uav/input/rateThrust", 1, &Uav_Dynamics::inputCallback, this);
@@ -125,7 +125,7 @@ int8_t Uav_Dynamics::init(){
     sendHilSensorTask = std::thread(&Uav_Dynamics::sendHilSensor, this, 0.001);
     sendHilSensorTask.detach();
 
-    receiveTask = std::thread(&Uav_Dynamics::receive, this, 0.001);
+    receiveTask = std::thread(&Uav_Dynamics::receive, this, 0.005);
     receiveTask.detach();
 
     publishToRosTask = std::thread(&Uav_Dynamics::publishToRos, this, 0.05);
@@ -177,17 +177,23 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
     }
 }
 
-void Uav_Dynamics::sendHilSensor(double period){
+void Uav_Dynamics::proceedQuadcopterDynamics(double period){
+    std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(int(10000)));
     while(ros::ok()){
-        threadCounter[2]++;
+        threadCounter[0]++;
+
+        if(receivedPX4Actuator_ && armed_){
+            static auto crnt_time = std::chrono::system_clock::now();
+            auto prev_time = crnt_time;
+            crnt_time = std::chrono::system_clock::now();
+            auto time_dif_sec = (crnt_time - prev_time).count() / 1000000000.0;
+
+            uavDynamicsSim_->process(time_dif_sec, propSpeedCommand_, true);
+        }
 
         auto crnt_time = std::chrono::system_clock::now();
-        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto sleed_period = std::chrono::milliseconds(int(1000 * period * clockScale_));
         auto time_point = crnt_time + sleed_period;
-        int send_status = px4->SendHilSensor(currentTime_.toNSec() / 1000);
-        if(send_status == -1){
-            ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Sent to PX4 failed" << strerror(errno));
-        }
         std::this_thread::sleep_until(time_point);
     }
 }
@@ -196,36 +202,31 @@ void Uav_Dynamics::sendHilGps(double period){
     while(ros::ok()){
         threadCounter[1]++;
 
-        auto crnt_time = std::chrono::system_clock::now();
-        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
-        auto time_point = crnt_time + sleed_period;
         int send_status = px4->SendHilGps(currentTime_.toNSec() / 1000);
         if(send_status == -1){
             ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Send to PX4 failed" << strerror(errno));
         }
-        std::this_thread::sleep_until(time_point);
-    }
-}
-
-void Uav_Dynamics::publishToRos(double period){
-    while(ros::ok()){
-        threadCounter[4]++;
 
         auto crnt_time = std::chrono::system_clock::now();
         auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
         auto time_point = crnt_time + sleed_period;
         std::this_thread::sleep_until(time_point);
-        publishState();
-        publishIMUMeasurement();
-        publishUavPosition();
-        publishUavSpeed();
-        publishControl();
+    }
+}
 
-        static auto next_time = std::chrono::system_clock::now();
-        if(crnt_time > next_time){
-            publishThreadsInfo();
-            next_time += std::chrono::milliseconds(int(1000));
+void Uav_Dynamics::sendHilSensor(double period){
+    while(ros::ok()){
+        threadCounter[2]++;
+
+        int send_status = px4->SendHilSensor(currentTime_.toNSec() / 1000);
+        if(send_status == -1){
+            ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Sent to PX4 failed" << strerror(errno));
         }
+
+        auto crnt_time = std::chrono::system_clock::now();
+        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto time_point = crnt_time + sleed_period;
+        std::this_thread::sleep_until(time_point);
     }
 }
 
@@ -242,10 +243,6 @@ void Uav_Dynamics::receive(double period){
     while(ros::ok()){
         threadCounter[3]++;
 
-        auto crnt_time = std::chrono::system_clock::now();
-        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
-        auto time_point = crnt_time + sleed_period;
-
         if(receivedPX4Actuator_){
             for (size_t i = 0; i < 1; i++){
                 if(px4->Receive(false, armed_, propSpeedCommand_) == 1){
@@ -256,61 +253,32 @@ void Uav_Dynamics::receive(double period){
             receivedPX4Actuator_ = true;
         }
 
+        auto crnt_time = std::chrono::system_clock::now();
+        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto time_point = crnt_time + sleed_period;
         std::this_thread::sleep_until(time_point);
     }
 }
 
-void Uav_Dynamics::proceedQuadcopterDynamics(double period){
-    std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(int(10000)));
+void Uav_Dynamics::publishToRos(double period){
     while(ros::ok()){
-        threadCounter[0]++;
+        threadCounter[4]++;
 
         auto crnt_time = std::chrono::system_clock::now();
-        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
-        auto time_point = crnt_time + sleed_period;
+        publishState();
+        publishIMUMeasurement();
+        publishUavPosition();
+        publishUavSpeed();
+        publishControl();
 
-        if(receivedPX4Actuator_ && armed_){
-            static auto prev_time = std::chrono::system_clock::now();
-            static uint8_t counter = 0;
-            counter++;
-            auto time_now = std::chrono::system_clock::now();
-            if(counter > 50){
-                std::chrono::duration<double> delta_time = time_now - prev_time;
-                counter = 0;
-            }
-            prev_time = std::chrono::system_clock::now();
-
-            uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
+        static auto next_time = std::chrono::system_clock::now();
+        if(crnt_time > next_time){
+            publishThreadsInfo();
+            next_time += std::chrono::milliseconds(int(1000));
         }
 
-        // test pitch
-        // propSpeedCommand_[0] = 0.66;
-        // propSpeedCommand_[1] = 0.64;
-        // propSpeedCommand_[2] = 0.64;
-        // propSpeedCommand_[3] = 0.66;
-        // uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
-
-        // test roll
-        // propSpeedCommand_[0] = 0.64;
-        // propSpeedCommand_[1] = 0.64;
-        // propSpeedCommand_[2] = 0.66;
-        // propSpeedCommand_[3] = 0.66;
-        // uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
-
-        // test yaw - should be clockwise
-        // propSpeedCommand_[0] = 0.64;
-        // propSpeedCommand_[1] = 0.66;
-        // propSpeedCommand_[2] = 0.64;
-        // propSpeedCommand_[3] = 0.66;
-        // uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
-
-        // test yaw - should be counterclockwise
-        // propSpeedCommand_[0] = 0.66;
-        // propSpeedCommand_[1] = 0.64;
-        // propSpeedCommand_[2] = 0.66;
-        // propSpeedCommand_[3] = 0.64;
-        // uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
-
+        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
+        auto time_point = crnt_time + sleed_period;
         std::this_thread::sleep_until(time_point);
     }
 }
@@ -464,13 +432,14 @@ void Uav_Dynamics::publishUavSpeed(void){
     auto velocity = uavDynamicsSim_->getVehicleVelocity();
     auto angular_velocity = uavDynamicsSim_->getVehicleAngularVelocity();
 
-    geometry_msgs::Twist speed;
-    speed.linear.x = velocity[0];
-    speed.linear.y = velocity[1];
-    speed.linear.z = velocity[2];
-    speed.angular.x = angular_velocity[0];
-    speed.angular.y = angular_velocity[1];
-    speed.angular.z = angular_velocity[2];
+    geometry_msgs::TwistStamped speed;
+    speed.header.stamp = currentTime_;
+    speed.twist.linear.x = velocity[0];
+    speed.twist.linear.y = velocity[1];
+    speed.twist.linear.z = velocity[2];
+    speed.twist.angular.x = angular_velocity[0];
+    speed.twist.angular.y = angular_velocity[1];
+    speed.twist.angular.z = angular_velocity[2];
     speedPub_.publish(speed);
 }
 
