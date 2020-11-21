@@ -345,7 +345,7 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     for(size_t idx = 0; idx < 4; idx++){
         FmotorInBodyCS[idx] << 0, 0, thrust[idx];
     }
-    FmotorInBodyCS[4] << thrust[4], 0, 0;
+    FmotorInBodyCS[4] << -thrust[4], 0, 0;
 
     std::array<Eigen::Vector3d, 5> motorTorquesInBodyCS;
     motorTorquesInBodyCS[0] << 0, 0, torque[0];
@@ -360,8 +360,18 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
         MmotorsTotal[idx] = motorTorquesInBodyCS[idx] + MdueToArmOfForceInBodyCS[idx];
     }
 
-    auto MtotalInBodyCS = std::accumulate(&MmotorsTotal[0], &MmotorsTotal[5], Maero);
-    state_.angularAccel = params_.inertia.inverse() * (MtotalInBodyCS - state_.angularVel.cross(params_.inertia * state_.angularVel));
+    /**
+     * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
+     * it is directed to the top, so we perform invertion.
+     * forces z axis was inverted
+     * Moments and angular x, y were inverted
+     */
+    Eigen::Vector3d FaeroInverted(Faero[0], Faero[1], -Faero[2]);
+    Eigen::Vector3d MaeroInverted(-Maero[0], -Maero[1], Maero[2]);
+    Eigen::Vector3d AngularVelInverted(-state_.angularVel[0], -state_.angularVel[1], state_.angularVel[2]);
+
+    auto MtotalInBodyCS = std::accumulate(&MmotorsTotal[0], &MmotorsTotal[5], MaeroInverted);
+    state_.angularAccel = params_.inertia.inverse() * (MtotalInBodyCS - AngularVelInverted.cross(params_.inertia * AngularVelInverted));
     state_.angularVel += state_.angularAccel * dt;
     Eigen::Quaterniond attitudeDelta = state_.attitude * Eigen::Quaterniond(0, state_.angularVel(0), state_.angularVel(1), state_.angularVel(2));
     attitudeDelta.coeffs() *= 0.5 * dt;
@@ -369,7 +379,7 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     state_.attitude.normalize();
 
     Eigen::Matrix3d rotationMatrix = state_.attitude.toRotationMatrix().transpose();
-    Eigen::Vector3d Fspecific = std::accumulate(&FmotorInBodyCS[0], &FmotorInBodyCS[5], Faero);
+    Eigen::Vector3d Fspecific = std::accumulate(&FmotorInBodyCS[0], &FmotorInBodyCS[5], FaeroInverted);
     Eigen::Vector3d Ftotal = Fspecific - rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity);
 
     state_.Fspecific = Fspecific;
@@ -388,11 +398,10 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
         state_.attitude.z() = 0;
     }
 
-    #define FORCES_LOG false
+    #define FORCES_LOG true
     #if FORCES_LOG == true
     std::cout << "- input: dt = " << dt << std::endl;
     std::cout << "- input: u = " << actuator[0] << ", " << actuator[1] << ", " << actuator[2] << ", " << actuator[3] << ", " << actuator[4] << std::endl;
-    std::cout << "- input: [" << actuators[0] << ", " << actuators[1] << ", " << actuators[2] << ", " << actuators[3] << ", " << actuators[4] << ", " << actuators[5] << ", " << actuators[6] << ", " << actuators[7] << "]" << std::endl;
     std::cout << "- input: Faero = " << Faero.transpose() << std::endl;
     std::cout << "- input: Maero = " << Maero.transpose() << std::endl;
     std::cout << "- input: state_.angularVel = " << state_.angularVel.transpose() << std::endl;
