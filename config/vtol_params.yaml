@@ -10,7 +10,7 @@ characteristicLength:   1.50        # m
 # Originally, inertia.z was 1.26242, but in this case there are stable oscillation
 inertia:                [0.62684, 0,      0,
                          0,       0.6444, 0,
-                         0,       0,      0.66242]  # kg*m^2
+                         0,       0,      1.26242]  # kg*m^2
 # Eigen::Vector3d propellerShift;                 // m
 
 # double dyn_press_conversion;                    // calculate conversion velocity pressure

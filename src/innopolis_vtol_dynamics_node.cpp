@@ -31,7 +31,7 @@ int main(int argc, char **argv){
 }
 
 
-Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), propSpeedCommand_(4, 0.){
+Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), propSpeedCommand_(8, 0.){
 
 }
 
@@ -190,6 +190,34 @@ void Uav_Dynamics::proceedQuadcopterDynamics(double period){
 
             uavDynamicsSim_->process(time_dif_sec, propSpeedCommand_, true);
         }
+
+        // test pitch
+        // propSpeedCommand_[0] = 0.66;
+        // propSpeedCommand_[1] = 0.64;
+        // propSpeedCommand_[2] = 0.64;
+        // propSpeedCommand_[3] = 0.66;
+        // uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
+
+        // test roll
+        // propSpeedCommand_[0] = 0.68;
+        // propSpeedCommand_[1] = 0.64;
+        // propSpeedCommand_[2] = 0.64;
+        // propSpeedCommand_[3] = 0.68;
+        // uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
+
+        // test yaw - should be clockwise
+        // propSpeedCommand_[0] = 0.64;
+        // propSpeedCommand_[1] = 0.66;
+        // propSpeedCommand_[2] = 0.64;
+        // propSpeedCommand_[3] = 0.66;
+        // uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
+
+        // test yaw - should be counterclockwise
+        // propSpeedCommand_[0] = 0.66;
+        // propSpeedCommand_[1] = 0.64;
+        // propSpeedCommand_[2] = 0.66;
+        // propSpeedCommand_[3] = 0.64;
+        // uavDynamicsSim_->process(dt_secs, propSpeedCommand_, true);
 
         auto crnt_time = std::chrono::system_clock::now();
         auto sleed_period = std::chrono::milliseconds(int(1000 * period * clockScale_));

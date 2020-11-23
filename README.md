@@ -18,6 +18,10 @@ Repos used as references:
 ```
 DONT_RUN=1 make px4_sitl_default gazebo
 ```
+or
+```
+DONT_RUN=1 make px4_sitl gazebo_standard_vtol
+```
 
 2. Add these lines to your `.bashrc` file, don't forget to change `~/Firmware` to your actual Firmware path
 
@@ -37,10 +41,12 @@ export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/Firmware/Tools/sitl_gazebo
 `pip install -r requirements`
 9.  Build using `./catkin_build`
 
-# How to use InnopolisDynamic simulator only for iris model yet:
+# How to use InnopolisDynamic simulator:
 
 1. Run dymamics and px4:
-```roslaunch innopolis_vtol_dynamics dynamics.launch```
+```roslaunch innopolis_vtol_dynamics dynamics.launch vehicle:=standard_vtol```
+
+where vehicle can be iris and standard_vtol (by default)
 
 2. To control and monitor flight using QGroundControl
 ```~/software/qgroundcontrol/QGroundControl.AppImage```
@@ -56,7 +62,7 @@ roscd inno_sim_interface/cfg
 
 # How to use Gazebo simulator:
 
-- Instead of `innopolis_vtol_dynamics dynamics.launch` use `roslaunch innopolis_vtol_dynamics gazebo.launch vehicle:=iris`
+- Instead of `innopolis_vtol_dynamics dynamics.launch` use `roslaunch innopolis_vtol_dynamics gazebo.launch`
 
 # Tests
 For tests we use [GoogleTest](https://github.com/google/googletest/tree/master/googletest)
@@ -76,5 +82,5 @@ To run test, type (and read [here](http://wiki.ros.org/gtest) and [here](https:/
 
 ```
 roscd innopolis_vtol_dynamics
-catkin run_tests --no-deps --this
+./catkin_test
 ```

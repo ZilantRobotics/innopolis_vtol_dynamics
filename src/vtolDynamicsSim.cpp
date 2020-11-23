@@ -170,24 +170,36 @@ void VtolDynamicsSim::process(double dt_secs,
     calculateNewState(Maero, Faero, actuators, dt_secs);
 }
 
+/**
+ * @note inno dynamics motor indexes is not correspond to px4 configuration
+ */
 std::vector<double> VtolDynamicsSim::mapCmdToActuator(const std::vector<double>& cmd) const{
+    if(cmd.size() != 8){
+        std::cerr << "ERROR: VtolDynamicsSim wrong control size. It is " << cmd.size()
+                  << ", but should be 8" << std::endl;
+        return cmd;
+    }
+
     std::vector<double> actuators(8);
+    actuators[0] = cmd[0];
+    actuators[1] = cmd[2];
+    actuators[2] = cmd[3];
+    actuators[3] = cmd[1];
+    actuators[4] = cmd[4];
+    actuators[5] = cmd[5];
+    actuators[6] = cmd[6];
+    actuators[7] = cmd[7];
 
-    /**
-     * @todo inno dynamics motor indexes is not correspond to px4 configuration
-     */
-    actuators[0] = (cmd[0] <= 0) ? 0 : cmd[0] * params_.actuatorMax[0];
-    actuators[1] = (cmd[2] <= 0) ? 0 : cmd[2] * params_.actuatorMax[1];
-    actuators[2] = (cmd[3] <= 0) ? 0 : cmd[3] * params_.actuatorMax[2];
-    actuators[3] = (cmd[1] <= 0) ? 0 : cmd[1] * params_.actuatorMax[3];
+    for(size_t idx = 0; idx < 5; idx++){
+        actuators[idx] = boost::algorithm::clamp(actuators[idx], 0.0, +1.0);
+        actuators[idx] *= params_.actuatorMax[idx];
+    }
 
-    /**
-     * @todo now we test only copter dynamics, in future following coefficients will be filled
-     */
-    actuators[4] = 0;
-    actuators[5] = 0;
-    actuators[6] = 0;
-    actuators[7] = 0;
+    for(size_t idx = 5; idx < 8; idx++){
+        actuators[idx] = boost::algorithm::clamp(actuators[idx], -1.0, +1.0);
+        actuators[idx] *= (actuators[idx] >= 0) ? params_.actuatorMax[idx] : params_.actuatorMin[idx];
+    }
+
     return actuators;
 }
 
@@ -345,14 +357,14 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     for(size_t idx = 0; idx < 4; idx++){
         FmotorInBodyCS[idx] << 0, 0, thrust[idx];
     }
-    FmotorInBodyCS[4] << -thrust[4], 0, 0;
+    FmotorInBodyCS[4] << thrust[4], 0, 0;
 
     std::array<Eigen::Vector3d, 5> motorTorquesInBodyCS;
     motorTorquesInBodyCS[0] << 0, 0, torque[0];
     motorTorquesInBodyCS[1] << 0, 0, torque[1];
     motorTorquesInBodyCS[2] << 0, 0, -torque[2];
     motorTorquesInBodyCS[3] << 0, 0, -torque[3];
-    motorTorquesInBodyCS[4] << -torque[4], 0, 0;
+    motorTorquesInBodyCS[4] << torque[4], 0, 0;
     std::array<Eigen::Vector3d, 5> MdueToArmOfForceInBodyCS;
     std::array<Eigen::Vector3d, 5> MmotorsTotal;
     for(size_t idx = 0; idx < 5; idx++){
@@ -398,7 +410,7 @@ void VtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
         state_.attitude.z() = 0;
     }
 
-    #define FORCES_LOG true
+    #define FORCES_LOG false
     #if FORCES_LOG == true
     std::cout << "- input: dt = " << dt << std::endl;
     std::cout << "- input: u = " << actuator[0] << ", " << actuator[1] << ", " << actuator[2] << ", " << actuator[3] << ", " << actuator[4] << std::endl;

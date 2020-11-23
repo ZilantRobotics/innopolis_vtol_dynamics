@@ -379,9 +379,16 @@ int PX4Communicator::Receive(bool blocking, bool &armed, std::vector<double>& co
                     command[1] = controls.controls[1];  // PX4: motor 2, tail left
                     command[0] = controls.controls[2];  // PX4: motor 3, front left
                     command[2] = controls.controls[3];  // PX4: motor 4, tail right
+                    command[4] = controls.controls[4];
+                    command[5] = controls.controls[5];
+                    command[6] = controls.controls[6];
+                    command[7] = controls.controls[7];
+
                     ROS_WARN_STREAM_THROTTLE(0.2, "PX4 Communicator: Recv \033[1;29m control \033[0m" << " [" <<
                             controls.controls[0] << ", " << controls.controls[1] << ", " <<
-                            controls.controls[2] << ", " << controls.controls[3] << "].");
+                            controls.controls[2] << ", " << controls.controls[3] << ", " <<
+                            controls.controls[4] << ", " << controls.controls[5] << ", " <<
+                            controls.controls[6] << ", " << controls.controls[7] << "].");
                 }
                 return 1;
             }
