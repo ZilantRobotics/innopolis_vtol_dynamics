@@ -39,7 +39,7 @@ Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), propSpeedCommand_(8, 
 int8_t Uav_Dynamics::init(){
     // Get Simulator parameters
     std::vector<double> initPose(7);
-    std::string dynamics_type;
+    std::string dynamics_type, vehicle;
     const std::string SIM_PARAMS_PATH = "/uav/sim_params/";
     if(!ros::param::get(SIM_PARAMS_PATH + "ignore_collisions",  ignoreCollisions_)  ||
        !ros::param::get(SIM_PARAMS_PATH + "use_sim_time",       useSimTime_ ) ||
@@ -47,6 +47,7 @@ int8_t Uav_Dynamics::init(){
        !ros::param::get(SIM_PARAMS_PATH + "lon_ref",            lonRef_) ||
        !ros::param::get(SIM_PARAMS_PATH + "alt_ref",            altRef_) ||
        !ros::param::get(SIM_PARAMS_PATH + "dynamics_type",      dynamics_type) ||
+       !node_.getParam("/node/vehicle",                         vehicle) ||
        !ros::param::get(SIM_PARAMS_PATH + "init_pose",          initPose)){
         ROS_ERROR("There is no at least one of required simulator parameters.");
         return -1;
@@ -56,13 +57,21 @@ int8_t Uav_Dynamics::init(){
      * @todo it's better to use some build method instead of manually call new
      */
     if(dynamics_type == "flightgoggles_multicopter"){
+        dynamicsType_ = FLIGHTGOGGLES_MULTICOPTER;
         uavDynamicsSim_ = new MulticopterDynamicsWrapper;
     }else if(dynamics_type == "inno_vtol"){
         uavDynamicsSim_ = new VtolDynamicsSim;
+        dynamicsType_ = INNO_VTOL;
     }else{
         ROS_ERROR("Dynamics type with name \"%s\" is not exist.", dynamics_type.c_str());
         return -1;
     }
+    if(vehicle == "standard_vtol"){
+        airframeType_ = STANDARD_VTOL;
+    }else if(vehicle == "iris"){
+        airframeType_ = IRIS;
+    }
+
     if(uavDynamicsSim_ == nullptr || uavDynamicsSim_->init() == -1){
         ROS_ERROR("Can't init uav dynamics sim. Shutdown.");
         return -1;
@@ -105,10 +114,11 @@ int8_t Uav_Dynamics::init(){
         // Get the current time if we are using wall time. Otherwise, use 0 as initial clock.
         currentTime_ = ros::Time::now();
     }
-  
+
+    bool is_copter_airframe = (airframeType_ == STANDARD_VTOL) ? false : true;
     px4 = new PX4Communicator(altRef_);
     int px4id = 0;
-    if(px4->Init(px4id, uavDynamicsSim_) != 0) {
+    if(px4->Init(px4id, uavDynamicsSim_, is_copter_airframe) != 0) {
         std::cerr << "Unable to Init PX4 Communication" << std::endl;
         return -1;
     }

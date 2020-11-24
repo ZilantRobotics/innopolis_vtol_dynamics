@@ -122,14 +122,18 @@ private:
     unsigned int last_baro_time_usec;
 
     float ALT_HOME;
-
+    bool is_copter_airframe_;
 public:
     PX4Communicator(float lat_home);
 
     /**
      * @brief Init connection with PX4 using TCP
+     * @param is_copter_airframe - input (copter requires only 4 control channels and vtol requires
+     * 8 channels, but for mavlink there is no difference, so it can fill last controls channels
+     * by random values in copter airframe, so we should not read them in this case to allow to run
+     * any dynamics simulators in any airframe)
      */
-    int Init(int portOffset, UavDynamicsSimBase *s);
+    int Init(int portOffset, UavDynamicsSimBase *s, bool is_copter_airframe);
 
     int Clean();
 

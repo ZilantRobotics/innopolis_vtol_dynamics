@@ -156,6 +156,15 @@ class Uav_Dynamics {
         std::vector<double> propSpeedCommand_;
 
     private:
+        enum DynamicsType{
+            FLIGHTGOGGLES_MULTICOPTER = 0,
+            INNO_VTOL,
+        };
+        enum AirframeType{
+            IRIS = 0,
+            STANDARD_VTOL,
+        };
+
         void proceedQuadcopterDynamics(double period);
         void sendHilGps(double period);
         void sendHilSensor(double period);
@@ -168,6 +177,9 @@ class Uav_Dynamics {
         std::thread publishToRosTask;
 
         std::array<int64_t, 6> threadCounter;
+        DynamicsType dynamicsType_;
+        AirframeType airframeType_;
+
 };
 
 #endif
