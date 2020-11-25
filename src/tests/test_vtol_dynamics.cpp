@@ -165,19 +165,60 @@ TEST(VtolDynamicsSim, griddata){
 TEST(VtolDynamicsSim, calculateCSRudder){
     VtolDynamicsSim vtolDynamicsSim;
     vtolDynamicsSim.init();
-    double rudder_position;
-    double airspeed;
+
+    struct DataSet{
+        double rudder_position;
+        double airspeed;
+        double expected;
+    };
+    std::vector<DataSet> data_set;
     double result;
 
-    rudder_position = 15;
-    airspeed = 10;
-    result = vtolDynamicsSim.calculateCSRudder(rudder_position, airspeed);
-    ASSERT_TRUE(std::abs(result - 0.028345) < 0.001);
+    data_set.push_back({.rudder_position=0,     .airspeed=5,    .expected=-1.5009e-04});
+    data_set.push_back({.rudder_position=0,     .airspeed=5.1,  .expected=-1.2303e-04});
+    data_set.push_back({.rudder_position=0,     .airspeed=8.5,  .expected=5.9762e-04});
+    data_set.push_back({.rudder_position=0,     .airspeed=8.66025,  .expected=6.0903e-04});
+    data_set.push_back({.rudder_position=0,     .airspeed=10,   .expected=7.0445e-04});
+    data_set.push_back({.rudder_position=0,     .airspeed=20,   .expected=9.2322e-04});
+    data_set.push_back({.rudder_position=0,     .airspeed=40,   .expected=-0.0013107});
+    data_set.push_back({.rudder_position=-20,   .airspeed=5,    .expected=-0.034155});
+    data_set.push_back({.rudder_position=0,     .airspeed=5,    .expected=-1.5009e-04});
+    data_set.push_back({.rudder_position=20,    .airspeed=5,    .expected=0.037053});
 
-    rudder_position = 5;
-    airspeed = 8.6603;
-    result = vtolDynamicsSim.calculateCSRudder(rudder_position, airspeed);
-    ASSERT_TRUE(std::abs(result - 6.0903e-04) < 0.001);
+    for(auto test_case : data_set){
+        result = vtolDynamicsSim.calculateCSRudder(test_case.rudder_position, test_case.airspeed);
+        std::cout << "- " << test_case.rudder_position << ", " << test_case.airspeed << std::endl;
+        std::cout << "- " << test_case.expected << ", " << result << std::endl << std::endl;
+
+        ASSERT_TRUE(std::abs(result - test_case.expected) < 0.001);
+    }
+}
+
+TEST(VtolDynamicsSim, calculateCSBeta){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+
+    struct DataSet{
+        double aos_degree;
+        double airspeed;
+        double expected;
+    };
+    std::vector<DataSet> data_set;
+    double result;
+
+    data_set.push_back({.aos_degree=0,      .airspeed=5,        .expected=-0.0032540});
+    data_set.push_back({.aos_degree=0,      .airspeed=10,       .expected=-0.0040036});
+    data_set.push_back({.aos_degree=0,      .airspeed=15,       .expected=-0.0037597});
+    data_set.push_back({.aos_degree=0,      .airspeed=20,       .expected=-0.0033221});
+
+
+    for(auto test_case : data_set){
+        result = vtolDynamicsSim.calculateCSBeta(test_case.aos_degree, test_case.airspeed);
+        std::cout << "- " << test_case.aos_degree << ", " << test_case.airspeed << std::endl;
+        std::cout << "- " << test_case.expected << ", " << result << std::endl << std::endl;
+
+        ASSERT_TRUE(std::abs(result - test_case.expected) < 0.0000001);
+    }
 }
 
 TEST(VtolDynamicsSim, calculateAerodynamics){
@@ -223,7 +264,7 @@ TEST(VtolDynamicsSim, calculateAerodynamicsCaseAileron){
     vtolDynamicsSim.init();
     Eigen::Vector3d diff, expectedResult, Faero, Maero;
     double Cmx_a, Cmy_e, Cmz_r;
-    auto isZeroComparator = [](double a) {return abs(a) < 0.01;};
+    auto isZeroComparator = [](double a) {return abs(a) < 0.02;};
 
     Eigen::Vector3d airspeed(5, 5, 5);
     double AoA = 0.1;

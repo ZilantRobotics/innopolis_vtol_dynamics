@@ -43,6 +43,7 @@ void VtolDynamicsSim::loadTables(const std::string& path){
 
     vectorTable = config["AoS"].as< std::vector<double> >();
     tables_.AoS = Eigen::Map<Eigen::Matrix<double, 1, 90, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 90);
+    tables_.AoS = tables_.AoS.transpose();
 
     vectorTable = config["actuator_table"].as< std::vector<double> >();
     tables_.actuator = Eigen::Map<Eigen::Matrix<double, 1, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 20);
@@ -185,6 +186,7 @@ std::vector<double> VtolDynamicsSim::mapCmdToActuator(const std::vector<double>&
     actuators[1] = cmd[2];
     actuators[2] = cmd[3];
     actuators[3] = cmd[1];
+
     actuators[4] = cmd[4];
     actuators[5] = cmd[5];
     actuators[6] = cmd[6];
@@ -299,6 +301,23 @@ void VtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     FD = FD.normalized();
     FD *= CD;
     Faero = 0.5 * dynamicPressure * (FL + FS + FD);
+
+    #define AERODYNAMICS_LOG false
+    #if AERODYNAMICS_LOG == true
+    std::cout << "AoA_deg=" << AoA_deg << std::endl;
+    std::cout << "AoS_deg=" << AoS_deg << std::endl;
+    std::cout << "rudder_pos=" << rudder_pos << std::endl;
+    std::cout << "airspeedMod=" << airspeedMod << std::endl;
+    std::cout << "CL=" << CL << std::endl;
+    std::cout << "CS=" << CS << std::endl;
+    std::cout << "CS_rudder=" << CS_rudder << std::endl;
+    std::cout << "CS_beta=" << CS_beta << std::endl;
+    std::cout << "CD=" << CD << std::endl;
+    std::cout << "FL=" << FL << std::endl;
+    std::cout << "FS=" << FS << std::endl;
+    std::cout << "FD=" << FD << std::endl;
+    std::cout << "Faero=" << Faero << std::endl;
+    #endif
 
     // 2. Calculate aero moment
     calculateCmxPolynomial(airspeedMod, polynomialCoeffs);
@@ -463,7 +482,7 @@ double VtolDynamicsSim::calculateCSRudder(double rudder_pos, double airspeed) co
     return griddata(-tables_.actuator, tables_.airspeed, tables_.CS_rudder, rudder_pos, airspeed);
 }
 double VtolDynamicsSim::calculateCSBeta(double AoS_deg, double airspeed) const{
-    return griddata(-(tables_.AoS), tables_.airspeed, tables_.CS_beta, AoS_deg, airspeed);
+    return griddata(-tables_.AoS, tables_.airspeed, tables_.CS_beta, AoS_deg, airspeed);
 }
 double VtolDynamicsSim::calculateCmxAileron(double aileron_pos, double airspeed) const{
     return griddata(tables_.actuator, tables_.airspeed, tables_.CmxAileron, aileron_pos, airspeed);
