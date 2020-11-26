@@ -159,14 +159,12 @@ void VtolDynamicsSim::process(double dt_secs,
     Eigen::Vector3d vel_w = calculateWind();
     Eigen::Matrix3d rotationMatrix = calculateRotationMatrix();
     Eigen::Vector3d airSpeed = calculateAirSpeed(rotationMatrix, state_.linearVel, vel_w);
-    double airSpeedMod = airSpeed.norm();
-    double dynPressure = calculateDynamicPressure(airSpeedMod);
     double AoA = calculateAnglesOfAtack(airSpeed);
     double AoS = calculateAnglesOfSideslip(airSpeed);
     Eigen::Vector3d Faero, Maero;
     double Cmx_a, Cmy_e, Cmz_r;
     auto actuators = isCmdPercent ? mapCmdToActuator(motorCmd) : motorCmd;
-    calculateAerodynamics(airSpeed, dynPressure, AoA, AoS, actuators[5], actuators[6], actuators[7],
+    calculateAerodynamics(airSpeed, AoA, AoS, actuators[5], actuators[6], actuators[7],
                           Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
     calculateNewState(Maero, Faero, actuators, dt_secs);
 }
@@ -240,7 +238,7 @@ double VtolDynamicsSim::calculateAnglesOfAtack(const Eigen::Vector3d& airSpeed) 
     if(A == 0){
         return 0;
     }
-    A = airSpeed[0] / A;
+    A = airSpeed[2] / A;
     A = boost::algorithm::clamp(A, -1.0, +1.0);
     A = (airSpeed[0] > 0) ? asin(A) : 3.1415 - asin(A);
     return (A > 3.1415) ? A - 2 * 3.1415 : A;
@@ -264,7 +262,6 @@ double VtolDynamicsSim::calculateAnglesOfSideslip(const Eigen::Vector3d& airSpee
  * FS - side force
  */
 void VtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
-                                            double dynamicPressure,
                                             double AoA,
                                             double AoS,
                                             double aileron_pos,
@@ -278,21 +275,24 @@ void VtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     // 0. Common computation
     double AoA_deg = boost::algorithm::clamp(AoA * 180 / 3.1415, -45.0, +45.0);
     double AoS_deg = boost::algorithm::clamp(AoS * 180 / 3.1415, -90.0, +90.0);
-    double airspeedMod = boost::algorithm::clamp(airspeed.norm(), 5, 40);
+    double airspeedMod = airspeed.norm();
+    double dynamicPressure = calculateDynamicPressure(airspeedMod);
+    double airspeedModClamped = boost::algorithm::clamp(airspeed.norm(), 5, 40);
+
 
     // 1. Calculate aero force
     Eigen::VectorXd polynomialCoeffs(7);
 
-    calculateCLPolynomial(airspeedMod, polynomialCoeffs);
+    calculateCLPolynomial(airspeedModClamped, polynomialCoeffs);
     double CL = polyval(polynomialCoeffs, AoA_deg);
 
-    calculateCSPolynomial(airspeedMod, polynomialCoeffs);
+    calculateCSPolynomial(airspeedModClamped, polynomialCoeffs);
     double CS = polyval(polynomialCoeffs, AoA_deg);
 
-    double CS_rudder = calculateCSRudder(rudder_pos, airspeedMod);
-    double CS_beta = calculateCSBeta(AoS_deg, airspeedMod);
+    double CS_rudder = calculateCSRudder(rudder_pos, airspeedModClamped);
+    double CS_beta = calculateCSBeta(AoS_deg, airspeedModClamped);
 
-    calculateCDPolynomial(airspeedMod, polynomialCoeffs);
+    calculateCDPolynomial(airspeedModClamped, polynomialCoeffs);
     double CD = polyval(polynomialCoeffs.block<5, 1>(0, 0), AoA_deg);
 
     Eigen::Vector3d FL = (Eigen::Vector3d(0, 1, 0).cross(airspeed.normalized())) * CL;
@@ -320,18 +320,18 @@ void VtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     #endif
 
     // 2. Calculate aero moment
-    calculateCmxPolynomial(airspeedMod, polynomialCoeffs);
+    calculateCmxPolynomial(airspeedModClamped, polynomialCoeffs);
     auto Cmx = polyval(polynomialCoeffs, AoA_deg);
 
-    calculateCmyPolynomial(airspeedMod, polynomialCoeffs);
+    calculateCmyPolynomial(airspeedModClamped, polynomialCoeffs);
     auto Cmy = polyval(polynomialCoeffs, AoA_deg);
 
-    calculateCmzPolynomial(airspeedMod, polynomialCoeffs);
+    calculateCmzPolynomial(airspeedModClamped, polynomialCoeffs);
     auto Cmz = -polyval(polynomialCoeffs, AoA_deg);
 
-    Cmx_aileron = calculateCmxAileron(aileron_pos, airspeedMod);
-    Cmy_elevator = calculateCmyElevator(elevator_pos, airspeedMod);
-    Cmx_rudder = calculateCmzRudder(rudder_pos, airspeedMod);
+    Cmx_aileron = calculateCmxAileron(aileron_pos, airspeedModClamped);
+    Cmy_elevator = calculateCmyElevator(elevator_pos, airspeedModClamped);
+    Cmx_rudder = calculateCmzRudder(rudder_pos, airspeedModClamped);
 
     auto Mx = Cmx + Cmx_aileron * aileron_pos;
     auto My = Cmy + Cmy_elevator * elevator_pos;

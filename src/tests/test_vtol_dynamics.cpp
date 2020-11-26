@@ -50,23 +50,64 @@ TEST(VtolDynamicsSim, calculateRotationMatrix){
 TEST(VtolDynamicsSim, calculateAnglesOfAtack){
     VtolDynamicsSim vtolDynamicsSim;
     Eigen::Vector3d airSpeed;
+    double result, expected;
 
-    airSpeed = Eigen::Vector3d(1, 2, 3);
-    ASSERT_TRUE((vtolDynamicsSim.calculateAnglesOfAtack(airSpeed) - 1.2490) < 0.001);
+    airSpeed << 0, 0, 0;
+    expected = 0;
+    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
 
-    airSpeed = Eigen::Vector3d(0, 0, 0);
-    ASSERT_TRUE((vtolDynamicsSim.calculateAnglesOfAtack(airSpeed) - 0) < 0.001);
+    airSpeed << 10, 1, 1;
+    expected = 0.099669;
+    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
+
+    airSpeed << 1, 10, 1;
+    expected = 0.785398;
+    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
+
+    airSpeed << 1, 1, 10;
+    expected = 1.471128;
+    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
+
+    airSpeed << 1, 2, 3;
+    expected = 1.2490;
+    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
+
 }
 
 TEST(VtolDynamicsSim, calculateAnglesOfSideslip){
     VtolDynamicsSim vtolDynamicsSim;
     Eigen::Vector3d airSpeed;
-
-    airSpeed = Eigen::Vector3d(1, 2, 3);
-    ASSERT_TRUE((vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed) - 0.56394) < 0.001);
+    double result, expected;
 
     airSpeed = Eigen::Vector3d(0, 0, 0);
-    ASSERT_TRUE((vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed) - 0) < 0.001);
+    expected = 0.0;
+    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
+
+    airSpeed << 10, 1, 1;
+    expected = 0.099177;
+    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
+
+    airSpeed << 1, 10, 1;
+    expected = 1.430307;
+    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
+
+    airSpeed << 1, 1, 10;
+    expected = 0.099177;
+    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
+
+    airSpeed << 1, 2, 3;
+    expected = 0.563943;
+    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
+    ASSERT_TRUE(abs(result - expected) < 0.001);
 }
 
 TEST(VtolDynamicsSim, findRow){
@@ -187,9 +228,6 @@ TEST(VtolDynamicsSim, calculateCSRudder){
 
     for(auto test_case : data_set){
         result = vtolDynamicsSim.calculateCSRudder(test_case.rudder_position, test_case.airspeed);
-        std::cout << "- " << test_case.rudder_position << ", " << test_case.airspeed << std::endl;
-        std::cout << "- " << test_case.expected << ", " << result << std::endl << std::endl;
-
         ASSERT_TRUE(std::abs(result - test_case.expected) < 0.001);
     }
 }
@@ -214,9 +252,6 @@ TEST(VtolDynamicsSim, calculateCSBeta){
 
     for(auto test_case : data_set){
         result = vtolDynamicsSim.calculateCSBeta(test_case.aos_degree, test_case.airspeed);
-        std::cout << "- " << test_case.aos_degree << ", " << test_case.airspeed << std::endl;
-        std::cout << "- " << test_case.expected << ", " << result << std::endl << std::endl;
-
         ASSERT_TRUE(std::abs(result - test_case.expected) < 0.0000001);
     }
 }
@@ -229,9 +264,8 @@ TEST(VtolDynamicsSim, calculateAerodynamics){
     auto isZeroComparator = [](double a) {return abs(a) < 0.001;};
 
     Eigen::Vector3d airspeed(0.000001, -9.999999, 0.000001);
-    double dynamicPressure = 44.399991;
-    double AoA = 0.958191;
-    double AoS = -1.570796;
+    double AoA_rad = 0.958191;
+    double AoS_rad = -1.570796;
     double aileron_pos = 0.000000;
     double elevator_pos = 0.000000;
     double rudder_pos = 0.000000;
@@ -243,9 +277,8 @@ TEST(VtolDynamicsSim, calculateAerodynamics){
     double extectedCmz_r = 0.0022183;
 
     vtolDynamicsSim.calculateAerodynamics(airspeed,
-                                          dynamicPressure,
-                                          AoA,
-                                          AoS,
+                                          AoA_rad,
+                                          AoS_rad,
                                           aileron_pos,
                                           elevator_pos,
                                           rudder_pos,
@@ -267,12 +300,11 @@ TEST(VtolDynamicsSim, calculateAerodynamicsCaseAileron){
     auto isZeroComparator = [](double a) {return abs(a) < 0.02;};
 
     Eigen::Vector3d airspeed(5, 5, 5);
-    double AoA = 0.1;
-    double AoS = 0.1;
+    double AoA_rad = 0.1;
+    double AoS_rad = 0.1;
     double aileron_pos = 0.5;
     double elevator_pos = 0.0;
     double rudder_pos = 0.0;
-    double dynamicPressure = vtolDynamicsSim.calculateDynamicPressure(airspeed.norm());
 
     Eigen::Vector3d extectedFaero(7.4133, -4.3077, -6.6924);
     Eigen::Vector3d extectedMaero(0.333818, 1.754507, -0.037038);
@@ -281,7 +313,116 @@ TEST(VtolDynamicsSim, calculateAerodynamicsCaseAileron){
     double extectedCmz_r = 0.0019689;
 
     vtolDynamicsSim.calculateAerodynamics(airspeed,
-                                          dynamicPressure,
+                                          AoA_rad,
+                                          AoS_rad,
+                                          aileron_pos,
+                                          elevator_pos,
+                                          rudder_pos,
+                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    diff = extectedFaero - Faero;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = extectedMaero - Maero;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    ASSERT_TRUE(isZeroComparator(extectedCmx_a - Cmx_a));
+    ASSERT_TRUE(isZeroComparator(extectedCmy_e - Cmy_e));
+    ASSERT_TRUE(isZeroComparator(extectedCmz_r - Cmz_r));
+}
+
+TEST(VtolDynamicsSim, calculateAerodynamicsCaseElevator){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    Eigen::Vector3d diff, expectedResult, Faero, Maero;
+    double Cmx_a, Cmy_e, Cmz_r;
+    auto isZeroComparator = [](double a) {return abs(a) < 0.02;};
+
+    Eigen::Vector3d airspeed(5, 5, 5);
+    double AoA = 0.1;
+    double AoS = 0.1;
+    double aileron_pos = 0.0;
+    double elevator_pos = 5;
+    double rudder_pos = 0.0;
+
+    Eigen::Vector3d extectedFaero(7.4133, -4.3077, -6.6924);
+    Eigen::Vector3d extectedMaero(0.190243, 1.220935, -0.037038);
+    double extectedCmx_a = 0.011498;
+    double extectedCmy_e = 0.0050693;
+    double extectedCmz_r = 0.0019689;
+
+    vtolDynamicsSim.calculateAerodynamics(airspeed,
+                                          AoA,
+                                          AoS,
+                                          aileron_pos,
+                                          elevator_pos,
+                                          rudder_pos,
+                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    diff = extectedFaero - Faero;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = extectedMaero - Maero;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    ASSERT_TRUE(isZeroComparator(extectedCmx_a - Cmx_a));
+    ASSERT_TRUE(isZeroComparator(extectedCmy_e - Cmy_e));
+    ASSERT_TRUE(isZeroComparator(extectedCmz_r - Cmz_r));
+}
+
+TEST(VtolDynamicsSim, calculateAerodynamicsAoA){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    Eigen::Vector3d diff, expectedResult, Faero, Maero;
+    double Cmx_a, Cmy_e, Cmz_r;
+    auto isZeroComparator = [](double a) {return abs(a) < 0.04;};
+
+    Eigen::Vector3d airspeed(5, 5, 5);
+    double AoA = 27.0 * 3.1415 / 180.0;
+    double AoS = 0;
+    double aileron_pos = 0.0;
+    double elevator_pos = 0.0;
+    double rudder_pos = 0.0;
+
+    Eigen::Vector3d extectedFaero(6.0625, -7.7260, -17.5536);
+    Eigen::Vector3d extectedMaero(0.16512, 1.26568, -0.11093);
+    double extectedCmx_a = 0.011498;
+    double extectedCmy_e = 0.0050693;
+    double extectedCmz_r = 0.0019689;
+
+    vtolDynamicsSim.calculateAerodynamics(airspeed,
+                                          AoA,
+                                          AoS,
+                                          aileron_pos,
+                                          elevator_pos,
+                                          rudder_pos,
+                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    diff = extectedFaero - Faero;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = extectedMaero - Maero;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    ASSERT_TRUE(isZeroComparator(extectedCmx_a - Cmx_a));
+    ASSERT_TRUE(isZeroComparator(extectedCmy_e - Cmy_e));
+    ASSERT_TRUE(isZeroComparator(extectedCmz_r - Cmz_r));
+}
+
+TEST(VtolDynamicsSim, calculateAerodynamicsRealCase){
+    VtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    Eigen::Vector3d diff, expectedResult, Faero, Maero;
+    double Cmx_a, Cmy_e, Cmz_r;
+    auto isZeroComparator = [](double a) {return abs(a) < 0.02;};
+
+    Eigen::Vector3d airspeed(2.93128, 0.619653, 0.266774);
+    // Eigen::Vector3d airspeed(5, 5, 5);
+
+    double AoA = 45 * 3.1415 / 180.0;
+    double AoS = 11.8888 * 3.1415 / 180.0;
+    double aileron_pos = 0.0;
+    double elevator_pos = 0.0;
+    double rudder_pos = 0.0;
+
+    Eigen::Vector3d extectedFaero(-2.28665, -0.92928, -2.66499);
+    Eigen::Vector3d extectedMaero(0.017652, 0.074924, -0.024468);
+    double extectedCmx_a = 0.011693;
+    double extectedCmy_e = 0.0047613;
+    double extectedCmz_r = 0.0016563;
+
+    vtolDynamicsSim.calculateAerodynamics(airspeed,
                                           AoA,
                                           AoS,
                                           aileron_pos,

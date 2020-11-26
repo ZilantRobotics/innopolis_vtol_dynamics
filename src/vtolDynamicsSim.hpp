@@ -167,7 +167,6 @@ class VtolDynamicsSim : public UavDynamicsSimBase{
                                Time_t dt);
 
         void calculateAerodynamics(const Eigen::Vector3d& airspeed,
-                                   double dynamicPressure,
                                    double AoA,
                                    double AoS,
                                    double aileron_pos,
