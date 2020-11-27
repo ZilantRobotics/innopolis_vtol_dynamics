@@ -1,5 +1,5 @@
 /**
- * @file multicopterDynamicsSimWrapper.hpp
+ * @file flightgogglesDynamicsSim.hpp
  * @author ponomarevda96@gmail.com
  */
 
@@ -9,9 +9,9 @@
 #include "uavDynamicsSimBase.hpp"
 #include "../libs/multicopterDynamicsSim/multicopterDynamicsSim.hpp"
 
-class MulticopterDynamicsWrapper: public UavDynamicsSimBase{
+class FlightgogglesDynamics: public UavDynamicsSimBase{
 public:
-    MulticopterDynamicsWrapper();
+    FlightgogglesDynamics();
 
     virtual int8_t init();
     virtual void initStaticMotorTransform() override;

@@ -32,7 +32,7 @@
 
 #include "px4_communicator.h"
 #include "uavDynamicsSimBase.hpp"
-#include "multicopterDynamicsSimWrapper.hpp"
+#include "flightgogglesDynamicsSim.hpp"
 
 
 /**

@@ -143,7 +143,7 @@ include_directories(
 # )
 
 add_library(${PROJECT_NAME} src/vtolDynamicsSim.cpp
-                            src/multicopterDynamicsSimWrapper.cpp
+                            src/flightgogglesDynamicsSim.cpp
                             src/uavDynamicsSimBase.cpp
                             libs/multicopterDynamicsSim/multicopterDynamicsSim.cpp
                             libs/multicopterDynamicsSim/inertialMeasurementSim.cpp)

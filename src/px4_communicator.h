@@ -64,8 +64,6 @@
 
 #include "../libs/multicopterDynamicsSim/multicopterDynamicsSim.hpp"
 #include "uavDynamicsSimBase.hpp"
-#include "multicopterDynamicsSimWrapper.hpp"
-
 
 #define TIMEOUTS 5
 #define TIMEOUTUS 0

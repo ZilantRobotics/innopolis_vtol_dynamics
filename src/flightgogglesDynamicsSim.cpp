@@ -7,7 +7,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/TransformStamped.h>
 
-#include "multicopterDynamicsSimWrapper.hpp"
+#include "flightgogglesDynamicsSim.hpp"
 
 
 static const std::string MULTICOPTER_PARAMS_NS = "/uav/multicopter_params/";
@@ -25,11 +25,11 @@ static void getParameter(std::string name, T& parameter, T default_value, std::s
   }
 }
 
-MulticopterDynamicsWrapper::MulticopterDynamicsWrapper(){
+FlightgogglesDynamics::FlightgogglesDynamics(){
 
 }
 
-int8_t MulticopterDynamicsWrapper::init(){
+int8_t FlightgogglesDynamics::init(){
     // Vehicle parameters
     double vehicleMass, motorTimeconstant, motorRotationalInertia,
             thrustCoeff, torqueCoeff, dragCoeff;
@@ -89,7 +89,7 @@ int8_t MulticopterDynamicsWrapper::init(){
     return 0;
 }
 
-void MulticopterDynamicsWrapper::initStaticMotorTransform(){
+void FlightgogglesDynamics::initStaticMotorTransform(){
     Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
     double momentArm;
     getParameter("moment_arm",                momentArm,                  0.08,     "m");
@@ -111,37 +111,37 @@ void MulticopterDynamicsWrapper::initStaticMotorTransform(){
     publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor3", motorFrame);
 }
 
-void MulticopterDynamicsWrapper::setInitialPosition(const Eigen::Vector3d & position,
+void FlightgogglesDynamics::setInitialPosition(const Eigen::Vector3d & position,
                                                     const Eigen::Quaterniond& attitude){
     multicopterSim_->setVehiclePosition(position, attitude);
 }
 
-void MulticopterDynamicsWrapper::setReferencePosition(double latRef, double lonRef, double altRef){
+void FlightgogglesDynamics::setReferencePosition(double latRef, double lonRef, double altRef){
     multicopterSim_->geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
 }
 
-void MulticopterDynamicsWrapper::process(double dt_secs,
+void FlightgogglesDynamics::process(double dt_secs,
                                          const std::vector<double> & motorSpeedCommandIn,
                                          bool isCmdPercent){
     multicopterSim_->proceedState_ExplicitEuler(dt_secs, motorSpeedCommandIn, isCmdPercent);
 }
 
-Eigen::Vector3d MulticopterDynamicsWrapper::getVehiclePosition() const{
+Eigen::Vector3d FlightgogglesDynamics::getVehiclePosition() const{
     return multicopterSim_->getVehiclePosition();
 }
-Eigen::Quaterniond MulticopterDynamicsWrapper::getVehicleAttitude() const{
+Eigen::Quaterniond FlightgogglesDynamics::getVehicleAttitude() const{
     return multicopterSim_->getVehicleAttitude();
 }
-Eigen::Vector3d MulticopterDynamicsWrapper::getVehicleVelocity(void) const{
+Eigen::Vector3d FlightgogglesDynamics::getVehicleVelocity(void) const{
     return multicopterSim_->getVehicleVelocity();
 }
-Eigen::Vector3d MulticopterDynamicsWrapper::getVehicleAngularVelocity(void) const{
+Eigen::Vector3d FlightgogglesDynamics::getVehicleAngularVelocity(void) const{
     return multicopterSim_->getVehicleAngularVelocity();
 }
-void MulticopterDynamicsWrapper::getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput){
+void FlightgogglesDynamics::getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput){
     return multicopterSim_->getIMUMeasurement(accOutput, gyroOutput);
 }
-void MulticopterDynamicsWrapper::enu2Geodetic(double east, double north, double up,
+void FlightgogglesDynamics::enu2Geodetic(double east, double north, double up,
                                               double *latitude, double *longitude, double *altitude){
     multicopterSim_->geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
 }

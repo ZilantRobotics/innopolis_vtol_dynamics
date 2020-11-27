@@ -58,9 +58,9 @@ int8_t Uav_Dynamics::init(){
      */
     if(dynamics_type == "flightgoggles_multicopter"){
         dynamicsType_ = FLIGHTGOGGLES_MULTICOPTER;
-        uavDynamicsSim_ = new MulticopterDynamicsWrapper;
+        uavDynamicsSim_ = new FlightgogglesDynamics;
     }else if(dynamics_type == "inno_vtol"){
-        uavDynamicsSim_ = new VtolDynamicsSim;
+        uavDynamicsSim_ = new InnoVtolDynamicsSim;
         dynamicsType_ = INNO_VTOL;
     }else{
         ROS_ERROR("Dynamics type with name \"%s\" is not exist.", dynamics_type.c_str());
