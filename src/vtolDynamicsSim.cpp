@@ -161,8 +161,8 @@ void InnoVtolDynamicsSim::process(double dt_secs,
     auto linearVelInveted = state_.linearVel;
     linearVelInveted[2] *= -1;
     Eigen::Vector3d airSpeed = calculateAirSpeed(rotationMatrix, linearVelInveted, vel_w);
-    double AoA = calculateAnglesOfAtack(airSpeed);
-    double AoS = calculateAnglesOfSideslip(airSpeed);
+    double AoA = -calculateAnglesOfAtack(airSpeed);
+    double AoS = -calculateAnglesOfSideslip(airSpeed);
     Eigen::Vector3d Faero, Maero;
     double Cmx_a, Cmy_e, Cmz_r;
     auto actuators = isCmdPercent ? mapCmdToActuator(motorCmd) : motorCmd;
@@ -190,9 +190,17 @@ std::vector<double> InnoVtolDynamicsSim::mapCmdToActuator(const std::vector<doub
     actuators[3] = cmd[1];
 
     actuators[4] = cmd[4];
-    actuators[5] = cmd[5];
-    actuators[6] = cmd[6];
-    actuators[7] = cmd[7];
+
+    /**
+     * @note this is hack, because in this moment we use standard vtol airframe (2 ailerons and elevator)
+     * https://github.com/InnopolisAero/Inno_PX4_Firmware/blob/e28f8a7f2e181680353cd23ed5c62c4e9b5858fc/ROMFS/px4fmu_common/mixers-sitl/standard_vtol_sitl.main.mix
+     * but this dynamics expected Inno VTOL airframe (aileron + elevator + rudder)
+     */
+    actuators[5] = (cmd[5] - cmd[6]) / 2;   // aileron     roll
+    actuators[6] = -cmd[7];                  // elevator     pitch
+    actuators[7] = 0.0;                     // rudder       yaw
+
+
 
     for(size_t idx = 0; idx < 5; idx++){
         actuators[idx] = boost::algorithm::clamp(actuators[idx], 0.0, +1.0);
@@ -201,7 +209,7 @@ std::vector<double> InnoVtolDynamicsSim::mapCmdToActuator(const std::vector<doub
 
     for(size_t idx = 5; idx < 8; idx++){
         actuators[idx] = boost::algorithm::clamp(actuators[idx], -1.0, +1.0);
-        actuators[idx] *= (actuators[idx] >= 0) ? params_.actuatorMax[idx] : params_.actuatorMin[idx];
+        actuators[idx] *= (actuators[idx] >= 0) ? params_.actuatorMax[idx] : -params_.actuatorMin[idx];
     }
 
     return actuators;
