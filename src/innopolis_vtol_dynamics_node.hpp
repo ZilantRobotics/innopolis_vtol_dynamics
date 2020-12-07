@@ -23,7 +23,6 @@
 // Messages
 #include <mav_msgs/RateThrust.h>
 #include <mav_msgs/Actuators.h>
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Float32.h>
@@ -46,6 +45,7 @@ class Uav_Dynamics {
          */
         int8_t init();
 
+    private:
         ros::NodeHandle node_;
 
         tf2_ros::TransformBroadcaster tfPub_;
@@ -55,15 +55,19 @@ class Uav_Dynamics {
         ros::Publisher speedPub_;
         ros::Publisher controlPub_;
         ros::Publisher clockPub_;
-        ros::Publisher threadPub_;
+        ros::Publisher forcesPub_;
 
+        ros::Publisher aeroForcePub_;
+        ros::Publisher totalForcePub_;
+        ros::Publisher aeroMomentPub_;
+        ros::Publisher totalMomentPub_;
 
         void publishState();
         void publishIMUMeasurement();
         void publishUavPosition();
         void publishUavSpeed();
         void publishControl();
-        void publishThreadsInfo();
+        void publishForcesInfo();
         void publishStaticMotorTransform(const ros::Time & timeStamp,
                                          const char * frame_id,
                                          const char * child_frame_id,
@@ -155,7 +159,6 @@ class Uav_Dynamics {
 
         std::vector<double> propSpeedCommand_;
 
-    private:
         enum DynamicsType{
             FLIGHTGOGGLES_MULTICOPTER = 0,
             INNO_VTOL,

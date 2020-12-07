@@ -9,6 +9,8 @@
 
 #include <cmath>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <visualization_msgs/Marker.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Float64MultiArray.h>
 #include "innopolis_vtol_dynamics_node.hpp"
@@ -99,7 +101,12 @@ int8_t Uav_Dynamics::init(){
     positionPub_ = node_.advertise<geometry_msgs::Pose>("/uav/position", 1);
     speedPub_ = node_.advertise<geometry_msgs::TwistStamped>("/uav/speed", 1);
     controlPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/control", 1);
-    threadPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/threads_info", 1);
+    forcesPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/threads_info", 1);
+    aeroForcePub_ = node_.advertise<visualization_msgs::Marker>("/uav/Faero", 1);
+    totalForcePub_ = node_.advertise<visualization_msgs::Marker>("/uav/Ftotal", 1);
+    aeroMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Maero", 1);
+    totalMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Mtotal", 1);
+
     inputCommandSub_ = node_.subscribe("/uav/input/rateThrust", 1, &Uav_Dynamics::inputCallback, this);
     inputMotorspeedCommandSub_ = node_.subscribe("/uav/input/motorspeed", 1, &Uav_Dynamics::inputMotorspeedCallback, this);
     collisionSub_ = node_.subscribe("/uav/collision", 1, &Uav_Dynamics::collisionCallback, this);
@@ -311,8 +318,8 @@ void Uav_Dynamics::publishToRos(double period){
 
         static auto next_time = std::chrono::system_clock::now();
         if(crnt_time > next_time){
-            publishThreadsInfo();
-            next_time += std::chrono::milliseconds(int(1000));
+            publishForcesInfo();
+            next_time += std::chrono::milliseconds(int(50));
         }
 
         auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
@@ -496,12 +503,83 @@ void Uav_Dynamics::publishControl(void){
 /**
  * @brief Publish thread counters
  */
-void Uav_Dynamics::publishThreadsInfo(void){
-    std_msgs::Float64MultiArray times;
-    times.data.resize(5);
-    for(size_t idx = 0; idx < 5; idx++){
-        times.data[idx] = 1.0 / threadCounter[idx];
-        threadCounter[idx] = 0;
+void Uav_Dynamics::publishForcesInfo(void){
+    std_msgs::Float64MultiArray forces;
+    forces.data.resize(12);
+    forces.data[0] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero()[0];
+    forces.data[1] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero()[1];
+    forces.data[2] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero()[2];
+
+    forces.data[3] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFtotal()[0];
+    forces.data[4] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFtotal()[1];
+    forces.data[5] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFtotal()[2];
+
+    forces.data[6] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMaero()[0];
+    forces.data[7] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMaero()[1];
+    forces.data[8] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMaero()[2];
+
+    forces.data[9] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal()[0];
+    forces.data[10] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal()[1];
+    forces.data[11] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal()[2];
+    forcesPub_.publish(forces);
+
+    if(dynamicsType_ == INNO_VTOL){
+        visualization_msgs::Marker arrow;
+        arrow.header.frame_id = "uav/imu";
+        arrow.header.stamp = ros::Time();
+        arrow.id = 0;
+        arrow.type = visualization_msgs::Marker::ARROW;
+        arrow.action = visualization_msgs::Marker::ADD;
+        arrow.pose.orientation.w = 1;
+        arrow.scale.x = 0.1;
+        arrow.scale.y = 0.1;
+        arrow.scale.z = 0.03; // scale of hat
+        arrow.lifetime = ros::Duration();
+        geometry_msgs::Point startPoint, endPoint;
+        startPoint.x = 0;
+        startPoint.y = 0;
+        startPoint.z = 0;
+        endPoint.x = 0;
+        endPoint.y = 0;
+        endPoint.z = 0;
+        arrow.points.push_back(startPoint);
+        arrow.points.push_back(endPoint);
+        arrow.color.a = 1.0;
+
+        auto Faero = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero();
+        arrow.points[1].x = Faero[0];
+        arrow.points[1].y = Faero[1];
+        arrow.points[1].z = Faero[2];
+        arrow.color.r = 1.0;
+        arrow.color.g = 1.0;
+        arrow.color.b = 0.0;
+        aeroForcePub_.publish(arrow);
+
+        auto Ftotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFtotal();
+        arrow.points[1].x = Ftotal[0];
+        arrow.points[1].y = Ftotal[1];
+        arrow.points[1].z = Ftotal[2];
+        arrow.color.r = 0.0;
+        arrow.color.g = 1.0;
+        arrow.color.b = 1.0;
+        totalForcePub_.publish(arrow);
+
+        auto Maero = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMaero();
+        arrow.points[1].x = Maero[0];
+        arrow.points[1].y = Maero[1];
+        arrow.points[1].z = Maero[2];
+        arrow.color.r = 0.5;
+        arrow.color.g = 0.5;
+        arrow.color.b = 0.0;
+        aeroMomentPub_.publish(arrow);
+
+        auto Mtotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal();
+        arrow.points[1].x = Mtotal[0];
+        arrow.points[1].y = Mtotal[1];
+        arrow.points[1].z = Mtotal[2];
+        arrow.color.r = 0.0;
+        arrow.color.g = 0.5;
+        arrow.color.b = 0.5;
+        totalMomentPub_.publish(arrow);
     }
-    threadPub_.publish(times);
 }
