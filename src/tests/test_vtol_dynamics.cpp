@@ -420,32 +420,62 @@ TEST(InnoVtolDynamicsSim, thruster){
     ASSERT_TRUE(abs(torque - 0.013696) < 0.000001);
 }
 
-TEST(InnoVtolDynamicsSim, calculateNewStateFirstCaseOnlyAttitude){
+/**
+ * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
+ * it is directed to the top, so we perform invertion.
+ */
+void calculateNewState(double dt,
+                    std::vector<double> actuators,
+                    Eigen::Vector3d Maero,
+                    Eigen::Vector3d Faero,
+                    Eigen::Vector3d initialLinearVelocity,
+                    Eigen::Vector3d initialAngularVelocity,
+                    Eigen::Vector3d initialPosition,
+                    Eigen::Quaterniond initialAttitude,
+                    Eigen::Vector3d& expectedAngAccel,
+                    Eigen::Vector3d& expectedLinAccel,
+                    Eigen::Vector3d& angularAcceleration,
+                    Eigen::Vector3d& linearAcceleration){
     InnoVtolDynamicsSim vtolDynamicsSim;
     vtolDynamicsSim.init();
-    double thrust, torque, dt;
-    Eigen::Vector3d Maero, Faero, angAccel, expectedAngAccel, linAccel, expectedLinAccel, diff;
-    auto isZeroComparator = [](double a) {return abs(a) < 6e-05;};
 
-    dt = 0.002500;
-    std::vector<double> actuators{0, 0, 0, 0, 0, 0, 0, 0};
-    Faero << 0.0, 0.0, 0.0;
-    Maero << 0.0, 0.0, 0.0;
-    vtolDynamicsSim.setInitialVelocity(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0.0, 0.0, 0.0));
-    vtolDynamicsSim.setInitialPosition(Eigen::Vector3d(0, 0, 0), Eigen::Quaterniond(1, 0.2, 0.10, 0.05));
+    Faero[2] *= -1;
+    Maero[0] *= -1;
+    Maero[1] *= -1;
 
-    /**
-     * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
-     * it is directed to the top, so we perform invertion.
-     * - expectedAngAccel x and y were multiplied by -1
-     * - expectedLinAccel.z was multiplied by -1
-     */
-    expectedAngAccel << 0.0, 0.0, 0.0;
-    expectedLinAccel << 2.5377e-16, -5.0753e-16, -9.8066e+00;
-
+    vtolDynamicsSim.setInitialVelocity(initialLinearVelocity, initialAngularVelocity);
+    vtolDynamicsSim.setInitialPosition(initialPosition, initialAttitude);
     vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
-    angAccel = vtolDynamicsSim.getAngularAcceleration();
-    linAccel = vtolDynamicsSim.getLinearAcceleration();
+
+    angularAcceleration = vtolDynamicsSim.getAngularAcceleration();
+    linearAcceleration = vtolDynamicsSim.getLinearAcceleration();
+
+    linearAcceleration[2] *= -1;
+    angularAcceleration[0] *= -1;
+    angularAcceleration[1] *= -1;
+}
+
+TEST(InnoVtolDynamicsSim, calculateNewStateFirstCaseOnlyAttitude){
+    double dt = 0.002500;
+    std::vector<double> actuators{0, 0, 0, 0, 0, 0, 0, 0};
+    Eigen::Quaterniond initAttitude(1, 0.2, 0.10, 0.05);
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(0.0, 0.0, 0.0),
+                    Maero(0.0, 0.0, 0.0),
+                    initialLinVel(0, 0, 0),
+                    initAngVel(0, 0, 0),
+                    initPose(0, 0, 0),
+                    expectedAngAccel(0.0, 0.0, 0.0),
+                    expectedLinAccel(2.5377e-16, -5.0753e-16, 9.8066e+00);
+    auto isZeroComparator = [](double a) {return abs(a) < 1e-04;};
+
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
+
+    std::cout << angAccel << std::endl;
+    std::cout << linAccel << std::endl;
     diff = expectedAngAccel - angAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
@@ -453,31 +483,24 @@ TEST(InnoVtolDynamicsSim, calculateNewStateFirstCaseOnlyAttitude){
 }
 
 TEST(InnoVtolDynamicsSim, calculateNewStateSecondCaseOnlyAngularVelocity){
-    InnoVtolDynamicsSim vtolDynamicsSim;
-    vtolDynamicsSim.init();
-    double thrust, torque, dt;
-    Eigen::Vector3d Maero, Faero, angAccel, expectedAngAccel, linAccel, expectedLinAccel, diff;
+    double dt = 0.002500;
+    std::vector<double> actuators{0, 0, 0, 0, 0, 0, 0, 0};
+    Eigen::Quaterniond initAttitude(1, 0.00, 0.00, 0.00);
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(0.0, 0.0, 0.0),
+                    Maero(0.0, 0.0, 0.0),
+                    initialLinVel(0, 0, 0),
+                    initAngVel(0.3, 0.2, 0.1),
+                    initPose(0, 0, 0),
+                    expectedAngAccel(-1.9719e-02,   2.9589e-02,     -8.3459e-04),
+                    expectedLinAccel(9.9127e-19,    1.9825e-18,     9.8066e+00);
     auto isZeroComparator = [](double a) {return abs(a) < 6e-05;};
 
-    dt = 0.002500;
-    std::vector<double> actuators{0, 0, 0, 0, 0, 0, 0, 0};
-    Faero << 0.0, 0.0, 0.0;
-    Maero << 0.0, 0.0, 0.0;
-    vtolDynamicsSim.setInitialVelocity(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0.3, 0.2, 0.1));
-    vtolDynamicsSim.setInitialPosition(Eigen::Vector3d(0, 0, 0), Eigen::Quaterniond(1, 0.0, 0.0, 0.0));
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
 
-    /**
-     * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
-     * it is directed to the top, so we perform invertion.
-     * - expectedAngAccel x and y were multiplied by -1
-     * - expectedLinAccel.z was multiplied by -1
-     */
-    expectedAngAccel << 1.9719e-02, -2.9589e-02, -8.3459e-04;
-    expectedLinAccel << 9.9127e-19, 1.9825e-18, -9.8066e+00;
-
-    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
-    angAccel = vtolDynamicsSim.getAngularAcceleration();
-    linAccel = vtolDynamicsSim.getLinearAcceleration();
     diff = expectedAngAccel - angAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
@@ -485,31 +508,24 @@ TEST(InnoVtolDynamicsSim, calculateNewStateSecondCaseOnlyAngularVelocity){
 }
 
 TEST(InnoVtolDynamicsSim, calculateNewStateThirdCaseOnlyFaero){
-    InnoVtolDynamicsSim vtolDynamicsSim;
-    vtolDynamicsSim.init();
-    double thrust, torque, dt;
-    Eigen::Vector3d Maero, Faero, angAccel, expectedAngAccel, linAccel, expectedLinAccel, diff;
-    auto isZeroComparator = [](double a) {return abs(a) < 4.3e-07;};
-
-    dt = 0.002500;
+    double dt = 0.002500;
     std::vector<double> actuators{0, 0, 0, 0, 0, 0, 0, 0};
-    Faero << 5.7448e-01, 2.9513e+01, -6.1333e-01;
-    Maero << 0.0, 0.0, 0.0;
-    vtolDynamicsSim.setInitialVelocity(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0.0, 0.0, 0.0));
-    vtolDynamicsSim.setInitialPosition(Eigen::Vector3d(0, 0, 0), Eigen::Quaterniond(1, 0.0, 0.0, 0.0));
+    Eigen::Quaterniond initAttitude(1, 0.00, 0.00, 0.00);
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(5.7448e-01, 2.9513e+01, 6.1333e-01),
+                    Maero(0.0, 0.0, 0.0),
+                    initialLinVel(0, 0, 0),
+                    initAngVel(0.0, 0.0, 0.0),
+                    initPose(0, 0, 0),
+                    expectedAngAccel(0.0,       0.0,        0.0),
+                    expectedLinAccel(0.082069,  4.216143,   9.894269);
+    auto isZeroComparator = [](double a) {return abs(a) < 6e-05;};
 
-    /**
-     * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
-     * it is directed to the top, so we perform invertion.
-     * - expectedAngAccel x and y were multiplied by -1
-     * - expectedLinAccel.z was multiplied by -1
-     */
-    expectedAngAccel << 0.0, 0.0, 0.0;
-    expectedLinAccel << 0.082069, 4.216143, -9.719031;
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
 
-    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
-    angAccel = vtolDynamicsSim.getAngularAcceleration();
-    linAccel = vtolDynamicsSim.getLinearAcceleration();
     diff = expectedAngAccel - angAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
@@ -517,129 +533,128 @@ TEST(InnoVtolDynamicsSim, calculateNewStateThirdCaseOnlyFaero){
 }
 
 TEST(InnoVtolDynamicsSim, calculateNewStateFourthCaseOnlyMaero){
-    InnoVtolDynamicsSim vtolDynamicsSim;
-    vtolDynamicsSim.init();
-    double thrust, torque, dt;
-    Eigen::Vector3d Maero, Faero, angAccel, expectedAngAccel, linAccel, expectedLinAccel, diff;
-    auto isZeroComparator = [](double a) {return abs(a) < 5.1e-05;};
-
-    dt = 0.002500;
+    double dt = 0.002500;
     std::vector<double> actuators{0, 0, 0, 0, 0, 0, 0, 0};
-    Faero << 0.0, 0.0, 0.0;
-    Maero << 0.214696, 0.694801, -0.316328;
-    vtolDynamicsSim.setInitialVelocity(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0.0, 0.0, 0.0));
-    vtolDynamicsSim.setInitialPosition(Eigen::Vector3d(0, 0, 0), Eigen::Quaterniond(1, 0.0, 0.0, 0.0));
+    Eigen::Quaterniond initAttitude(1, 0.00, 0.00, 0.00);
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(0.0, 0.0, 0.0),
+                    Maero(-0.214696, -0.694801, -0.316328),
+                    initialLinVel(0, 0, 0),
+                    initAngVel(0.0, 0.0, 0.0),
+                    initPose(0, 0, 0),
+                    expectedAngAccel(-0.34251,      -1.07821,       -0.25057),
+                    expectedLinAccel(7.7443e-21,    -3.8722e-21,    9.8066e+00);
+    auto isZeroComparator = [](double a) {return abs(a) < 6e-05;};
 
-    /**
-     * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
-     * it is directed to the top, so we perform invertion.
-     * - expectedAngAccel x and y were multiplied by -1
-     * - expectedLinAccel.z was multiplied by -1
-     */
-    expectedAngAccel << -0.34251, -1.07821, -0.25057;
-    expectedLinAccel << -7.7443e-21, 3.8722e-21, -9.8066e+00;
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
 
-    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
-    angAccel = vtolDynamicsSim.getAngularAcceleration();
-    linAccel = vtolDynamicsSim.getLinearAcceleration();
     diff = expectedAngAccel - angAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
 }
 
-TEST(InnoVtolDynamicsSim, calculateNewStateSixthCaseOnlyCopterMotorsWithEqualPower){
-    InnoVtolDynamicsSim vtolDynamicsSim;
-    vtolDynamicsSim.init();
-    double thrust, torque, dt;
-    Eigen::Vector3d Maero, Faero, angAccel, expectedAngAccel, linAccel, expectedLinAccel, diff;
-    auto isZeroComparator = [](double a) {return abs(a) < 6.74158e-07;};
-
-    dt = 0.002500;
+TEST(InnoVtolDynamicsSim, calculateNewStateFifthCaseOnlyCopterMotorsWithEqualPower){
+    double dt = 0.002500;
     std::vector<double> actuators{700, 700, 700, 700, 0, 0, 0, 0};
-    Faero << 0.0, 0.0, 0.0;
-    Maero << 0.0, 0.0, 0.0;
-    vtolDynamicsSim.setInitialVelocity(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0.0, 0.0, 0.0));
-    vtolDynamicsSim.setInitialPosition(Eigen::Vector3d(0, 0, 0), Eigen::Quaterniond(1, 0.0, 0.0, 0.0));
+    Eigen::Quaterniond initAttitude(1, 0.00, 0.00, 0.00);
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(0.0, 0.0, 0.0),
+                    Maero(0.0, 0.0, 0.0),
+                    initialLinVel(0, 0, 0),
+                    initAngVel(0.0, 0.0, 0.0),
+                    initPose(0, 0, 0),
+                    expectedAngAccel(0.00000,       0.00000,        0.00000),
+                    expectedLinAccel(0.00000,       0.00000,        -6.36769);
+    auto isZeroComparator = [](double a) {return abs(a) < 6e-05;};
 
-    /**
-     * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
-     * it is directed to the top, so we perform invertion.
-     * - expectedAngAccel x and y were multiplied by -1
-     * - expectedLinAccel.z was multiplied by -1
-     */
-    expectedAngAccel << 0.0, 0.0, 0.0;
-    expectedLinAccel << 0.00000, 0.00000, 6.36769;
-    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
-    angAccel = vtolDynamicsSim.getAngularAcceleration();
-    linAccel = vtolDynamicsSim.getLinearAcceleration();
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
+
     diff = expectedAngAccel - angAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
 }
 
-TEST(InnoVtolDynamicsSim, calculateNewStateSeventhCaseOnlyCopterMotorsWithNotEqualPower){
-    InnoVtolDynamicsSim vtolDynamicsSim;
-    vtolDynamicsSim.init();
-    double thrust, torque, dt;
-    Eigen::Vector3d Maero, Faero, angAccel, expectedAngAccel, linAccel, expectedLinAccel, diff;
-    auto isZeroComparator = [](double a) {return abs(a) < 4.24861e-05;};
-
-    dt = 0.002500;
+TEST(InnoVtolDynamicsSim, calculateNewStateSixthCaseOnlyCopterMotorsWithNotEqualPower){
+    double dt = 0.002500;
     std::vector<double> actuators{700, 680, 660, 640, 0, 0, 0, 0};
-    Faero << 0.0, 0.0, 0.0;
-    Maero << 0.0, 0.0, 0.0;
-    vtolDynamicsSim.setInitialVelocity(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0.0, 0.0, 0.0));
-    vtolDynamicsSim.setInitialPosition(Eigen::Vector3d(0, 0, 0), Eigen::Quaterniond(1, 0.0, 0.0, 0.0));
+    Eigen::Quaterniond initAttitude(1, 0.00, 0.00, 0.00);
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(0.0, 0.0, 0.0),
+                    Maero(0.0, 0.0, 0.0),
+                    initialLinVel(0, 0, 0),
+                    initAngVel(0.0, 0.0, 0.0),
+                    initPose(0, 0, 0),
+                    expectedAngAccel(0.13933,       1.48111,        0.10723),
+                    expectedLinAccel(-1.3753e-04,   1.2938e-05,     -5.0505e+00);
+    auto isZeroComparator = [](double a) {return abs(a) < 6e-05;};
 
-    /**
-     * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
-     * it is directed to the top, so we perform invertion.
-     * - expectedAngAccel x and y were multiplied by -1
-     * - expectedLinAccel.z was multiplied by -1
-     */
-    expectedAngAccel << -0.13933, -1.48111, 0.10723;
-    expectedLinAccel << -1.3753e-04, 1.2938e-05, 5.0505e+00;
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
 
-    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
-    angAccel = vtolDynamicsSim.getAngularAcceleration();
-    linAccel = vtolDynamicsSim.getLinearAcceleration();
     diff = expectedAngAccel - angAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
 }
 
-TEST(InnoVtolDynamicsSim, calculateNewStateEighthCaseOnlyICE){
-    InnoVtolDynamicsSim vtolDynamicsSim;
-    vtolDynamicsSim.init();
-    double thrust, torque, dt;
-    Eigen::Vector3d Maero, Faero, angAccel, expectedAngAccel, linAccel, expectedLinAccel, diff;
-    auto isZeroComparator = [](double a) {return abs(a) < 5.1e-05;};
-
-    dt = 0.002500;
+TEST(InnoVtolDynamicsSim, calculateNewStateSeventhCaseOnlyICE){
+    double dt = 0.002500;
     std::vector<double> actuators{0, 0, 0, 0, 500, 0, 0, 0};
-    Faero << 0.0, 0.0, 0.0;
-    Maero << 0.0, 0.0, 0.0;
-    vtolDynamicsSim.setInitialVelocity(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0.0, 0.0, 0.0));
-    vtolDynamicsSim.setInitialPosition(Eigen::Vector3d(0, 0, 0), Eigen::Quaterniond(1, 0.0, 0.0, 0.0));
+    Eigen::Quaterniond initAttitude(1, 0.00, 0.00, 0.00);
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(0.0, 0.0, 0.0),
+                    Maero(0.0, 0.0, 0.0),
+                    initialLinVel(0, 0, 0),
+                    initAngVel(0.0, 0.0, 0.0),
+                    initPose(0, 0, 0),
+                    expectedAngAccel(-0.43508,      0.00000,        0.00000),
+                    expectedLinAccel(2.2705e+00,    3.8722e-21,     9.8066e+00);
+    auto isZeroComparator = [](double a) {return abs(a) < 6e-05;};
 
-    expectedAngAccel << -0.43508, 0.00000, 0.00000;
-    expectedLinAccel << 2.2705e+00, 3.8722e-21, 9.8066e+00;
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
 
-    /**
-     * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
-     * it is directed to the top, so we perform invertion.
-     */
-    expectedAngAccel[0] *= -1;
-    expectedAngAccel[1] *= -1;
-    expectedLinAccel[2] *= -1;
-
-    vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
-    angAccel = vtolDynamicsSim.getAngularAcceleration();
-    linAccel = vtolDynamicsSim.getLinearAcceleration();
     diff = expectedAngAccel - angAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = expectedLinAccel - linAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+}
+
+TEST(DISABLED_InnoVtolDynamicsSim, calculateNewStateEightComplex){
+    double dt = 0.002500;
+    std::vector<double> actuators{600, 550, 450, 500, 650, 0, 0, 0};
+    Eigen::Quaterniond initAttitude(0.9819, 0.1534, 0.09116, -0.06407); // [0.3, 0.2, 0.1]
+
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(15.0, 10.0, 5.0),
+                    Maero(5.0, 10.0, 15.0),
+                    initialLinVel(15, 3, 1),
+                    initAngVel(0.5, 0.4, 0.3),
+                    initPose(0, 0, 10),
+                    expectedAngAccel(5.0598,        16.2287,        11.9625),
+                    expectedLinAccel(3.45031,       4.40765,        0.68005);
+    auto isZeroComparator = [](double a) {return abs(a) < 1e-03;};
+
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
+
+    diff = expectedAngAccel - angAccel;
+    std::cout << angAccel << std::endl;
+    std::cout << linAccel << std::endl;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
