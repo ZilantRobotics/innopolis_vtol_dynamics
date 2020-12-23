@@ -205,7 +205,7 @@ void Uav_Dynamics::proceedQuadcopterDynamics(double period){
             crnt_time = std::chrono::system_clock::now();
             auto time_dif_sec = (crnt_time - prev_time).count() / 1000000000.0;
 
-            uavDynamicsSim_->process(time_dif_sec, propSpeedCommand_, true);
+            uavDynamicsSim_->process(period, propSpeedCommand_, true);
         }
 
         // test pitch
@@ -381,7 +381,7 @@ void Uav_Dynamics::resetState(void){
 void Uav_Dynamics::publishState(void){
     geometry_msgs::TransformStamped transform;
 
-    transform.header.stamp = currentTime_;
+    transform.header.stamp = ros::Time::now();
     transform.header.frame_id = "world";
 
     Eigen::Vector3d position = uavDynamicsSim_->getVehiclePosition();
