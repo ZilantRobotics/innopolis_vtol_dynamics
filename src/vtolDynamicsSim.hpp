@@ -55,9 +55,10 @@ struct State{
     Eigen::Vector3d gyroBias;
     Eigen::Vector3d Faero;                          // N
     Eigen::Vector3d Maero;                          // N*m
-    double Cmx_a;   // coefficients for the jacobian
-    double Cmy_e;   // coefficients for the jacobian
-    double Cmz_r;   // coefficients for the jacobian
+    Eigen::Vector3d Msteer;                         // N*m
+    Eigen::Vector3d Mairspeed;                      // N*m
+    Eigen::Vector3d MmotorsTotal;                   // N*m
+
     Eigen::Vector3d Fspecific;                      // N
     Eigen::Vector3d Ftotal;                         // N
     Eigen::Vector3d Mtotal;                         // N*m
@@ -188,11 +189,15 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
 
         Eigen::Vector3d getAngularAcceleration() const;
         Eigen::Vector3d getLinearAcceleration() const;
+        Eigen::Vector3d getMsteer() const;
+        Eigen::Vector3d getMairspeed() const;
+        Eigen::Vector3d getMmotorsTotal() const;
 
     private:
         void loadTables(const std::string& path);
         void loadParams(const std::string& path);
-        std::vector<double> mapCmdToActuator(const std::vector<double>& cmd) const;
+        std::vector<double> mapCmdToActuatorStandardVTOL(const std::vector<double>& cmd) const;
+        std::vector<double> mapCmdToActuatorInnoVTOL(const std::vector<double>& cmd) const;
         Eigen::Vector3d calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,
                                     const Eigen::Vector3d& estimatedVelocity,
                                     const Eigen::Vector3d& windSpeed);

@@ -399,6 +399,15 @@ void Uav_Dynamics::publishState(void){
     transform.child_frame_id = "uav/imu";
 
     tfPub_.sendTransform(transform);
+
+
+    transform.header.frame_id = "world";
+    transform.transform.rotation.x = 0;
+    transform.transform.rotation.y = 0;
+    transform.transform.rotation.z = 0;
+    transform.transform.rotation.w = 1;
+    transform.child_frame_id = "uav/com";
+    tfPub_.sendTransform(transform);
 }
 
 /**
@@ -505,7 +514,7 @@ void Uav_Dynamics::publishControl(void){
  */
 void Uav_Dynamics::publishForcesInfo(void){
     std_msgs::Float64MultiArray forces;
-    forces.data.resize(12);
+    forces.data.resize(21);
     forces.data[0] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero()[0];
     forces.data[1] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero()[1];
     forces.data[2] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero()[2];
@@ -521,6 +530,18 @@ void Uav_Dynamics::publishForcesInfo(void){
     forces.data[9] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal()[0];
     forces.data[10] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal()[1];
     forces.data[11] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal()[2];
+
+    forces.data[12] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMsteer()[0];
+    forces.data[13] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMsteer()[1];
+    forces.data[14] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMsteer()[2];
+
+    forces.data[15] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMairspeed()[0];
+    forces.data[16] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMairspeed()[1];
+    forces.data[17] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMairspeed()[2];
+
+    forces.data[18] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMmotorsTotal()[0];
+    forces.data[19] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMmotorsTotal()[1];
+    forces.data[20] = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMmotorsTotal()[2];
     forcesPub_.publish(forces);
 
     if(dynamicsType_ == INNO_VTOL){

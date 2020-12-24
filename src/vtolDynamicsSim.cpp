@@ -158,12 +158,11 @@ void InnoVtolDynamicsSim::process(double dt_secs,
                               bool isCmdPercent){
     Eigen::Vector3d vel_w = calculateWind();
     Eigen::Matrix3d rotationMatrix = calculateRotationMatrix();
-    auto linearVelInveted = state_.linearVel;
-    Eigen::Vector3d airSpeed = calculateAirSpeed(rotationMatrix, linearVelInveted, vel_w);
+    Eigen::Vector3d airSpeed = calculateAirSpeed(rotationMatrix, state_.linearVel, vel_w);
     double AoA = -calculateAnglesOfAtack(airSpeed);
     double AoS = -calculateAnglesOfSideslip(airSpeed);
     double Cmx_a, Cmy_e, Cmz_r;
-    auto actuators = isCmdPercent ? mapCmdToActuator(motorCmd) : motorCmd;
+    auto actuators = isCmdPercent ? mapCmdToActuatorInnoVTOL(motorCmd) : motorCmd;
     calculateAerodynamics(airSpeed, AoA, AoS, actuators[5], actuators[6], actuators[7],
                           state_.Faero, state_.Maero, Cmx_a, Cmy_e, Cmz_r);
 
@@ -179,9 +178,17 @@ void InnoVtolDynamicsSim::process(double dt_secs,
 }
 
 /**
- * @note inno dynamics motor indexes is not correspond to px4 configuration
+ * @note Map motors indexes from StandardVTOL mixer into internal represenation
+ * Input indexes should correspond following mixer:
+ * https://github.com/InnopolisAero/Inno_PX4_Firmware/blob/e28f8a7f2e181680353cd23ed5c62c4e9b5858fc/ROMFS/px4fmu_common/mixers-sitl/standard_vtol_sitl.main.mix
+ * Output indexes will be:
+ * 0-3 - copter indexes, where 0 - right forward, 1 - left backward, 2 - left forward, 3 - right backward
+ * 4 - throttle
+ * 5 - aileron
+ * 6 - elevator
+ * 7 - rudder (always equal to zero, because there is no control for it)
  */
-std::vector<double> InnoVtolDynamicsSim::mapCmdToActuator(const std::vector<double>& cmd) const{
+std::vector<double> InnoVtolDynamicsSim::mapCmdToActuatorStandardVTOL(const std::vector<double>& cmd) const{
     if(cmd.size() != 8){
         std::cerr << "ERROR: InnoVtolDynamicsSim wrong control size. It is " << cmd.size()
                   << ", but should be 8" << std::endl;
@@ -193,25 +200,62 @@ std::vector<double> InnoVtolDynamicsSim::mapCmdToActuator(const std::vector<doub
     actuators[1] = cmd[2];
     actuators[2] = cmd[3];
     actuators[3] = cmd[1];
-
     actuators[4] = cmd[4];
-
-    /**
-     * @note this is hack, because in this moment we use standard vtol airframe (2 ailerons and elevator)
-     * https://github.com/InnopolisAero/Inno_PX4_Firmware/blob/e28f8a7f2e181680353cd23ed5c62c4e9b5858fc/ROMFS/px4fmu_common/mixers-sitl/standard_vtol_sitl.main.mix
-     * but this dynamics expected Inno VTOL airframe (aileron + elevator + rudder)
-     */
-    actuators[5] = (cmd[5] - cmd[6]) / 2;   // aileron     roll
-    actuators[6] = -cmd[7];                  // elevator     pitch
+    actuators[5] = (cmd[5] - cmd[6]) / 2;   // aileron      roll
+    actuators[6] = -cmd[7];                 // elevator     pitch
     actuators[7] = 0.0;                     // rudder       yaw
-
-
 
     for(size_t idx = 0; idx < 5; idx++){
         actuators[idx] = boost::algorithm::clamp(actuators[idx], 0.0, +1.0);
         actuators[idx] *= params_.actuatorMax[idx];
     }
 
+    for(size_t idx = 5; idx < 8; idx++){
+        actuators[idx] = boost::algorithm::clamp(actuators[idx], -1.0, +1.0);
+        actuators[idx] *= (actuators[idx] >= 0) ? params_.actuatorMax[idx] : -params_.actuatorMin[idx];
+    }
+
+    return actuators;
+}
+
+/**
+ * @note Map motors indexes from InnoVTOL mixer into internal represenation
+ * Input indexes should correspond InnoVTOL mixer.
+ * Few notes:
+ * 4 - aileron default value is 0.5 and it can be [0, +1]
+ * 5 - elevator default value is 0 and it can be [-1, +1]
+ * 6 - rudder default value is 0 and it can be [-1, +1]
+ * 7 - throttle default value is 0 and it can be [0, +1]
+ * Output indexes will be:
+ * 0-3 - copter indexes, where 0 - right forward, 1 - left backward, 2 - left forward, 3 - right backward
+ * 4 - throttle
+ * 5 - aileron
+ * 6 - elevator
+ * 7 - rudder
+ */
+std::vector<double> InnoVtolDynamicsSim::mapCmdToActuatorInnoVTOL(const std::vector<double>& cmd) const{
+    if(cmd.size() != 8){
+        std::cerr << "ERROR: InnoVtolDynamicsSim wrong control size. It is " << cmd.size()
+                  << ", but should be 8" << std::endl;
+        return cmd;
+    }
+
+    std::vector<double> actuators(8);
+    actuators[0] = cmd[0];
+    actuators[1] = cmd[2];
+    actuators[2] = cmd[3];
+    actuators[3] = cmd[1];
+    actuators[4] = cmd[7];
+    actuators[5] = -cmd[4];
+    actuators[6] = cmd[5];
+    actuators[7] = -cmd[6];
+
+    for(size_t idx = 0; idx < 5; idx++){
+        actuators[idx] = boost::algorithm::clamp(actuators[idx], 0.0, +1.0);
+        actuators[idx] *= params_.actuatorMax[idx];
+    }
+
+    actuators[5] = (actuators[5] - 0.5) * (0.5);
     for(size_t idx = 5; idx < 8; idx++){
         actuators[idx] = boost::algorithm::clamp(actuators[idx], -1.0, +1.0);
         actuators[idx] *= (actuators[idx] >= 0) ? params_.actuatorMax[idx] : -params_.actuatorMin[idx];
@@ -241,9 +285,19 @@ Eigen::Matrix3d InnoVtolDynamicsSim::calculateRotationMatrix() const{
 }
 
 Eigen::Vector3d InnoVtolDynamicsSim::calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,
-                                                   const Eigen::Vector3d& estimatedVelocity,
+                                                   const Eigen::Vector3d& velocity,
                                                    const Eigen::Vector3d& windSpeed){
-    return rotationMatrix * (estimatedVelocity - windSpeed);
+    Eigen::Vector3d airspeed = rotationMatrix * (velocity - windSpeed);
+    /**
+     * @todo limit airspeed, because table values are limited
+     */
+    if(abs(airspeed[0]) > 40 || abs(airspeed[1]) > 40 || abs(airspeed[2]) > 40){
+        airspeed[0] = boost::algorithm::clamp(airspeed[0], -40, +40);
+        airspeed[1] = boost::algorithm::clamp(airspeed[1], -40, +40);
+        airspeed[2] = boost::algorithm::clamp(airspeed[2], -40, +40);
+        std::cout << "Warning: airspeed is out of limit." << std::endl;
+    }
+    return airspeed;
 }
 
 double InnoVtolDynamicsSim::calculateDynamicPressure(double airSpeedMod){
@@ -287,7 +341,7 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
                                             Eigen::Vector3d& Maero,
                                             double& Cmx_aileron,
                                             double& Cmy_elevator,
-                                            double& Cmx_rudder){
+                                            double& Cmz_rudder){
     // 0. Common computation
     double AoA_deg = boost::algorithm::clamp(AoA * 180 / 3.1415, -45.0, +45.0);
     double AoS_deg = boost::algorithm::clamp(AoS * 180 / 3.1415, -90.0, +90.0);
@@ -315,23 +369,6 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
 
     Faero = 0.5 * dynamicPressure * (FL + FS + FD);
 
-    #define AERODYNAMICS_LOG false
-    #if AERODYNAMICS_LOG == true
-    std::cout << "AoA_deg=" << AoA_deg << std::endl;
-    std::cout << "AoS_deg=" << AoS_deg << std::endl;
-    std::cout << "rudder_pos=" << rudder_pos << std::endl;
-    std::cout << "airspeedMod=" << airspeedMod << std::endl;
-    std::cout << "CL=" << CL << std::endl;
-    std::cout << "CS=" << CS << std::endl;
-    std::cout << "CS_rudder=" << CS_rudder << std::endl;
-    std::cout << "CS_beta=" << CS_beta << std::endl;
-    std::cout << "CD=" << CD << std::endl;
-    std::cout << "FL=" << FL << std::endl;
-    std::cout << "FS=" << FS << std::endl;
-    std::cout << "FD=" << FD << std::endl;
-    std::cout << "Faero=" << Faero << std::endl;
-    #endif
-
     // 2. Calculate aero moment
     calculateCmxPolynomial(airspeedModClamped, polynomialCoeffs);
     auto Cmx = polyval(polynomialCoeffs, AoA_deg);
@@ -344,13 +381,46 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
 
     Cmx_aileron = calculateCmxAileron(aileron_pos, airspeedModClamped);
     Cmy_elevator = calculateCmyElevator(elevator_pos, airspeedModClamped);
-    Cmx_rudder = calculateCmzRudder(rudder_pos, airspeedModClamped);
+    Cmz_rudder = calculateCmzRudder(rudder_pos, airspeedModClamped);
 
     auto Mx = Cmx + Cmx_aileron * aileron_pos;
     auto My = Cmy + Cmy_elevator * elevator_pos;
-    auto Mz = Cmz + Cmx_rudder * rudder_pos;
+    auto Mz = Cmz + Cmz_rudder * rudder_pos;
 
     Maero = 0.5 * dynamicPressure * params_.characteristicLength * Eigen::Vector3d(Mx, My, Mz);
+
+
+    state_.Msteer << 0.5 * dynamicPressure * params_.characteristicLength * Cmx_aileron * aileron_pos,
+                     0.5 * dynamicPressure * params_.characteristicLength * Cmy_elevator * elevator_pos,
+                     0.5 * dynamicPressure * params_.characteristicLength * Cmz_rudder * rudder_pos;
+    state_.Mairspeed << 0.5 * dynamicPressure * params_.characteristicLength * Cmx,
+                        0.5 * dynamicPressure * params_.characteristicLength * Cmy,
+                        0.5 * dynamicPressure * params_.characteristicLength * Cmz;
+
+    #define AERODYNAMICS_LOG false
+    #if AERODYNAMICS_LOG == true
+    if(abs(Faero[0]) > 20 || abs(Faero[1]) > 20 || abs(Faero[2]) > 20){
+        std::cout << "in: AoA_deg=" << AoA_deg << std::endl;
+        std::cout << "in: AoS_deg=" << AoS_deg << std::endl;
+        std::cout << "in: aileron/elevator/rudder poses=" << aileron_pos << ", " << elevator_pos << ", " << rudder_pos << std::endl;
+        std::cout << "in: airspeedMod=" << airspeedMod << std::endl;
+        // std::cout << "CL=" << CL << std::endl;
+        // std::cout << "CS=" << CS << std::endl;
+        // std::cout << "CS_rudder=" << CS_rudder << std::endl;
+        // std::cout << "CS_beta=" << CS_beta << std::endl;
+        // std::cout << "CD=" << CD << std::endl;
+        // std::cout << "FL=" << FL << std::endl;
+        // std::cout << "FS=" << FS << std::endl;
+        // std::cout << "FD=" << FD << std::endl;
+        std::cout << "aileron:"     << Cmx_aileron << ", "  << aileron_pos << ", "  << state_.Msteer[0] << ", Mairspeed=" << state_.Mairspeed[0] << std::endl;
+        std::cout << "elevator:"    << Cmy_elevator << ", " << elevator_pos << ", " << state_.Msteer[1] << ", Mairspeed=" << state_.Mairspeed[1] << std::endl;
+        std::cout << "rudder:"      << Cmz_rudder << ", "   << rudder_pos << ", "   << state_.Msteer[2] << ", Mairspeed=" << state_.Mairspeed[2] << std::endl;
+        std::cout << "out: Maero=" << Maero << std::endl;
+        std::cout << "out: Faero=" << Faero << std::endl;
+        std::cout << std::endl;
+    }
+
+    #endif
 }
 
 void InnoVtolDynamicsSim::thruster(double actuator, double& thrust, double& torque) const{
@@ -423,8 +493,12 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     state_.linearAccel = rotationMatrix.inverse() * Ftotal / params_.mass;
     state_.linearVel += state_.linearAccel * dt_sec;
     state_.position += state_.linearVel * dt_sec;
+    state_.MmotorsTotal[0] = std::accumulate(&MmotorsTotal[0][0], &MmotorsTotal[5][0], 0);
+    state_.MmotorsTotal[1] = std::accumulate(&MmotorsTotal[0][0], &MmotorsTotal[5][0], 0);
+    state_.MmotorsTotal[2] = std::accumulate(&MmotorsTotal[0][0], &MmotorsTotal[5][0], 0);
 
     if(state_.position[2] < 0){
+        state_.Fspecific << 0, 0, params_.gravity;
         state_.linearVel << 0.0, 0.0, 0.0;
         state_.angularVel << 0.0, 0.0, 0.0;
         state_.position[2] = 0.00;
@@ -462,7 +536,9 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     std::cout << "- Ftotal="                    << Ftotal.transpose() << ", dt=" << dt_sec << ", " << ", mass=" << params_.mass << std::endl;
     std::cout << "- out: state_.linearAccel="   << state_.linearAccel.transpose() << std::endl;
     std::cout << "- out: state_.angularAccel: " << state_.angularAccel.transpose() << std::endl;
+    std::cout << "- out: state_.linearVel: "   << state_.linearVel.transpose() << std::endl;
     std::cout << "- out: state_.angularVel: "   << state_.angularVel.transpose() << std::endl;
+    std::cout << "- out: state_.position = "    << state_.position.transpose() << std::endl;
     std::cout << "- out: state_.attitude = "    << state_.attitude.coeffs().transpose() << std::endl;
     #endif
 }
@@ -619,6 +695,15 @@ Eigen::Vector3d InnoVtolDynamicsSim::getFaero() const{
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getFtotal() const{
     return state_.Ftotal;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getMsteer() const{
+    return state_.Msteer;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getMairspeed() const{
+    return state_.Mairspeed;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getMmotorsTotal() const{
+    return state_.MmotorsTotal;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getMaero() const{
     return state_.Maero;
