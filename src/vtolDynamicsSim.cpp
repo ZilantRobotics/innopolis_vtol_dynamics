@@ -151,6 +151,9 @@ void InnoVtolDynamicsSim::initStaticMotorTransform(){
 
     motorFrame.translation() = params_.propellersLocation[3];
     publishStaticMotorTransform(time, "uav/imu", "uav/motor3", motorFrame);
+
+    motorFrame.translation() = params_.propellersLocation[4];
+    publishStaticMotorTransform(time, "uav/imu", "uav/motor4", motorFrame);
 }
 
 void InnoVtolDynamicsSim::process(double dt_secs,
@@ -172,9 +175,10 @@ void InnoVtolDynamicsSim::process(double dt_secs,
      * forces z axis was inverted
      * Moments and angular x, y were inverted
      */
-    Eigen::Vector3d FaeroInverted(state_.Faero[0], state_.Faero[1], -state_.Faero[2]);
-    Eigen::Vector3d MaeroInverted(-state_.Maero[0], -state_.Maero[1], state_.Maero[2]);
-    calculateNewState(MaeroInverted, FaeroInverted, actuators, dt_secs);
+    state_.Faero[2] *= -1;
+    state_.Maero[0] *= -1;
+    state_.Maero[1] *= -1;
+    calculateNewState(state_.Maero, state_.Faero, actuators, dt_secs);
 }
 
 /**
@@ -448,11 +452,10 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
         thruster(actuator[idx], thrust[idx], torque[idx]);
     }
 
-    std::array<Eigen::Vector3d, 5> FmotorInBodyCS;
     for(size_t idx = 0; idx < 4; idx++){
-        FmotorInBodyCS[idx] << 0, 0, thrust[idx];
+        state_.Fmotors[idx] << 0, 0, thrust[idx];
     }
-    FmotorInBodyCS[4] << thrust[4], 0, 0;
+    state_.Fmotors[4] << thrust[4], 0, 0;
 
     std::array<Eigen::Vector3d, 5> motorTorquesInBodyCS;
     motorTorquesInBodyCS[0] << 0, 0, torque[0];
@@ -461,10 +464,9 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     motorTorquesInBodyCS[3] << 0, 0, -torque[3];
     motorTorquesInBodyCS[4] << torque[4], 0, 0;
     std::array<Eigen::Vector3d, 5> MdueToArmOfForceInBodyCS;
-    std::array<Eigen::Vector3d, 5> MmotorsTotal;
     for(size_t idx = 0; idx < 5; idx++){
-        MdueToArmOfForceInBodyCS[idx] = params_.propellersLocation[idx].cross(FmotorInBodyCS[idx]);
-        MmotorsTotal[idx] = motorTorquesInBodyCS[idx] + MdueToArmOfForceInBodyCS[idx];
+        MdueToArmOfForceInBodyCS[idx] = params_.propellersLocation[idx].cross(state_.Fmotors[idx]);
+        state_.Mmotors[idx] = motorTorquesInBodyCS[idx] + MdueToArmOfForceInBodyCS[idx];
     }
 
     /**
@@ -474,7 +476,7 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
      */
     Eigen::Vector3d AngularVelInverted(state_.angularVel[0], state_.angularVel[1], -state_.angularVel[2]);
 
-    auto MtotalInBodyCS = std::accumulate(&MmotorsTotal[0], &MmotorsTotal[5], Maero);
+    auto MtotalInBodyCS = std::accumulate(&state_.Mmotors[0], &state_.Mmotors[5], Maero);
     state_.angularAccel = params_.inertia.inverse() * (MtotalInBodyCS - AngularVelInverted.cross(params_.inertia * AngularVelInverted));
     state_.angularVel += state_.angularAccel * dt_sec;
     Eigen::Quaterniond attitudeDelta = state_.attitude * Eigen::Quaterniond(0, state_.angularVel(0), state_.angularVel(1), state_.angularVel(2));
@@ -483,7 +485,7 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     state_.attitude.normalize();
 
     Eigen::Matrix3d rotationMatrix = state_.attitude.toRotationMatrix().transpose();
-    Eigen::Vector3d Fspecific = std::accumulate(&FmotorInBodyCS[0], &FmotorInBodyCS[5], Faero);
+    Eigen::Vector3d Fspecific = std::accumulate(&state_.Fmotors[0], &state_.Fmotors[5], Faero);
     Eigen::Vector3d Ftotal = Fspecific - rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity);
 
     state_.Fspecific = Fspecific;
@@ -493,9 +495,9 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     state_.linearAccel = rotationMatrix.inverse() * Ftotal / params_.mass;
     state_.linearVel += state_.linearAccel * dt_sec;
     state_.position += state_.linearVel * dt_sec;
-    state_.MmotorsTotal[0] = std::accumulate(&MmotorsTotal[0][0], &MmotorsTotal[5][0], 0);
-    state_.MmotorsTotal[1] = std::accumulate(&MmotorsTotal[0][0], &MmotorsTotal[5][0], 0);
-    state_.MmotorsTotal[2] = std::accumulate(&MmotorsTotal[0][0], &MmotorsTotal[5][0], 0);
+    state_.MmotorsTotal[0] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
+    state_.MmotorsTotal[1] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
+    state_.MmotorsTotal[2] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
 
     if(state_.position[2] < 0){
         state_.Fspecific << 0, 0, params_.gravity;
@@ -521,8 +523,8 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
                                                 << motorTorquesInBodyCS[3].transpose() << ", " << motorTorquesInBodyCS[4].transpose() << std::endl;
     std::cout << "- MdueToArmOfForceInBodyCS: " << MdueToArmOfForceInBodyCS[0].transpose() << ", " << MdueToArmOfForceInBodyCS[1].transpose() << ", " << MdueToArmOfForceInBodyCS[2].transpose() << ", "
                                                 << MdueToArmOfForceInBodyCS[3].transpose() << ", " << MdueToArmOfForceInBodyCS[4].transpose() << std::endl;
-    std::cout << "- MmotorsTotal: "             << MmotorsTotal[0].transpose() << ", " << MmotorsTotal[1].transpose() << ", " << MmotorsTotal[2].transpose() << ", " << MmotorsTotal[3].transpose() << ", "
-                                                << MmotorsTotal[4].transpose() << std::endl;
+    std::cout << "- state_.Mmotors: "           << state_.Mmotors[0].transpose() << ", " << state_.Mmotors[1].transpose() << ", " << state_.Mmotors[2].transpose() << ", "
+                                                << state_.Mmotors[3].transpose() << ", " << state_.Mmotors[4].transpose() << std::endl;
     std::cout << "- MtotalInBodyCS: "           << MtotalInBodyCS.transpose() << std::endl;
 
     std::cout << "- new rotationMatrix: "       << rotationMatrix(0,0) << ", " << rotationMatrix(0,1) << ", " << rotationMatrix(0,2) << ";" << std::endl <<
@@ -710,6 +712,12 @@ Eigen::Vector3d InnoVtolDynamicsSim::getMaero() const{
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getMtotal() const{
     return state_.Mtotal;
+}
+const std::array<Eigen::Vector3d, 5>& InnoVtolDynamicsSim::getFmotors() const{
+    return state_.Fmotors;
+}
+const std::array<Eigen::Vector3d, 5>& InnoVtolDynamicsSim::getMmotors() const{
+    return state_.Mmotors;
 }
 void InnoVtolDynamicsSim::enu2Geodetic(double east, double north, double up,
                                    double *latitude, double *longitude, double *altitude){

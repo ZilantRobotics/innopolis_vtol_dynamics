@@ -62,6 +62,9 @@ class Uav_Dynamics {
         ros::Publisher aeroMomentPub_;
         ros::Publisher totalMomentPub_;
 
+        ros::Publisher motorsForcesPub_[5];
+        ros::Publisher motorsMomentsPub_[5];
+
         void publishState();
         void publishIMUMeasurement();
         void publishUavPosition();

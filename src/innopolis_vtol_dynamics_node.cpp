@@ -106,6 +106,12 @@ int8_t Uav_Dynamics::init(){
     totalForcePub_ = node_.advertise<visualization_msgs::Marker>("/uav/Ftotal", 1);
     aeroMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Maero", 1);
     totalMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Mtotal", 1);
+    motorsForcesPub_[0] = node_.advertise<visualization_msgs::Marker>("/uav/motor0", 2);
+    motorsForcesPub_[1] = node_.advertise<visualization_msgs::Marker>("/uav/motor1", 2);
+    motorsForcesPub_[2] = node_.advertise<visualization_msgs::Marker>("/uav/motor2", 2);
+    motorsForcesPub_[3] = node_.advertise<visualization_msgs::Marker>("/uav/motor3", 2);
+    motorsForcesPub_[4] = node_.advertise<visualization_msgs::Marker>("/uav/motor4", 2);
+
 
     inputCommandSub_ = node_.subscribe("/uav/input/rateThrust", 1, &Uav_Dynamics::inputCallback, this);
     inputMotorspeedCommandSub_ = node_.subscribe("/uav/input/motorspeed", 1, &Uav_Dynamics::inputMotorspeedCallback, this);
@@ -552,9 +558,9 @@ void Uav_Dynamics::publishForcesInfo(void){
         arrow.type = visualization_msgs::Marker::ARROW;
         arrow.action = visualization_msgs::Marker::ADD;
         arrow.pose.orientation.w = 1;
-        arrow.scale.x = 0.1;
+        arrow.scale.x = 0.05;   // radius of cylinder
         arrow.scale.y = 0.1;
-        arrow.scale.z = 0.03; // scale of hat
+        arrow.scale.z = 0.03;   // scale of hat
         arrow.lifetime = ros::Duration();
         geometry_msgs::Point startPoint, endPoint;
         startPoint.x = 0;
@@ -567,24 +573,9 @@ void Uav_Dynamics::publishForcesInfo(void){
         arrow.points.push_back(endPoint);
         arrow.color.a = 1.0;
 
-        auto Faero = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero();
-        arrow.points[1].x = Faero[0];
-        arrow.points[1].y = Faero[1];
-        arrow.points[1].z = Faero[2];
-        arrow.color.r = 1.0;
-        arrow.color.g = 1.0;
-        arrow.color.b = 0.0;
-        aeroForcePub_.publish(arrow);
+        std::string motorNames[5] = {"uav/motor0", "uav/motor1", "uav/motor2", "uav/motor3", "uav/motor4"};
 
-        auto Ftotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFtotal();
-        arrow.points[1].x = Ftotal[0];
-        arrow.points[1].y = Ftotal[1];
-        arrow.points[1].z = Ftotal[2];
-        arrow.color.r = 0.0;
-        arrow.color.g = 1.0;
-        arrow.color.b = 1.0;
-        totalForcePub_.publish(arrow);
-
+        // publish moments
         auto Maero = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMaero();
         arrow.points[1].x = Maero[0];
         arrow.points[1].y = Maero[1];
@@ -594,6 +585,16 @@ void Uav_Dynamics::publishForcesInfo(void){
         arrow.color.b = 0.0;
         aeroMomentPub_.publish(arrow);
 
+        auto Mmotors = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMmotors();
+        for(size_t motorIdx = 0; motorIdx < 5; motorIdx++){
+            arrow.header.frame_id = motorNames[motorIdx].c_str();
+            arrow.points[1].x = Mmotors[motorIdx][0];
+            arrow.points[1].y = Mmotors[motorIdx][1];
+            arrow.points[1].z = Mmotors[motorIdx][2];
+            motorsForcesPub_[motorIdx].publish(arrow);
+        }
+        arrow.header.frame_id = "uav/imu";
+
         auto Mtotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal();
         arrow.points[1].x = Mtotal[0];
         arrow.points[1].y = Mtotal[1];
@@ -602,5 +603,35 @@ void Uav_Dynamics::publishForcesInfo(void){
         arrow.color.g = 0.5;
         arrow.color.b = 0.5;
         totalMomentPub_.publish(arrow);
+
+
+        // publish forces
+        auto Faero = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFaero();
+        arrow.points[1].x = Faero[0];
+        arrow.points[1].y = Faero[1];
+        arrow.points[1].z = Faero[2];
+        arrow.color.r = 0.0;
+        arrow.color.g = 0.5;
+        arrow.color.b = 0.5;
+        aeroForcePub_.publish(arrow);
+
+        auto Fmotors = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFmotors();
+        for(size_t motorIdx = 0; motorIdx < 5; motorIdx++){
+            arrow.header.frame_id = motorNames[motorIdx].c_str();
+            arrow.points[1].x = Fmotors[motorIdx][0] / 10;
+            arrow.points[1].y = Fmotors[motorIdx][1] / 10;
+            arrow.points[1].z = Fmotors[motorIdx][2] / 10;
+            motorsForcesPub_[motorIdx].publish(arrow);
+        }
+        arrow.header.frame_id = "uav/imu";
+
+        auto Ftotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFtotal();
+        arrow.points[1].x = Ftotal[0];
+        arrow.points[1].y = Ftotal[1];
+        arrow.points[1].z = Ftotal[2];
+        arrow.color.r = 0.0;
+        arrow.color.g = 1.0;
+        arrow.color.b = 1.0;
+        totalForcePub_.publish(arrow);
     }
 }

@@ -58,6 +58,8 @@ struct State{
     Eigen::Vector3d Msteer;                         // N*m
     Eigen::Vector3d Mairspeed;                      // N*m
     Eigen::Vector3d MmotorsTotal;                   // N*m
+    std::array<Eigen::Vector3d, 5> Fmotors;         // N
+    std::array<Eigen::Vector3d, 5> Mmotors;         // N*m
 
     Eigen::Vector3d Fspecific;                      // N
     Eigen::Vector3d Ftotal;                         // N
@@ -192,6 +194,9 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         Eigen::Vector3d getMsteer() const;
         Eigen::Vector3d getMairspeed() const;
         Eigen::Vector3d getMmotorsTotal() const;
+        const std::array<Eigen::Vector3d, 5>& getFmotors() const;
+        const std::array<Eigen::Vector3d, 5>& getMmotors() const;
+
 
     private:
         void loadTables(const std::string& path);

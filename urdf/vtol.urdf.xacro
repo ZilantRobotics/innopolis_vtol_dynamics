@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<robot name="vtol" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="BASE_LENGTH"      value="0.890" />
+  <xacro:property name="BASE_WIDTH"       value="0.596" />
+  <xacro:property name="BASE_HEIGHT"      value="0.1" />
+  <xacro:property name="BASE_MASS"        value="7" />
+
+  <link name="base_footprint"/>
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" />
+      <geometry>
+        <box size="${BASE_LENGTH} ${BASE_WIDTH} ${BASE_HEIGHT}"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${BASE_LENGTH} ${BASE_WIDTH} ${BASE_HEIGHT}"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <gazebo reference="base_link">
+    <material>Gazebo/Grey</material>
+    <turnGravityOff>false</turnGravityOff>
+    <selfCollide>false</selfCollide>
+  </gazebo>
+
+</robot>
