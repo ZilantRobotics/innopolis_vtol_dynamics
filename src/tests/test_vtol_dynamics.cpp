@@ -474,8 +474,6 @@ TEST(InnoVtolDynamicsSim, calculateNewStateFirstCaseOnlyAttitude){
                       expectedAngAccel, expectedLinAccel,
                       angAccel, linAccel);
 
-    std::cout << angAccel << std::endl;
-    std::cout << linAccel << std::endl;
     diff = expectedAngAccel - angAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;

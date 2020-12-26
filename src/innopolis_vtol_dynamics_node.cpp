@@ -106,11 +106,17 @@ int8_t Uav_Dynamics::init(){
     totalForcePub_ = node_.advertise<visualization_msgs::Marker>("/uav/Ftotal", 1);
     aeroMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Maero", 1);
     totalMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Mtotal", 1);
-    motorsForcesPub_[0] = node_.advertise<visualization_msgs::Marker>("/uav/motor0", 2);
-    motorsForcesPub_[1] = node_.advertise<visualization_msgs::Marker>("/uav/motor1", 2);
-    motorsForcesPub_[2] = node_.advertise<visualization_msgs::Marker>("/uav/motor2", 2);
-    motorsForcesPub_[3] = node_.advertise<visualization_msgs::Marker>("/uav/motor3", 2);
-    motorsForcesPub_[4] = node_.advertise<visualization_msgs::Marker>("/uav/motor4", 2);
+    motorsForcesPub_[0] = node_.advertise<visualization_msgs::Marker>("/uav/Fmotor0", 1);
+    motorsForcesPub_[1] = node_.advertise<visualization_msgs::Marker>("/uav/Fmotor1", 1);
+    motorsForcesPub_[2] = node_.advertise<visualization_msgs::Marker>("/uav/Fmotor2", 1);
+    motorsForcesPub_[3] = node_.advertise<visualization_msgs::Marker>("/uav/Fmotor3", 1);
+    motorsForcesPub_[4] = node_.advertise<visualization_msgs::Marker>("/uav/Fmotor4", 1);
+    motorsMomentsPub_[0] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor0", 1);
+    motorsMomentsPub_[1] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor1", 1);
+    motorsMomentsPub_[2] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor2", 1);
+    motorsMomentsPub_[3] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor3", 1);
+    motorsMomentsPub_[4] = node_.advertise<visualization_msgs::Marker>("/uavM/motor4", 1);
+    velocityPub_ = node_.advertise<visualization_msgs::Marker>("/uav/linearVelocity", 1);
 
 
     inputCommandSub_ = node_.subscribe("/uav/input/rateThrust", 1, &Uav_Dynamics::inputCallback, this);
@@ -591,7 +597,7 @@ void Uav_Dynamics::publishForcesInfo(void){
             arrow.points[1].x = Mmotors[motorIdx][0];
             arrow.points[1].y = Mmotors[motorIdx][1];
             arrow.points[1].z = Mmotors[motorIdx][2];
-            motorsForcesPub_[motorIdx].publish(arrow);
+            motorsMomentsPub_[motorIdx].publish(arrow);
         }
         arrow.header.frame_id = "uav/imu";
 
@@ -633,5 +639,15 @@ void Uav_Dynamics::publishForcesInfo(void){
         arrow.color.g = 1.0;
         arrow.color.b = 1.0;
         totalForcePub_.publish(arrow);
+
+        arrow.header.frame_id = "uav/imu";
+        auto velocity = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getBodyLinearVelocity();
+        arrow.points[1].x = velocity[0];
+        arrow.points[1].y = velocity[1];
+        arrow.points[1].z = velocity[2];
+        arrow.color.r = 0.7;
+        arrow.color.g = 0.5;
+        arrow.color.b = 1.3;
+        velocityPub_.publish(arrow);
     }
 }

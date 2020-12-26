@@ -15,7 +15,6 @@
 #include "uavDynamicsSimBase.hpp"
 
 
-
 struct VtolParameters{
     double mass;                                    // kg
     double gravity;                                 // n/sec^2
@@ -24,35 +23,44 @@ struct VtolParameters{
     double characteristicLength;                    // m
     Eigen::Matrix3d inertia;                        // kg*m^2
 
-    std::array<Eigen::Vector3d, 5> propellersLocation;  // calculate
-
-    double massUncertainty;                         // mass multiplier
-    double inertiaUncertainty;                      // mass multiplier
+    std::array<Eigen::Vector3d, 5> propellersLocation;
 
     std::vector<double> actuatorMin;                // rad/sec
     std::vector<double> actuatorMax;                // rad/sec
     std::array<double, 8> deltaControlMax;          // rad/sec^2
     std::array<double, 8> timeConstant;             // sec
-    std::array<double, 8> desiredControl;           // rad/sec
 
     double accVariance;
     double gyroVariance;
+
+    /**
+     * @note not ready yet
+     */
+    double massUncertainty;                         // mass multiplier
+    double inertiaUncertainty;                      // mass multiplier
 };
 
 struct State{
-    Eigen::Vector3d position;                       // meters
-    Eigen::Vector3d linearVel;                      // m/sec, in body CS
-    Eigen::Vector3d linearAccel;                    // m/sec^2, in body CS
+    /**
+     * @note Inertial frame of reference (CS - coordinate system)
+     */
+    Eigen::Vector3d initialPose;                    // meters
+    Eigen::Quaterniond initialAttitude;             // quaternion
 
-    Eigen::Vector3d eulerAngles;                    // rad
-    Eigen::Quaterniond attitude;
-    Eigen::Vector3d angularVel;                     // rad/sec, in body CS
-    Eigen::Vector3d angularAccel;                   // rad/sec^2, in body CS
+    Eigen::Vector3d position;                       // meters
+    Eigen::Vector3d linearVel;                      // m/sec
+    Eigen::Vector3d linearAccel;                    // m/sec^2
+
+    Eigen::Quaterniond attitude;                    // quaternion
+    Eigen::Vector3d angularVel;                     // rad/sec
+    Eigen::Vector3d angularAccel;                   // rad/sec^2
 
     Eigen::Vector3d windVelocity;                   // m/sec^2
     Eigen::Vector3d gustVelocity;                   // m/sec^2
-    Eigen::Vector3d accelBias;
-    Eigen::Vector3d gyroBias;
+
+    /**
+     * @note Body frame
+     */
     Eigen::Vector3d Faero;                          // N
     Eigen::Vector3d Maero;                          // N*m
     Eigen::Vector3d Msteer;                         // N*m
@@ -60,14 +68,22 @@ struct State{
     Eigen::Vector3d MmotorsTotal;                   // N*m
     std::array<Eigen::Vector3d, 5> Fmotors;         // N
     std::array<Eigen::Vector3d, 5> Mmotors;         // N*m
-
     Eigen::Vector3d Fspecific;                      // N
     Eigen::Vector3d Ftotal;                         // N
     Eigen::Vector3d Mtotal;                         // N*m
+    Eigen::Vector3d bodylinearVel;                  // m/sec (just for debug only)
 
+    /**
+     * @note parameters
+     */
+    Eigen::Vector3d accelBias;
+    Eigen::Vector3d gyroBias;
     double windVariance;
-    double guVariance;
 
+    /**
+     * @note not ready yet
+     */
+    double gustVariance;
     std::vector<double> prevActuators;              // rad/sec
     std::vector<double> crntActuators;              // rad/sec
 };
@@ -121,14 +137,24 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
 
         /**
          * @note These methods should be public for debug only (publish to ros topic)
+         * it's better to refactor them
          */
-        virtual Eigen::Vector3d getFaero() const;
-        virtual Eigen::Vector3d getFtotal() const;
-        virtual Eigen::Vector3d getMaero() const;
-        virtual Eigen::Vector3d getMtotal() const;
+        Eigen::Vector3d getFaero() const;
+        Eigen::Vector3d getFtotal() const;
+        Eigen::Vector3d getMaero() const;
+        Eigen::Vector3d getMtotal() const;
+        Eigen::Vector3d getAngularAcceleration() const;
+        Eigen::Vector3d getLinearAcceleration() const;
+        Eigen::Vector3d getMsteer() const;
+        Eigen::Vector3d getMairspeed() const;
+        Eigen::Vector3d getMmotorsTotal() const;
+        Eigen::Vector3d getBodyLinearVelocity() const;
+        const std::array<Eigen::Vector3d, 5>& getFmotors() const;
+        const std::array<Eigen::Vector3d, 5>& getMmotors() const;
 
         /**
          * @note The methods below are should be public for test only
+         * think about making test as friend
          */
         Eigen::Vector3d calculateWind();
         Eigen::Matrix3d calculateRotationMatrix() const;
@@ -185,18 +211,8 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
 
 
         void setWindParameter(Eigen::Vector3d windMeanVelocity, double wind_velocityVariance);
-        void setEulerAngles(Eigen::Vector3d eulerAngles);
-        void setInitialVelocity(const Eigen::Vector3d & linearVelocity,
+        void setInitialVelocity(const Eigen::Vector3d& linearVelocity,
                                 const Eigen::Vector3d& angularVelocity);
-
-        Eigen::Vector3d getAngularAcceleration() const;
-        Eigen::Vector3d getLinearAcceleration() const;
-        Eigen::Vector3d getMsteer() const;
-        Eigen::Vector3d getMairspeed() const;
-        Eigen::Vector3d getMmotorsTotal() const;
-        const std::array<Eigen::Vector3d, 5>& getFmotors() const;
-        const std::array<Eigen::Vector3d, 5>& getMmotors() const;
-
 
     private:
         void loadTables(const std::string& path);

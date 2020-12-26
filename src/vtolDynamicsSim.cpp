@@ -126,9 +126,11 @@ void InnoVtolDynamicsSim::setReferencePosition(double latRef, double lonRef, dou
     geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
 }
 void InnoVtolDynamicsSim::setInitialPosition(const Eigen::Vector3d & position,
-                                         const Eigen::Quaterniond& attitude){
+                                             const Eigen::Quaterniond& attitude){
     state_.position = position;
     state_.attitude = attitude;
+    state_.initialPose = position;
+    state_.initialAttitude = attitude;
 }
 void InnoVtolDynamicsSim::setInitialVelocity(const Eigen::Vector3d & linearVelocity,
                                          const Eigen::Vector3d& angularVelocity){
@@ -495,20 +497,22 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     state_.linearAccel = rotationMatrix.inverse() * Ftotal / params_.mass;
     state_.linearVel += state_.linearAccel * dt_sec;
     state_.position += state_.linearVel * dt_sec;
-    state_.MmotorsTotal[0] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
-    state_.MmotorsTotal[1] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
-    state_.MmotorsTotal[2] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
 
     if(state_.position[2] < 0){
         state_.Fspecific << 0, 0, params_.gravity;
         state_.linearVel << 0.0, 0.0, 0.0;
         state_.angularVel << 0.0, 0.0, 0.0;
         state_.position[2] = 0.00;
-        state_.attitude.w() = 1;
-        state_.attitude.x() = 0;
-        state_.attitude.y() = 0;
-        state_.attitude.z() = 0;
+        state_.attitude = state_.initialAttitude;
     }
+
+    #define STORE_SIM_PARAMETERS true
+    #if STORE_SIM_PARAMETERS == true
+    state_.MmotorsTotal[0] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
+    state_.MmotorsTotal[1] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
+    state_.MmotorsTotal[2] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
+    state_.bodylinearVel = rotationMatrix * state_.linearVel;
+    #endif
 
     #define FORCES_LOG false
     #if FORCES_LOG == true
@@ -669,25 +673,20 @@ void InnoVtolDynamicsSim::setWindParameter(Eigen::Vector3d windMeanVelocity,
     state_.windVelocity = windMeanVelocity;
     state_.windVariance = windVariance;
 }
-void InnoVtolDynamicsSim::setEulerAngles(Eigen::Vector3d eulerAngles){
-    state_.eulerAngles = eulerAngles;
-}
-
-
 Eigen::Vector3d InnoVtolDynamicsSim::getAngularAcceleration() const{
     return state_.angularAccel;
-}
-Eigen::Vector3d InnoVtolDynamicsSim::getVehicleAngularVelocity() const{
-    return state_.angularVel;
-}
-Eigen::Quaterniond InnoVtolDynamicsSim::getVehicleAttitude() const{
-    return state_.attitude;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getLinearAcceleration() const{
     return state_.linearAccel;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getVehicleVelocity() const{
     return state_.linearVel;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getVehicleAngularVelocity() const{
+    return state_.angularVel;
+}
+Eigen::Quaterniond InnoVtolDynamicsSim::getVehicleAttitude() const{
+    return state_.attitude;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getVehiclePosition() const{
     return state_.position;
@@ -706,6 +705,9 @@ Eigen::Vector3d InnoVtolDynamicsSim::getMairspeed() const{
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getMmotorsTotal() const{
     return state_.MmotorsTotal;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getBodyLinearVelocity() const{
+    return state_.bodylinearVel;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getMaero() const{
     return state_.Maero;
