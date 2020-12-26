@@ -232,32 +232,21 @@ TEST(InnoVtolDynamicsSim, calculateAerodynamics){
     auto isZeroComparator = [](double a) {return abs(a) < 0.001;};
 
     Eigen::Vector3d airspeed(0.000001, -9.999999, 0.000001);
-    double AoA_rad = 0.958191;
-    double AoS_rad = -1.570796;
+    double AoA = 0.958191;
+    double AoS = -1.570796;
     double aileron_pos = 0.000000;
     double elevator_pos = 0.000000;
     double rudder_pos = 0.000000;
 
     Eigen::Vector3d extectedFaero(-4.8133e-07, 2.9513e+01, -6.0493e-06);
     Eigen::Vector3d extectedMaero(0.21470, 0.69480, -0.31633);
-    double extectedCmx_a = 0.011426;
-    double extectedCmy_e = 0.0049566;
-    double extectedCmz_r = 0.0022183;
 
-    vtolDynamicsSim.calculateAerodynamics(airspeed,
-                                          AoA_rad,
-                                          AoS_rad,
-                                          aileron_pos,
-                                          elevator_pos,
-                                          rudder_pos,
-                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    vtolDynamicsSim.calculateAerodynamics(airspeed, AoA, AoS, aileron_pos, elevator_pos, rudder_pos,
+                                          Faero, Maero);
     diff = extectedFaero - Faero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = extectedMaero - Maero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
-    ASSERT_TRUE(isZeroComparator(extectedCmx_a - Cmx_a));
-    ASSERT_TRUE(isZeroComparator(extectedCmy_e - Cmy_e));
-    ASSERT_TRUE(isZeroComparator(extectedCmz_r - Cmz_r));
 }
 
 TEST(InnoVtolDynamicsSim, calculateAerodynamicsCaseAileron){
@@ -268,32 +257,21 @@ TEST(InnoVtolDynamicsSim, calculateAerodynamicsCaseAileron){
     auto isZeroComparator = [](double a) {return abs(a) < 0.02;};
 
     Eigen::Vector3d airspeed(5, 5, 5);
-    double AoA_rad = 0.1;
-    double AoS_rad = 0.1;
+    double AoA = 0.1;
+    double AoS = 0.1;
     double aileron_pos = 0.5;
     double elevator_pos = 0.0;
     double rudder_pos = 0.0;
 
     Eigen::Vector3d extectedFaero(7.4133, -4.3077, -6.6924);
     Eigen::Vector3d extectedMaero(0.333818, 1.754507, -0.037038);
-    double extectedCmx_a = 0.011498;
-    double extectedCmy_e = 0.0050693;
-    double extectedCmz_r = 0.0019689;
 
-    vtolDynamicsSim.calculateAerodynamics(airspeed,
-                                          AoA_rad,
-                                          AoS_rad,
-                                          aileron_pos,
-                                          elevator_pos,
-                                          rudder_pos,
-                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    vtolDynamicsSim.calculateAerodynamics(airspeed, AoA, AoS, aileron_pos, elevator_pos, rudder_pos,
+                                          Faero, Maero);
     diff = extectedFaero - Faero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = extectedMaero - Maero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
-    ASSERT_TRUE(isZeroComparator(extectedCmx_a - Cmx_a));
-    ASSERT_TRUE(isZeroComparator(extectedCmy_e - Cmy_e));
-    ASSERT_TRUE(isZeroComparator(extectedCmz_r - Cmz_r));
 }
 
 TEST(InnoVtolDynamicsSim, calculateAerodynamicsCaseElevator){
@@ -312,24 +290,13 @@ TEST(InnoVtolDynamicsSim, calculateAerodynamicsCaseElevator){
 
     Eigen::Vector3d extectedFaero(7.4133, -4.3077, -6.6924);
     Eigen::Vector3d extectedMaero(0.190243, 1.220935, -0.037038);
-    double extectedCmx_a = 0.011498;
-    double extectedCmy_e = 0.0050693;
-    double extectedCmz_r = 0.0019689;
 
-    vtolDynamicsSim.calculateAerodynamics(airspeed,
-                                          AoA,
-                                          AoS,
-                                          aileron_pos,
-                                          elevator_pos,
-                                          rudder_pos,
-                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    vtolDynamicsSim.calculateAerodynamics(airspeed, AoA, AoS, aileron_pos, elevator_pos, rudder_pos,
+                                          Faero, Maero);
     diff = extectedFaero - Faero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = extectedMaero - Maero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
-    ASSERT_TRUE(isZeroComparator(extectedCmx_a - Cmx_a));
-    ASSERT_TRUE(isZeroComparator(extectedCmy_e - Cmy_e));
-    ASSERT_TRUE(isZeroComparator(extectedCmz_r - Cmz_r));
 }
 
 TEST(InnoVtolDynamicsSim, calculateAerodynamicsAoA){
@@ -348,24 +315,13 @@ TEST(InnoVtolDynamicsSim, calculateAerodynamicsAoA){
 
     Eigen::Vector3d extectedFaero(6.0625, -7.7260, -17.5536);
     Eigen::Vector3d extectedMaero(0.16512, 1.26568, -0.11093);
-    double extectedCmx_a = 0.011498;
-    double extectedCmy_e = 0.0050693;
-    double extectedCmz_r = 0.0019689;
 
-    vtolDynamicsSim.calculateAerodynamics(airspeed,
-                                          AoA,
-                                          AoS,
-                                          aileron_pos,
-                                          elevator_pos,
-                                          rudder_pos,
-                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    vtolDynamicsSim.calculateAerodynamics(airspeed, AoA, AoS, aileron_pos, elevator_pos, rudder_pos,
+                                          Faero, Maero);
     diff = extectedFaero - Faero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = extectedMaero - Maero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
-    ASSERT_TRUE(isZeroComparator(extectedCmx_a - Cmx_a));
-    ASSERT_TRUE(isZeroComparator(extectedCmy_e - Cmy_e));
-    ASSERT_TRUE(isZeroComparator(extectedCmz_r - Cmz_r));
 }
 
 TEST(InnoVtolDynamicsSim, calculateAerodynamicsRealCase){
@@ -376,7 +332,6 @@ TEST(InnoVtolDynamicsSim, calculateAerodynamicsRealCase){
     auto isZeroComparator = [](double a) {return abs(a) < 0.02;};
 
     Eigen::Vector3d airspeed(2.93128, 0.619653, 0.266774);
-
     double AoA = 45 * 3.1415 / 180.0;
     double AoS = 11.8888 * 3.1415 / 180.0;
     double aileron_pos = 0.0;
@@ -385,25 +340,13 @@ TEST(InnoVtolDynamicsSim, calculateAerodynamicsRealCase){
 
     Eigen::Vector3d extectedFaero(-2.28665, -0.92928, -2.66499);
     Eigen::Vector3d extectedMaero(0.017652, 0.074924, -0.024468);
-    double extectedCmx_a = 0.011693;
-    double extectedCmy_e = 0.0047613;
-    double extectedCmz_r = 0.0016563;
 
-    vtolDynamicsSim.calculateAerodynamics(airspeed,
-                                          AoA,
-                                          AoS,
-                                          aileron_pos,
-                                          elevator_pos,
-                                          rudder_pos,
-                                          Faero, Maero, Cmx_a, Cmy_e, Cmz_r);
+    vtolDynamicsSim.calculateAerodynamics(airspeed, AoA, AoS, aileron_pos, elevator_pos, rudder_pos,
+                                          Faero, Maero);
     diff = extectedFaero - Faero;
-
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = extectedMaero - Maero;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
-    ASSERT_TRUE(isZeroComparator(extectedCmx_a - Cmx_a));
-    ASSERT_TRUE(isZeroComparator(extectedCmy_e - Cmy_e));
-    ASSERT_TRUE(isZeroComparator(extectedCmz_r - Cmz_r));
 }
 
 TEST(InnoVtolDynamicsSim, thruster){
@@ -438,21 +381,25 @@ void calculateNewState(double dt,
                     Eigen::Vector3d& linearAcceleration){
     InnoVtolDynamicsSim vtolDynamicsSim;
     vtolDynamicsSim.init();
+    vtolDynamicsSim.setInitialVelocity(initialLinearVelocity, initialAngularVelocity);
+    vtolDynamicsSim.setInitialPosition(initialPosition, initialAttitude);
 
+    #define EDU_INSTEAD_NED true
+    #if EDU_INSTEAD_NED == true
     Faero[2] *= -1;
     Maero[0] *= -1;
     Maero[1] *= -1;
+    #endif
 
-    vtolDynamicsSim.setInitialVelocity(initialLinearVelocity, initialAngularVelocity);
-    vtolDynamicsSim.setInitialPosition(initialPosition, initialAttitude);
     vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
-
     angularAcceleration = vtolDynamicsSim.getAngularAcceleration();
     linearAcceleration = vtolDynamicsSim.getLinearAcceleration();
 
+    #if EDU_INSTEAD_NED == true
     linearAcceleration[2] *= -1;
     angularAcceleration[0] *= -1;
     angularAcceleration[1] *= -1;
+    #endif
 }
 
 TEST(InnoVtolDynamicsSim, calculateNewStateFirstCaseOnlyAttitude){
@@ -499,6 +446,8 @@ TEST(InnoVtolDynamicsSim, calculateNewStateSecondCaseOnlyAngularVelocity){
                       expectedAngAccel, expectedLinAccel,
                       angAccel, linAccel);
 
+    // std::cout << angAccel.transpose() << std::endl;
+    // std::cout << linAccel.transpose() << std::endl;
     diff = expectedAngAccel - angAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
@@ -630,10 +579,10 @@ TEST(InnoVtolDynamicsSim, calculateNewStateSeventhCaseOnlyICE){
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
 }
 
-TEST(DISABLED_InnoVtolDynamicsSim, calculateNewStateEightComplex){
+TEST(InnoVtolDynamicsSim, calculateNewStateEightComplexWithoutInitialAttitude){
     double dt = 0.002500;
     std::vector<double> actuators{600, 550, 450, 500, 650, 0, 0, 0};
-    Eigen::Quaterniond initAttitude(0.9819, 0.1534, 0.09116, -0.06407); // [0.3, 0.2, 0.1]
+    Eigen::Quaterniond initAttitude(1, 0, 0, 0);
 
     Eigen::Vector3d angAccel, linAccel, diff,
                     Faero(15.0, 10.0, 5.0),
@@ -641,8 +590,8 @@ TEST(DISABLED_InnoVtolDynamicsSim, calculateNewStateEightComplex){
                     initialLinVel(15, 3, 1),
                     initAngVel(0.5, 0.4, 0.3),
                     initPose(0, 0, 10),
-                    expectedAngAccel(5.0598,        16.2287,        11.9625),
-                    expectedLinAccel(3.45031,       4.40765,        0.68005);
+                    expectedAngAccel(5.0598, 16.2287, 11.9625),
+                    expectedLinAccel(5.60908, 1.44474, 0.80233);
     auto isZeroComparator = [](double a) {return abs(a) < 1e-03;};
 
     calculateNewState(dt, actuators,  Maero, Faero,
@@ -650,14 +599,41 @@ TEST(DISABLED_InnoVtolDynamicsSim, calculateNewStateEightComplex){
                       expectedAngAccel, expectedLinAccel,
                       angAccel, linAccel);
 
+    // std::cout << angAccel.transpose() << std::endl;
+    // std::cout << linAccel.transpose() << std::endl;
     diff = expectedAngAccel - angAccel;
-    std::cout << angAccel << std::endl;
-    std::cout << linAccel << std::endl;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
     diff = expectedLinAccel - linAccel;
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
 }
 
+TEST(InnoVtolDynamicsSim, calculateNewStateEightComplexFull){
+    double dt = 0.002500;
+    std::vector<double> actuators{600, 550, 450, 500, 650, 4, 7, 11};
+    Eigen::Quaterniond initAttitude(0.9833, 0.1436, 0.106, 0.03427);    // rpy = [0.3, 0.2, 0.1]
+
+    Eigen::Vector3d angAccel, linAccel, diff,
+                    Faero(15.0, 10.0, 5.0),
+                    Maero(5.0, 10.0, 15.0),
+                    initialLinVel(15, 3, 1),
+                    initAngVel(0.5, 0.4, 0.3),
+                    initPose(0, 0, 10),
+                    expectedAngAccel(5.0598, 16.2287, 11.9625),
+                    expectedLinAccel(3.45031, 4.40765, 0.68005);
+    auto isZeroComparator = [](double a) {return abs(a) < 1e-03;};
+
+    calculateNewState(dt, actuators,  Maero, Faero,
+                      initialLinVel, initAngVel, initPose, initAttitude,
+                      expectedAngAccel, expectedLinAccel,
+                      angAccel, linAccel);
+
+    // std::cout << angAccel.transpose() << std::endl;
+    // std::cout << linAccel.transpose() << std::endl;
+    diff = expectedAngAccel - angAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+    diff = expectedLinAccel - linAccel;
+    ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
+}
 
 int main(int argc, char *argv[]){
     testing::InitGoogleTest(&argc, argv);

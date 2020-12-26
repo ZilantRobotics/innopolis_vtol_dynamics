@@ -67,6 +67,11 @@ class Uav_Dynamics {
 
         ros::Publisher velocityPub_;
 
+        ros::Publisher liftForcePub_;
+        ros::Publisher drugForcePub_;
+        ros::Publisher sideForcePub_;
+
+
         void publishState();
         void publishIMUMeasurement();
         void publishUavPosition();

@@ -1,10 +1,22 @@
 <?xml version="1.0"?>
 <robot name="vtol" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:property name="BASE_LENGTH"      value="0.890" />
-  <xacro:property name="BASE_WIDTH"       value="0.596" />
-  <xacro:property name="BASE_HEIGHT"      value="0.1" />
-  <xacro:property name="BASE_MASS"        value="7" />
+  <xacro:property name="PROP_LOCATION_X"    value="0.445" />
+  <xacro:property name="PROP_LOCATION_Y"    value="0.422" />
+  <xacro:property name="PROP_LOCATION_Z"    value="0.01" />
+
+  <xacro:property name="ICE_RADIUS"         value="0.1" />
+  <xacro:property name="ICE_WIDTH"          value="0.05" />
+
+  <xacro:property name="MOTOR_RADIUS"       value="0.1" />
+  <xacro:property name="MOTOR_WIDTH"        value="0.01" />
+
+  <material name="grey">
+    <color rgba="0.5 0.5 0.5 1.0"/>
+  </material>
+  <material name="light_black">
+    <color rgba="0.4 0.4 0.4 1.0"/>
+  </material>
 
   <link name="base_footprint"/>
 
@@ -12,14 +24,14 @@
     <visual>
       <origin xyz="0 0 0" />
       <geometry>
-        <box size="${BASE_LENGTH} ${BASE_WIDTH} ${BASE_HEIGHT}"/>
+        <box size="${PROP_LOCATION_X * 2} ${PROP_LOCATION_Y * 2} ${PROP_LOCATION_Z * 2}"/>
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="${BASE_LENGTH} ${BASE_WIDTH} ${BASE_HEIGHT}"/>
+        <box size="${PROP_LOCATION_X * 2} ${PROP_LOCATION_Y * 2} ${PROP_LOCATION_Z * 2}"/>
       </geometry>
     </collision>
   </link>
@@ -28,10 +40,115 @@
     <child link="base_link"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
-  <gazebo reference="base_link">
-    <material>Gazebo/Grey</material>
-    <turnGravityOff>false</turnGravityOff>
-    <selfCollide>false</selfCollide>
-  </gazebo>
+
+  <link name="ICE">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 1.57 0"/>
+      <geometry>
+        <cylinder radius="${ICE_RADIUS}" length="${ICE_WIDTH}" />
+      </geometry>
+      <material name="light_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="${ICE_RADIUS}" length="${ICE_WIDTH}" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="ice_connect" type="fixed">
+    <parent link="base_link"/>
+    <child link="ICE"/>
+    <origin xyz="${PROP_LOCATION_X} 0.0 0.0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <link name="motor0">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
+      </geometry>
+      <material name="light_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="motor0_connect" type="fixed">
+    <parent link="base_link"/>
+    <child link="motor0"/>
+    <origin xyz="${PROP_LOCATION_X * 0.707} ${PROP_LOCATION_Y * 0.707} ${PROP_LOCATION_Z}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <link name="motor1">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
+      </geometry>
+      <material name="light_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="motor1_connect" type="fixed">
+    <parent link="base_link"/>
+    <child link="motor1"/>
+    <origin xyz="${-PROP_LOCATION_X * 0.707} ${-PROP_LOCATION_Y * 0.707} ${PROP_LOCATION_Z}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <link name="motor2">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
+      </geometry>
+      <material name="light_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="motor2_connect" type="fixed">
+    <parent link="base_link"/>
+    <child link="motor2"/>
+    <origin xyz="${PROP_LOCATION_X * 0.707} ${-PROP_LOCATION_Y * 0.707} ${PROP_LOCATION_Z}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <link name="motor3">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
+      </geometry>
+      <material name="light_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="motor3_connect" type="fixed">
+    <parent link="base_link"/>
+    <child link="motor3"/>
+    <origin xyz="${-PROP_LOCATION_X * 0.707} ${PROP_LOCATION_Y * 0.707} ${PROP_LOCATION_Z}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
 
 </robot>

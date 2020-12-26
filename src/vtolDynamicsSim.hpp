@@ -61,6 +61,9 @@ struct State{
     /**
      * @note Body frame
      */
+    Eigen::Vector3d Flift;                          // N
+    Eigen::Vector3d Fdrug;                          // N
+    Eigen::Vector3d Fside;                          // N
     Eigen::Vector3d Faero;                          // N
     Eigen::Vector3d Maero;                          // N*m
     Eigen::Vector3d Msteer;                         // N*m
@@ -127,6 +130,9 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
                              const std::vector<double>& motorSpeedCommandIn,
                              bool isCmdPercent) override;
 
+        /**
+         * @note These methods should return in enu format
+         */
         virtual Eigen::Vector3d getVehiclePosition() const override;
         virtual Eigen::Quaterniond getVehicleAttitude() const override;
         virtual Eigen::Vector3d getVehicleVelocity() const override;
@@ -149,6 +155,9 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         Eigen::Vector3d getMairspeed() const;
         Eigen::Vector3d getMmotorsTotal() const;
         Eigen::Vector3d getBodyLinearVelocity() const;
+        Eigen::Vector3d getFlift() const;
+        Eigen::Vector3d getFdrug() const;
+        Eigen::Vector3d getFside() const;
         const std::array<Eigen::Vector3d, 5>& getFmotors() const;
         const std::array<Eigen::Vector3d, 5>& getMmotors() const;
 
@@ -174,10 +183,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
                                    double elevator_pos,
                                    double rudder_pos,
                                    Eigen::Vector3d& Faero,
-                                   Eigen::Vector3d& Maero,
-                                   double& Cmx_a,
-                                   double& Cmy_e,
-                                   double& Cmz_r);
+                                   Eigen::Vector3d& Maero);
 
         void calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
         void calculateCSPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);

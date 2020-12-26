@@ -141,21 +141,12 @@ void InnoVtolDynamicsSim::setInitialVelocity(const Eigen::Vector3d & linearVeloc
 void InnoVtolDynamicsSim::initStaticMotorTransform(){
     Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
     auto time = ros::Time::now();
-
-    motorFrame.translation() = params_.propellersLocation[0];
-    publishStaticMotorTransform(time, "uav/imu", "uav/motor0", motorFrame);
-
-    motorFrame.translation() = params_.propellersLocation[1];
-    publishStaticMotorTransform(time, "uav/imu", "uav/motor1", motorFrame);
-
-    motorFrame.translation() = params_.propellersLocation[2];
-    publishStaticMotorTransform(time, "uav/imu", "uav/motor2", motorFrame);
-
-    motorFrame.translation() = params_.propellersLocation[3];
-    publishStaticMotorTransform(time, "uav/imu", "uav/motor3", motorFrame);
-
-    motorFrame.translation() = params_.propellersLocation[4];
-    publishStaticMotorTransform(time, "uav/imu", "uav/motor4", motorFrame);
+    constexpr std::array<const char*, 5> motorNames = {
+        "uav/motor0", "uav/motor1", "uav/motor2", "uav/motor3", "uav/motor4"};
+    for(size_t idx = 0; idx < 5; idx++){
+        motorFrame.translation() = params_.propellersLocation[idx];
+        publishStaticMotorTransform(time, "uav/imu", motorNames[idx], motorFrame);
+    }
 }
 
 void InnoVtolDynamicsSim::process(double dt_secs,
@@ -165,22 +156,26 @@ void InnoVtolDynamicsSim::process(double dt_secs,
     Eigen::Matrix3d rotationMatrix = calculateRotationMatrix();
     Eigen::Vector3d airSpeed = calculateAirSpeed(rotationMatrix, state_.linearVel, vel_w);
     double AoA = -calculateAnglesOfAtack(airSpeed);
-    double AoS = -calculateAnglesOfSideslip(airSpeed);
-    double Cmx_a, Cmy_e, Cmz_r;
+    double AoS = calculateAnglesOfSideslip(airSpeed);
     auto actuators = isCmdPercent ? mapCmdToActuatorInnoVTOL(motorCmd) : motorCmd;
     calculateAerodynamics(airSpeed, AoA, AoS, actuators[5], actuators[6], actuators[7],
-                          state_.Faero, state_.Maero, Cmx_a, Cmy_e, Cmz_r);
-
+                          state_.Faero, state_.Maero);
     /**
      * @note In InnoDynamics the altitude is directed to the bottom, but in this simulator
      * it is directed to the top, so we perform invertion.
      * forces z axis was inverted
-     * Moments and angular x, y were inverted
      */
     state_.Faero[2] *= -1;
-    state_.Maero[0] *= -1;
-    state_.Maero[1] *= -1;
+    state_.Maero[2] *= -1;
     calculateNewState(state_.Maero, state_.Faero, actuators, dt_secs);
+}
+
+Eigen::Vector3d convertNedToEdu(Eigen::Vector3d ned){
+    return Eigen::Vector3d(ned[1], ned[0], -ned[2]);
+}
+
+Eigen::Quaterniond convertNedToEdu(Eigen::Quaterniond ned){
+    return Eigen::Quaterniond(ned.w(), ned.y(), ned.x(), -ned.z());
 }
 
 /**
@@ -228,9 +223,9 @@ std::vector<double> InnoVtolDynamicsSim::mapCmdToActuatorStandardVTOL(const std:
  * @note Map motors indexes from InnoVTOL mixer into internal represenation
  * Input indexes should correspond InnoVTOL mixer.
  * Few notes:
- * 4 - aileron default value is 0.5 and it can be [0, +1]
- * 5 - elevator default value is 0 and it can be [-1, +1]
- * 6 - rudder default value is 0 and it can be [-1, +1]
+ * 4 - aileron default value is 0.5 and it can be [0, +1], where 0 wants to rotate to the right
+ * 5 - elevator default value is 0 and it can be [-1, +1], where -1 wants ...
+ * 6 - rudder default value is 0 and it can be [-1, +1], where -1 wants ...
  * 7 - throttle default value is 0 and it can be [0, +1]
  * Output indexes will be:
  * 0-3 - copter indexes, where 0 - right forward, 1 - left backward, 2 - left forward, 3 - right backward
@@ -252,16 +247,16 @@ std::vector<double> InnoVtolDynamicsSim::mapCmdToActuatorInnoVTOL(const std::vec
     actuators[2] = cmd[3];
     actuators[3] = cmd[1];
     actuators[4] = cmd[7];
-    actuators[5] = -cmd[4];
-    actuators[6] = cmd[5];
-    actuators[7] = -cmd[6];
+    actuators[5] = cmd[4];     // aileron
+    actuators[6] = -cmd[5];      // elevator
+    actuators[7] = cmd[6];     // rudder
 
     for(size_t idx = 0; idx < 5; idx++){
         actuators[idx] = boost::algorithm::clamp(actuators[idx], 0.0, +1.0);
         actuators[idx] *= params_.actuatorMax[idx];
     }
 
-    actuators[5] = (actuators[5] - 0.5) * (0.5);
+    actuators[5] = (actuators[5] - 0.5) * (2);
     for(size_t idx = 5; idx < 8; idx++){
         actuators[idx] = boost::algorithm::clamp(actuators[idx], -1.0, +1.0);
         actuators[idx] *= (actuators[idx] >= 0) ? params_.actuatorMax[idx] : -params_.actuatorMin[idx];
@@ -344,17 +339,13 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
                                             double elevator_pos,
                                             double rudder_pos,
                                             Eigen::Vector3d& Faero,
-                                            Eigen::Vector3d& Maero,
-                                            double& Cmx_aileron,
-                                            double& Cmy_elevator,
-                                            double& Cmz_rudder){
+                                            Eigen::Vector3d& Maero){
     // 0. Common computation
     double AoA_deg = boost::algorithm::clamp(AoA * 180 / 3.1415, -45.0, +45.0);
     double AoS_deg = boost::algorithm::clamp(AoS * 180 / 3.1415, -90.0, +90.0);
     double airspeedMod = airspeed.norm();
     double dynamicPressure = calculateDynamicPressure(airspeedMod);
     double airspeedModClamped = boost::algorithm::clamp(airspeed.norm(), 5, 40);
-
 
     // 1. Calculate aero force
     Eigen::VectorXd polynomialCoeffs(7);
@@ -385,9 +376,9 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     calculateCmzPolynomial(airspeedModClamped, polynomialCoeffs);
     auto Cmz = -polyval(polynomialCoeffs, AoA_deg);
 
-    Cmx_aileron = calculateCmxAileron(aileron_pos, airspeedModClamped);
-    Cmy_elevator = calculateCmyElevator(elevator_pos, airspeedModClamped);
-    Cmz_rudder = calculateCmzRudder(rudder_pos, airspeedModClamped);
+    double Cmx_aileron = calculateCmxAileron(aileron_pos, airspeedModClamped);
+    double Cmy_elevator = calculateCmyElevator(elevator_pos, airspeedModClamped);
+    double Cmz_rudder = calculateCmzRudder(rudder_pos, airspeedModClamped);
 
     auto Mx = Cmx + Cmx_aileron * aileron_pos;
     auto My = Cmy + Cmy_elevator * elevator_pos;
@@ -396,12 +387,13 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     Maero = 0.5 * dynamicPressure * params_.characteristicLength * Eigen::Vector3d(Mx, My, Mz);
 
 
-    state_.Msteer << 0.5 * dynamicPressure * params_.characteristicLength * Cmx_aileron * aileron_pos,
-                     0.5 * dynamicPressure * params_.characteristicLength * Cmy_elevator * elevator_pos,
-                     0.5 * dynamicPressure * params_.characteristicLength * Cmz_rudder * rudder_pos;
-    state_.Mairspeed << 0.5 * dynamicPressure * params_.characteristicLength * Cmx,
-                        0.5 * dynamicPressure * params_.characteristicLength * Cmy,
-                        0.5 * dynamicPressure * params_.characteristicLength * Cmz;
+    state_.Flift << 0.5 * dynamicPressure * params_.characteristicLength * FL;
+    state_.Fdrug << 0.5 * dynamicPressure * params_.characteristicLength * FD;
+    state_.Fside << 0.5 * dynamicPressure * params_.characteristicLength * FS;
+    state_.Msteer << Cmx_aileron * aileron_pos, Cmy_elevator * elevator_pos, Cmz_rudder * rudder_pos;
+    state_.Msteer *= 0.5 * dynamicPressure * params_.characteristicLength;
+    state_.Mairspeed << Cmx, Cmy, Cmz;
+    state_.Mairspeed *= 0.5 * dynamicPressure * params_.characteristicLength;
 
     #define AERODYNAMICS_LOG false
     #if AERODYNAMICS_LOG == true
@@ -507,6 +499,41 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     }
 
     #define STORE_SIM_PARAMETERS true
+    #define FORCES_LOG false
+    #define MOMENTS_LOG true
+
+    #if MOMENTS_LOG == true
+    static int counter = 0;
+    static Eigen::Vector3d MtotalSum(0, 0, 0);
+    static Eigen::Vector3d MaeroSum(0, 0, 0);
+    static Eigen::Vector3d MsteerSum(0, 0, 0);
+    static Eigen::Vector3d Mairspeed(0, 0, 0);
+    static Eigen::Vector3d AngularVelocitySum(0, 0, 0);
+    if(counter > 250){
+        counter = 0;
+        MtotalSum /= 250;
+        MaeroSum /= 250;
+        MsteerSum /= 250;
+        Mairspeed /= 250;
+        AngularVelocitySum /= 250;
+        std::cout << "Mtotal: " << MtotalSum.transpose() << ", " <<
+                     "Maero: " << MaeroSum.transpose() << ", " <<
+                     "Msteer: " << MsteerSum.transpose() << ", " <<
+                     "Mairspeed: " << Mairspeed.transpose() << ", " <<
+                     "angVelocity: " << AngularVelocitySum.transpose() << ", " <<
+                     std::endl;
+        MtotalSum << 0, 0, 0;
+        MaeroSum << 0, 0, 0;
+        AngularVelocitySum << 0, 0, 0;
+    }
+    MtotalSum += state_.Mtotal;
+    MaeroSum += state_.Maero;
+    MsteerSum += state_.Msteer;
+    Mairspeed += state_.Mairspeed;
+    AngularVelocitySum += state_.angularVel;
+    counter++;
+    #endif
+
     #if STORE_SIM_PARAMETERS == true
     state_.MmotorsTotal[0] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
     state_.MmotorsTotal[1] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);
@@ -514,7 +541,6 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     state_.bodylinearVel = rotationMatrix * state_.linearVel;
     #endif
 
-    #define FORCES_LOG false
     #if FORCES_LOG == true
     std::cout << "- input: dt = "               << dt_sec << std::endl;
     std::cout << "- input: u = "                << actuator[0] << ", " << actuator[1] << ", " << actuator[2] << ", " << actuator[3] << ", "
@@ -667,6 +693,46 @@ double InnoVtolDynamicsSim::polyval(const Eigen::VectorXd& poly, double val) con
     return result;
 }
 
+/**
+ * @note These methods should return in enu format
+ */
+Eigen::Vector3d InnoVtolDynamicsSim::getVehiclePosition() const{
+    return state_.position;
+}
+Eigen::Quaterniond InnoVtolDynamicsSim::getVehicleAttitude() const{
+    return state_.attitude;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getVehicleVelocity() const{
+    return state_.linearVel;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getVehicleAngularVelocity() const{
+    return state_.angularVel;
+}
+/**
+ * @note We consider that z=0 means ground, so if position <=0, Normal force is appeared,
+ * it means that in any way specific force will be equal to Gravity force.
+ */
+void InnoVtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut){
+    Eigen::Vector3d specificForce;
+    if(state_.position[2] <= 0){
+        specificForce << 0, 0, params_.gravity;
+    }else{
+        specificForce = state_.Fspecific / params_.mass;
+    }
+    Eigen::Vector3d accNoise(sqrt(params_.accVariance) * distribution_(generator_),
+                             sqrt(params_.accVariance) * distribution_(generator_),
+                             sqrt(params_.accVariance) * distribution_(generator_));
+    Eigen::Vector3d gyroNoise(sqrt(params_.gyroVariance) * distribution_(generator_),
+                             sqrt(params_.gyroVariance) * distribution_(generator_),
+                             sqrt(params_.gyroVariance) * distribution_(generator_));
+    Eigen::Quaterniond imuOrient(1, 0, 0, 0);
+    accOut = imuOrient.inverse() * specificForce + state_.accelBias + accNoise;
+    gyroOut = imuOrient.inverse() * state_.angularVel + state_.gyroBias + gyroNoise;
+}
+void InnoVtolDynamicsSim::enu2Geodetic(double east, double north, double up,
+                                   double *latitude, double *longitude, double *altitude){
+    geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
+}
 
 void InnoVtolDynamicsSim::setWindParameter(Eigen::Vector3d windMeanVelocity,
                                        double windVariance){
@@ -678,18 +744,6 @@ Eigen::Vector3d InnoVtolDynamicsSim::getAngularAcceleration() const{
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getLinearAcceleration() const{
     return state_.linearAccel;
-}
-Eigen::Vector3d InnoVtolDynamicsSim::getVehicleVelocity() const{
-    return state_.linearVel;
-}
-Eigen::Vector3d InnoVtolDynamicsSim::getVehicleAngularVelocity() const{
-    return state_.angularVel;
-}
-Eigen::Quaterniond InnoVtolDynamicsSim::getVehicleAttitude() const{
-    return state_.attitude;
-}
-Eigen::Vector3d InnoVtolDynamicsSim::getVehiclePosition() const{
-    return state_.position;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getFaero() const{
     return state_.Faero;
@@ -715,34 +769,18 @@ Eigen::Vector3d InnoVtolDynamicsSim::getMaero() const{
 Eigen::Vector3d InnoVtolDynamicsSim::getMtotal() const{
     return state_.Mtotal;
 }
+Eigen::Vector3d InnoVtolDynamicsSim::getFlift() const{
+    return state_.Flift;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getFdrug() const{
+    return state_.Fdrug;
+}
+Eigen::Vector3d InnoVtolDynamicsSim::getFside() const{
+    return state_.Fside;
+}
 const std::array<Eigen::Vector3d, 5>& InnoVtolDynamicsSim::getFmotors() const{
     return state_.Fmotors;
 }
 const std::array<Eigen::Vector3d, 5>& InnoVtolDynamicsSim::getMmotors() const{
     return state_.Mmotors;
-}
-void InnoVtolDynamicsSim::enu2Geodetic(double east, double north, double up,
-                                   double *latitude, double *longitude, double *altitude){
-    geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
-}
-void InnoVtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut){
-    /**
-     * @note We consider that z=0 means ground, so if position <=0, Normal force is appeared,
-     * it means that in any way specific force will be equal to Gravity force.
-     */
-    Eigen::Vector3d specificForce;
-    if(state_.position[2] <= 0){
-        specificForce << 0, 0, params_.gravity;
-    }else{
-        specificForce = state_.Fspecific / params_.mass;
-    }
-    Eigen::Vector3d accNoise(sqrt(params_.accVariance) * distribution_(generator_),
-                             sqrt(params_.accVariance) * distribution_(generator_),
-                             sqrt(params_.accVariance) * distribution_(generator_));
-    Eigen::Vector3d gyroNoise(sqrt(params_.gyroVariance) * distribution_(generator_),
-                             sqrt(params_.gyroVariance) * distribution_(generator_),
-                             sqrt(params_.gyroVariance) * distribution_(generator_));
-    Eigen::Quaterniond imuOrient(1, 0, 0, 0);
-    accOut = imuOrient.inverse() * specificForce + state_.accelBias + accNoise;
-    gyroOut = imuOrient.inverse() * state_.angularVel + state_.gyroBias + gyroNoise;
 }
