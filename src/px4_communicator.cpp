@@ -75,7 +75,7 @@ int PX4Communicator::Init(int portOffset, UavDynamicsSimBase *s, bool is_copter_
 
     if ((listenMavlinkSock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        std::cerr<<"PX4 Communicator: Creating TCP socket failed: " << strerror(errno) << std::endl;
+        std::cerr << "PX4 Communicator: Creating TCP socket failed: " << strerror(errno) << std::endl;
     }
 
     //do not accumulate messages by waiting for ACK
@@ -83,7 +83,7 @@ int PX4Communicator::Init(int portOffset, UavDynamicsSimBase *s, bool is_copter_
     int result = setsockopt(listenMavlinkSock, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
     if (result != 0)
     {
-        std::cerr<<"PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
+        std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
     }
 
     //try to close as fast as posible 
@@ -93,7 +93,7 @@ int PX4Communicator::Init(int portOffset, UavDynamicsSimBase *s, bool is_copter_
     result = setsockopt(listenMavlinkSock, SOL_SOCKET, SO_LINGER, &nolinger, sizeof(nolinger));
     if (result != 0)
     {
-        std::cerr<<"PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
+        std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
     }
 
     // The socket reuse is necessary for reconnecting to the same address
@@ -103,27 +103,27 @@ int PX4Communicator::Init(int portOffset, UavDynamicsSimBase *s, bool is_copter_
     result = setsockopt(listenMavlinkSock, SOL_SOCKET, SO_REUSEADDR, &socket_reuse, sizeof(socket_reuse));
     if (result != 0) 
     {
-         std::cerr<<"PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
+         std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
     }
 
     // Same as above but for a given port
     result = setsockopt(listenMavlinkSock, SOL_SOCKET, SO_REUSEPORT, &socket_reuse, sizeof(socket_reuse));
     if (result != 0) 
     {
-        std::cerr<<"PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
+        std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
     }
 
 
     if (bind(listenMavlinkSock, (struct sockaddr *)&simulator_mavlink_addr, sizeof(simulator_mavlink_addr)) < 0)
     {
-        std::cerr<<"PX4 Communicator: bind failed:  " << strerror(errno) << std::endl;
+        std::cerr << "PX4 Communicator: bind failed:  " << strerror(errno) << std::endl;
     }
 
     errno = 0;
     result=listen(listenMavlinkSock, 5);
     if (result < 0)
     {
-        std::cerr<<"PX4 Communicator: listen failed: " << strerror(errno) << std::endl;
+        std::cerr << "PX4 Communicator: listen failed: " << strerror(errno) << std::endl;
     }
 
     unsigned int px4_addr_len=sizeof(px4_mavlink_addr);
@@ -132,11 +132,11 @@ int PX4Communicator::Init(int portOffset, UavDynamicsSimBase *s, bool is_copter_
         px4MavlinkSock = accept(listenMavlinkSock, (struct sockaddr *)&px4_mavlink_addr, &px4_addr_len);
         if (px4MavlinkSock<0)
         {
-            std::cerr<<"PX4 Communicator: accept failed: " << strerror(errno) << std::endl;
+            std::cerr << "PX4 Communicator: accept failed: " << strerror(errno) << std::endl;
         }
         else
         {
-            std::cerr<<"PX4 Communicator: PX4 Connected."<< std::endl;
+            std::cerr << "PX4 Communicator: PX4 Connected."<< std::endl;
             break;
         }
     }
@@ -252,7 +252,7 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     Eigen::Vector3d vel_frd = q_frd_flu * q_enu_flu.inverse() * vel_enu;
     // calculate differential pressure in hPa
     // Note: ignoring tailsitter case here
-    double diff_pressure = 0.005f * rho * vel_frd.x() * vel_frd.x();// + diff_pressure_noise;
+    double diff_pressure = 0.005f * rho * vel_frd.norm() * vel_frd.norm();// + diff_pressure_noise;
 
     sensor_msg.temperature = temperature + temp_nois * standard_normal_distribution_(random_generator_);
     sensor_msg.abs_pressure = absolute_pressure + abs_pressure_nois * standard_normal_distribution_(random_generator_);
@@ -351,47 +351,46 @@ int PX4Communicator::Receive(bool blocking, bool &armed, std::vector<double>& co
     int p = poll(&fds[0], 1, (blocking?-1:2));
     if(p < 0){
         std::cerr << "PX4 Communicator: PX4 Pool error\n" << std::endl;
-    }
-    if(p == 0){
+    }else if(p == 0){
         // std::cerr << "PX4 Communicator:No PX data" << std::endl;
-    }
-    else if(fds[0].revents & POLLIN){
+    }else if(fds[0].revents & POLLIN){
         unsigned int slen=sizeof(px4_mavlink_addr);
         unsigned int len = recvfrom(px4MavlinkSock, buffer, sizeof(buffer), 0, (struct sockaddr *)&px4_mavlink_addr, &slen);
         mavlink_status_t status;
         for (unsigned i = 0; i < len; ++i)
         {
-            if (mavlink_parse_char(MAVLINK_COMM_0, buffer[i], &msg, &status) &&
-                msg.msgid == MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS)
-            {
-                mavlink_hil_actuator_controls_t controls;
-                mavlink_msg_hil_actuator_controls_decode(&msg, &controls);
+            if (mavlink_parse_char(MAVLINK_COMM_0, buffer[i], &msg, &status)){
+                if(msg.msgid == MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS){
+                    mavlink_hil_actuator_controls_t controls;
+                    mavlink_msg_hil_actuator_controls_decode(&msg, &controls);
 
-                if(command.size() < 4)
-                {
-                    std::cerr << "command.size() < 4" << std::endl;
-                    return -1;
-                }
-
-                armed = (controls.mode & MAV_MODE_FLAG_SAFETY_ARMED);
-                if(armed)
-                {
-                    command[3] = controls.controls[0];  // PX4: motor 1, front right
-                    command[1] = controls.controls[1];  // PX4: motor 2, tail left
-                    command[0] = controls.controls[2];  // PX4: motor 3, front left
-                    command[2] = controls.controls[3];  // PX4: motor 4, tail right
-                    if(is_copter_airframe_ == false){
-                        command[4] = controls.controls[4];
-                        command[5] = controls.controls[5];
-                        command[6] = controls.controls[6];
-                        command[7] = controls.controls[7];
+                    if(command.size() < 4)
+                    {
+                        std::cerr << "command.size() < 4" << std::endl;
+                        return -1;
                     }
 
-                    ROS_WARN_STREAM_THROTTLE(0.2, "PX4 Communicator: Recv \033[1;29m control \033[0m" << " [" <<
-                            controls.controls[0] << ", " << controls.controls[1] << ", " <<
-                            controls.controls[2] << ", " << controls.controls[3] << ", " <<
-                            controls.controls[4] << ", " << controls.controls[5] << ", " <<
-                            controls.controls[6] << ", " << controls.controls[7] << "].");
+                    armed = (controls.mode & MAV_MODE_FLAG_SAFETY_ARMED);
+                    if(armed)
+                    {
+                        command[0] = controls.controls[0];
+                        command[1] = controls.controls[1];
+                        command[2] = controls.controls[2];
+                        command[3] = controls.controls[3];
+                        if(is_copter_airframe_ == false){
+                            command[4] = controls.controls[4];
+                            command[5] = controls.controls[5];
+                            command[6] = controls.controls[6];
+                            command[7] = controls.controls[7];
+                        }
+
+                        ROS_WARN_STREAM_THROTTLE(0.2, "PX4 Communicator: Recv \033[1;29m control->cmd \033[0m" << " [" <<
+                                "mc: "      << command[0] << ", " << command[1] << ", " << command[2] << ", " << command[3] << ", " <<
+                                "fw rpy: (" << command[4] << ", " << command[5] << ", " << command[6] << "), " <<
+                                "throttle " << command[7] << "].");
+                    }
+                }else if (msg.msgid == MAVLINK_MSG_ID_ESTIMATOR_STATUS){
+                    ROS_INFO_STREAM_THROTTLE(2, "PX4 Communicator: MAVLINK_MSG_ID_ESTIMATOR_STATUS");
                 }
                 return 1;
             }

@@ -242,10 +242,15 @@ std::vector<double> InnoVtolDynamicsSim::mapCmdToActuatorInnoVTOL(const std::vec
     }
 
     std::vector<double> actuators(8);
-    actuators[0] = cmd[0];
-    actuators[1] = cmd[2];
-    actuators[2] = cmd[3];
+
+    /**
+     * @note Actuators are inverted by x axis
+     */
+    actuators[0] = cmd[2];
+    actuators[1] = cmd[3];
+    actuators[2] = cmd[0];
     actuators[3] = cmd[1];
+
     actuators[4] = cmd[7];
     actuators[5] = cmd[4];     // aileron
     actuators[6] = -cmd[5];      // elevator

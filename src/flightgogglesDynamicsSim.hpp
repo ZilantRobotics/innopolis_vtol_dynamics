@@ -32,6 +32,13 @@ public:
 
 private:
     MulticopterDynamicsSim * multicopterSim_;
+
+    /**
+     * @brief Convert actuator indexes from PX4 notation to internal Flightgoggles notation
+     * @param cmd with indexes: 0 - front right, 1 - tail left, 2 - front left, 3 - tail right
+     * @return cmd with indexes: 0 - front left, 1 - tail left, 2 - tail right, 3 - front right
+     */
+    std::vector<double> mapCmdActuator(std::vector<double> cmd) const;
 };
 
 #endif  // MULTICOPTER_DYNAMICS_WRAPPER_BASE_HPP

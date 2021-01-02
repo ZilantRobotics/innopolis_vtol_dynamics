@@ -123,7 +123,8 @@ void FlightgogglesDynamics::setReferencePosition(double latRef, double lonRef, d
 void FlightgogglesDynamics::process(double dt_secs,
                                          const std::vector<double> & motorSpeedCommandIn,
                                          bool isCmdPercent){
-    multicopterSim_->proceedState_ExplicitEuler(dt_secs, motorSpeedCommandIn, isCmdPercent);
+    auto actuators = mapCmdActuator(motorSpeedCommandIn);
+    multicopterSim_->proceedState_ExplicitEuler(dt_secs, actuators, isCmdPercent);
 }
 
 Eigen::Vector3d FlightgogglesDynamics::getVehiclePosition() const{
@@ -144,4 +145,13 @@ void FlightgogglesDynamics::getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen
 void FlightgogglesDynamics::enu2Geodetic(double east, double north, double up,
                                               double *latitude, double *longitude, double *altitude){
     multicopterSim_->geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
+}
+
+std::vector<double> FlightgogglesDynamics::mapCmdActuator(std::vector<double> initialCmd) const{
+    std::vector<double> mappedCmd;
+    mappedCmd.push_back(initialCmd[2]);     // PX4: motor 3, front left
+    mappedCmd.push_back(initialCmd[1]);     // PX4: motor 2, tail left
+    mappedCmd.push_back(initialCmd[3]);     // PX4: motor 4, tail right
+    mappedCmd.push_back(initialCmd[0]);     // PX4: motor 1, front right
+    return mappedCmd;
 }
