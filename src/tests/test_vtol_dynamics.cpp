@@ -384,8 +384,8 @@ void calculateNewState(double dt,
     vtolDynamicsSim.setInitialVelocity(initialLinearVelocity, initialAngularVelocity);
     vtolDynamicsSim.setInitialPosition(initialPosition, initialAttitude);
 
-    #define EDU_INSTEAD_NED true
-    #if EDU_INSTEAD_NED == true
+    #define USE_NED_FRD true
+    #if USE_NED_FRD == false
     Faero[2] *= -1;
     Maero[0] *= -1;
     Maero[1] *= -1;
@@ -395,7 +395,7 @@ void calculateNewState(double dt,
     angularAcceleration = vtolDynamicsSim.getAngularAcceleration();
     linearAcceleration = vtolDynamicsSim.getLinearAcceleration();
 
-    #if EDU_INSTEAD_NED == true
+    #if USE_NED_FRD == false
     linearAcceleration[2] *= -1;
     angularAcceleration[0] *= -1;
     angularAcceleration[1] *= -1;
