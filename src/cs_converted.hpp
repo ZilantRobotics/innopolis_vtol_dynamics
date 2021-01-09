@@ -26,7 +26,7 @@ Eigen::Vector3d nedToEnu(Eigen::Vector3d ned){
  * @note getVehicleAttitude
  */
 Eigen::Quaterniond frdToFlu(Eigen::Quaterniond frd){
-    return q_frd_flu * frd.inverse();
+    return q_frd_flu * frd;
 }
 
 /**
