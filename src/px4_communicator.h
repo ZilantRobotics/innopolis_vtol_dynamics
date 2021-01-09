@@ -69,36 +69,56 @@
 #define TIMEOUTUS 0
 
 
-const unsigned int SENS_ACCEL       = 0b111;
-const unsigned int SENS_GYRO        = 0b111000;
-const unsigned int SENS_MAG         = 0b111000000;
-const unsigned int SENS_BARO        = 0b1101000000000;
-const unsigned int SENS_DIFF_PRESS  = 0b10000000000;
-
-/*
- * @brief Quaternion for rotation between ENU and NED frames
- *
- * NED to ENU: +PI/2 rotation about Z (Down) followed by a +PI rotation around X (old North/new East)
- * ENU to NED: +PI/2 rotation about Z (Up) followed by a +PI rotation about X (old East/new North)
- */
-static const auto q_ned_enu = Eigen::Quaterniond(0, 0.70711, 0.70711, 0);       // q_ng
-// NED_px4 = q_ng * ENU_ros
-
-/**
- * @brief Quaternion for rotation between body FLU and body FRD frames
- *
- * +PI rotation around X (Forward) axis rotates from Forward, Right, Down (aircraft)
- * to Forward, Left, Up (base_link) frames and vice-versa.
- */
-static const auto q_frd_flu = Eigen::Quaterniond(0, 1, 0, 0);       // q_br
-// FRD_px4(b) = q_br * FLU_ros(r)
-
-
 class PX4Communicator
 {
+public:
+    PX4Communicator(float lat_home);
+
+    /**
+     * @brief Init connection with PX4 using TCP
+     * @param is_copter_airframe - input
+     * Mavlink actuator msg say nothing about is it VTOL or copter and it is always has 8 channels,
+     * so we can't understand airframe in real time.
+     * The problem is that in copter airframe mavlink fill last 4 channels by random values,
+     * so we should initially manually define airframe and just fill last 4 channels by zeros.
+     * @note Be sure if your VTOL mixer has shifted values in control surface, for example
+     * aileron from 0 to 1, where 0.5 is default - in copter mode communicator fill it by zeros.
+     */
+    int Init(int portOffset, bool is_copter_airframe);
+
+    /**
+     * @brief Close mavlink sockets
+     */
+    int Clean();
+
+    /**
+     * @brief Send hil_sensor (#107) and hil_gps (#113) to PX4 via mavlink
+     */
+    int SendHilSensor(unsigned int time_usec,
+                      Eigen::Vector3d pose_geodetic,
+                      Eigen::Quaterniond q_enu_flu,
+                      Eigen::Vector3d vel_frd,
+                      Eigen::Vector3d acc_frd,
+                      Eigen::Vector3d gyro_frd);
+    int SendHilGps(unsigned int time_usec,
+                   Eigen::Vector3d vel_ned,
+                   Eigen::Vector3d pose_geodetic);
+
+
+    /**
+     * @brief Receive hil_actuator_controls (#93) from PX4 via mavlink
+     * @param blocking - input
+     * @param armed - output
+     * @param command - output
+     */
+    int Receive(bool blocking, bool &armed, std::vector<double>& command);
 
 private:
-    UavDynamicsSimBase *sim;
+    static const unsigned int SENS_ACCEL       = 0b111;
+    static const unsigned int SENS_GYRO        = 0b111000;
+    static const unsigned int SENS_MAG         = 0b111000000;
+    static const unsigned int SENS_BARO        = 0b1101000000000;
+    static const unsigned int SENS_DIFF_PRESS  = 0b10000000000;
 
     struct sockaddr_in  px4_mavlink_addr;
     struct sockaddr_in  simulator_mavlink_addr;
@@ -109,11 +129,11 @@ private:
 
     std::default_random_engine random_generator_;
     std::normal_distribution<double> standard_normal_distribution_;
-    double mag_nois;
-    double baro_alt_nois;
-    double temp_nois;
-    double abs_pressure_nois;
-    double diff_pressure_nois;
+    double mag_noise;
+    double baro_alt_noise;
+    double temp_noise;
+    double abs_pressure_noise;
+    double diff_pressure_noise;
 
     unsigned int last_gps_time_usec;
     unsigned int last_mag_time_usec;
@@ -121,34 +141,6 @@ private:
 
     float ALT_HOME;
     bool is_copter_airframe_;
-public:
-    PX4Communicator(float lat_home);
-
-    /**
-     * @brief Init connection with PX4 using TCP
-     * @param is_copter_airframe - input (copter requires only 4 control channels and vtol requires
-     * 8 channels, but for mavlink there is no difference, so it can fill last controls channels
-     * by random values in copter airframe, so we should not read them in this case to allow to run
-     * any dynamics simulators in any airframe)
-     */
-    int Init(int portOffset, UavDynamicsSimBase *s, bool is_copter_airframe);
-
-    int Clean();
-
-    /**
-     * @brief Send hil_sensor (#107) and hil_gps (#113) to PX4 via mavlink
-     */
-    int SendHilSensor(unsigned int time_usec);
-    int SendHilGps(unsigned int time_usec);
-
-
-    /**
-     * @brief Receive hil_actuator_controls (#93) from PX4 via mavlink
-     * @param blocking - input
-     * @param armed - output
-     * @param command - output
-     */
-    int Receive(bool blocking, bool &armed, std::vector<double>& command);
 };
 
 

@@ -15,6 +15,7 @@
 #include <std_msgs/Float64MultiArray.h>
 #include "innopolis_vtol_dynamics_node.hpp"
 #include "vtolDynamicsSim.hpp"
+#include "cs_converter.hpp"
 
 
 int main(int argc, char **argv){
@@ -140,7 +141,7 @@ int8_t Uav_Dynamics::init(){
     bool is_copter_airframe = (airframeType_ == STANDARD_VTOL) ? false : true;
     px4 = new PX4Communicator(altRef_);
     int px4id = 0;
-    if(px4->Init(px4id, uavDynamicsSim_, is_copter_airframe) != 0) {
+    if(px4->Init(px4id, is_copter_airframe) != 0) {
         std::cerr << "Unable to Init PX4 Communication" << std::endl;
         return -1;
     }
@@ -234,7 +235,13 @@ void Uav_Dynamics::sendHilGps(double period){
     while(ros::ok()){
         threadCounter[1]++;
 
-        int send_status = px4->SendHilGps(currentTime_.toNSec() / 1000);
+        // Get data from sim and perform convertion
+        Eigen::Vector3d vel_ned = Converter::enuToNed(uavDynamicsSim_->getVehicleVelocity());
+        Eigen::Vector3d pose_geodetic, pose_enu = uavDynamicsSim_->getVehiclePosition();
+        uavDynamicsSim_->enu2Geodetic(pose_enu.x(), pose_enu.y(), pose_enu.z(),
+                                      &pose_geodetic.x(), &pose_geodetic.y(), &pose_geodetic.z());
+
+        int send_status = px4->SendHilGps(currentTime_.toNSec() / 1000, vel_ned, pose_geodetic);
         if(send_status == -1){
             ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Send to PX4 failed" << strerror(errno));
         }
@@ -250,7 +257,24 @@ void Uav_Dynamics::sendHilSensor(double period){
     while(ros::ok()){
         threadCounter[2]++;
 
-        int send_status = px4->SendHilSensor(currentTime_.toNSec() / 1000);
+        // Get data from sim and perform convertion
+        Eigen::Vector3d pose_geodetic, pose_enu = uavDynamicsSim_->getVehiclePosition();
+        uavDynamicsSim_->enu2Geodetic(pose_enu.x(), pose_enu.y(), pose_enu.z(),
+                                      &pose_geodetic.x(), &pose_geodetic.y(), &pose_geodetic.z());
+        Eigen::Quaterniond q_enu_flu = uavDynamicsSim_->getVehicleAttitude();
+        Eigen::Vector3d vel_enu = uavDynamicsSim_->getVehicleVelocity();
+        Eigen::Vector3d vel_frd = Converter::enuToFrd(vel_enu, q_enu_flu);
+        Eigen::Vector3d acc_flu(0, 0, -9.8), gyro_flu(0, 0, 0);
+        uavDynamicsSim_->getIMUMeasurement(acc_flu, gyro_flu);
+        Eigen::Vector3d acc_frd = Converter::fluToFrd(acc_flu);
+        Eigen::Vector3d gyro_frd = Converter::fluToFrd(gyro_flu);
+
+        int send_status = px4->SendHilSensor(currentTime_.toNSec() / 1000,
+                                             pose_geodetic,
+                                             q_enu_flu,
+                                             vel_frd,
+                                             acc_frd,
+                                             gyro_frd);
         if(send_status == -1){
             ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Sent to PX4 failed" << strerror(errno));
         }

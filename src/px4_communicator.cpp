@@ -34,6 +34,7 @@
 /**
  * @file px4_communicator.cpp
  *
+ * @author Dmitry Ponomarev <ponomarevda96@gmail.com>
  * @author Roman Fedorenko <frontwise@gmail.com>
  * @author ThunderFly s.r.o., Vít Hanousek <info@thunderfly.cz>
  * @url https://github.com/ThunderFly-aerospace
@@ -44,6 +45,7 @@
 #include "px4_communicator.h"
 #include <iostream>
 #include <ros/ros.h>
+// #include "cs_converter.hpp"
 
 
 PX4Communicator::PX4Communicator(float alt_home) :
@@ -51,20 +53,19 @@ PX4Communicator::PX4Communicator(float alt_home) :
 {
     standard_normal_distribution_ = std::normal_distribution<double>(0.0f, 0.1f);
 
-    mag_nois = 0.0000051;
-    baro_alt_nois = 0.0001;
-    temp_nois = 0.001;
-    abs_pressure_nois = 0.001;
+    mag_noise = 0.0000051;
+    baro_alt_noise = 0.0001;
+    temp_noise = 0.001;
+    abs_pressure_noise = 0.001;
     // Let's use a rough guess of 0.01 hPa as the standard devitiation which roughly yields
     // about +/- 1 m/s noise.
-    diff_pressure_nois = 0.01;
+    diff_pressure_noise = 0.01;
 
     last_gps_time_usec = -1;
 }
 
-int PX4Communicator::Init(int portOffset, UavDynamicsSimBase *s, bool is_copter_airframe)
+int PX4Communicator::Init(int portOffset, bool is_copter_airframe)
 {
-    sim = s;
     is_copter_airframe_ = is_copter_airframe;
 
     memset((char *) &simulator_mavlink_addr, 0, sizeof(px4_mavlink_addr));
@@ -176,93 +177,75 @@ int PX4Communicator::Clean()
     return 0;
 }
 
-int PX4Communicator::SendHilSensor(unsigned int time_usec)
+int PX4Communicator::SendHilSensor(unsigned int time_usec,
+                                   Eigen::Vector3d pose_geodetic,
+                                   Eigen::Quaterniond q_enu_flu,
+                                   Eigen::Vector3d vel_frd,
+                                   Eigen::Vector3d acc_frd,
+                                   Eigen::Vector3d gyro_frd)
 {
-    // Input data:
-    Eigen::Vector3d pos_enu = sim->getVehiclePosition();
-    Eigen::Quaterniond q_enu_flu = sim->getVehicleAttitude();
-
     // Output data
     mavlink_hil_sensor_t sensor_msg;
     sensor_msg.time_usec = time_usec;
 
-    // Fill acc and gyro (Note: in IMU frame, considered equal to flu)
-    Eigen::Vector3d acc_flu(0,0,-9.8);
-    Eigen::Vector3d gyro_flu(0,0,0);
-    sim->getIMUMeasurement(acc_flu, gyro_flu);
-    Eigen::Vector3d acc_frd = q_frd_flu * acc_flu;
-    Eigen::Vector3d gyro_frd = q_frd_flu * gyro_flu;
+    // 1. Fill acc and gyro in FRD frame
     sensor_msg.xacc = acc_frd[0];
     sensor_msg.yacc = acc_frd[1];
     sensor_msg.zacc = acc_frd[2];
     sensor_msg.xgyro = gyro_frd[0];
     sensor_msg.ygyro = gyro_frd[1];
     sensor_msg.zgyro = gyro_frd[2];
-    // TODO: bit 31: full reset of attitude/position/velocities/etc was performed in sim.
     sensor_msg.fields_updated = SENS_ACCEL | SENS_GYRO;
 
-    // Fill Magnetc field
-    double latitude_deg = 0;
-    double longitude_deg = 0;
-    double altitude_m = 0;
-    sim->enu2Geodetic(pos_enu.x(), pos_enu.y(), pos_enu.z(),
-                      &latitude_deg, &longitude_deg, &altitude_m);
-
-    double enu_x = 0, enu_y = 0, enu_z = 0;
-    geographiclib_conversions::MagneticField(latitude_deg, longitude_deg, altitude_m, enu_x, enu_y, enu_z);
-
-    Eigen::Vector3d mag_enu(enu_x, enu_y, enu_z);
-    Eigen::Vector3d mag_frd = q_frd_flu * q_enu_flu.inverse() * mag_enu;
-    sensor_msg.xmag = mag_frd[0] + mag_nois * standard_normal_distribution_(random_generator_);
-    sensor_msg.ymag = mag_frd[1] + mag_nois * standard_normal_distribution_(random_generator_);
-    sensor_msg.zmag = mag_frd[2] + mag_nois * standard_normal_distribution_(random_generator_);
+    // 2. Fill Magnetc field with noise
     if(last_mag_time_usec < 0)
         last_mag_time_usec = 0;
     if (time_usec - last_mag_time_usec > 1e6/10)
     {
+        Eigen::Vector3d mag_enu;
+        geographiclib_conversions::MagneticField(pose_geodetic.x(), pose_geodetic.y(), pose_geodetic.z(),
+                                                mag_enu.x(), mag_enu.y(), mag_enu.z());
+        static const auto q_frd_flu = Eigen::Quaterniond(0, 1, 0, 0);
+        Eigen::Vector3d mag_frd = q_frd_flu * q_enu_flu.inverse() * mag_enu;
+        sensor_msg.xmag = mag_frd[0] + mag_noise * standard_normal_distribution_(random_generator_);
+        sensor_msg.ymag = mag_frd[1] + mag_noise * standard_normal_distribution_(random_generator_);
+        sensor_msg.zmag = mag_frd[2] + mag_noise * standard_normal_distribution_(random_generator_);
         sensor_msg.fields_updated |= SENS_MAG;
         last_mag_time_usec = time_usec;
     }
 
-    // calculate abs_pressure using an ISA model for the tropsphere (valid up to 11km above MSL)
-    const float LAPSE_RATE = 0.0065f; // reduction in temperature with altitude (Kelvin/m)
-    const float TEMPERATURE_MSL = 288.0f; // temperature at MSL (Kelvin)
-    float alt_msl = ALT_HOME + pos_enu.z();
-
-    float temperature_local = TEMPERATURE_MSL - LAPSE_RATE * alt_msl;
-    float pressure_ratio = powf((TEMPERATURE_MSL/temperature_local), 5.256f);
-    const float PRESSURE_MSL = 101325.0f;
-    float absolute_pressure = PRESSURE_MSL / pressure_ratio;
-
-    // convert to hPa
-    absolute_pressure *= 0.01f;
-
-    // calculate density using an ISA model for the tropsphere (valid up to 11km above MSL)
-    const float density_ratio = powf((TEMPERATURE_MSL/temperature_local), 4.256f);
-    float rho = 1.225f / density_ratio;
-
-    // calculate pressure altitude including effect of pressure noise
-    double pressure_altitude = alt_msl;
-
-    // calculate temperature in Celsius
-    double temperature = temperature_local - 273.0f;
-
-    // diff pressure
-    Eigen::Vector3d vel_enu = sim->getVehicleVelocity();
-    Eigen::Vector3d vel_frd = q_frd_flu * q_enu_flu.inverse() * vel_enu;
-    // calculate differential pressure in hPa
-    // Note: ignoring tailsitter case here
-    double diff_pressure = 0.005f * rho * vel_frd.norm() * vel_frd.norm();// + diff_pressure_noise;
-
-    sensor_msg.temperature = temperature + temp_nois * standard_normal_distribution_(random_generator_);
-    sensor_msg.abs_pressure = absolute_pressure + abs_pressure_nois * standard_normal_distribution_(random_generator_);
-    sensor_msg.pressure_alt = pressure_altitude + baro_alt_nois * standard_normal_distribution_(random_generator_);
-    sensor_msg.diff_pressure = diff_pressure + diff_pressure_nois * standard_normal_distribution_(random_generator_) ;
-
+    // 3. Fill Barometr and diff pressure
     if(last_baro_time_usec < 0)
         last_baro_time_usec = 0;
     if (time_usec - last_baro_time_usec > 1e6/10)
     {
+        // 3.1. abs_pressure using an ISA model for the tropsphere (valid up to 11km above MSL)
+        const float LAPSE_RATE = 0.0065f; // reduction in temperature with altitude (Kelvin/m)
+        const float TEMPERATURE_MSL = 288.0f; // temperature at MSL (Kelvin)
+        float alt_msl = pose_geodetic.z();
+        float temperature_local = TEMPERATURE_MSL - LAPSE_RATE * alt_msl;
+        float pressure_ratio = powf((TEMPERATURE_MSL/temperature_local), 5.256f);
+        const float PRESSURE_MSL = 101325.0f;
+        float absolute_pressure = PRESSURE_MSL / pressure_ratio;
+        absolute_pressure *= 0.01f; // convert to hPa
+        sensor_msg.abs_pressure = absolute_pressure + abs_pressure_noise * standard_normal_distribution_(random_generator_);
+
+        // 3.2. density using an ISA model for the tropsphere (valid up to 11km above MSL)
+        const float density_ratio = powf((TEMPERATURE_MSL/temperature_local), 4.256f);
+        float rho = 1.225f / density_ratio;
+
+        // 3.3. pressure altitude including effect of pressure noise
+        double pressure_altitude = pose_geodetic.z();
+        sensor_msg.pressure_alt = pressure_altitude + baro_alt_noise * standard_normal_distribution_(random_generator_);
+
+        // 3.4. temperature in Celsius
+        double temperature = temperature_local - 273.0f;
+        sensor_msg.temperature = temperature + temp_noise * standard_normal_distribution_(random_generator_);
+
+        // 3.5. diff pressure in hPa (Note: ignoring tailsitter case here)
+        double diff_pressure = 0.005f * rho * vel_frd.norm() * vel_frd.norm();
+        sensor_msg.diff_pressure = diff_pressure + diff_pressure_noise * standard_normal_distribution_(random_generator_) ;
+
         sensor_msg.fields_updated |= SENS_BARO | SENS_DIFF_PRESS;
         last_baro_time_usec = time_usec;
     }
@@ -285,34 +268,22 @@ int PX4Communicator::SendHilSensor(unsigned int time_usec)
     return 0;
 }
 
-int PX4Communicator::SendHilGps(unsigned int time_usec){
-    Eigen::Vector3d vel_enu = sim->getVehicleVelocity();
-    Eigen::Vector3d vel_ned = q_ned_enu * vel_enu;
-    double speed_north_mps = vel_ned.x();
-    double speed_east_mps = vel_ned.y();
-    double speed_down_mps = vel_ned.z();
 
-    Eigen::Vector3d pos_enu = sim->getVehiclePosition();
-    double latitude_deg = 0;
-    double longitude_deg = 0;
-    double altitude_m = 0;
-    double east = pos_enu.x();
-    double north = pos_enu.y();
-    double up = pos_enu.z();
-    sim->enu2Geodetic(east, north, up,
-                      &latitude_deg, &longitude_deg, &altitude_m);
-
+int PX4Communicator::SendHilGps(unsigned int time_usec,
+                                Eigen::Vector3d vel_ned,
+                                Eigen::Vector3d pose_geodetic){
+    // Fill gps msg
     mavlink_hil_gps_t hil_gps_msg;
-    hil_gps_msg.time_usec = time_usec;// fgData.elapsed_sec * 1e6;
+    hil_gps_msg.time_usec = time_usec;
     hil_gps_msg.fix_type = 3;
-    hil_gps_msg.lat = latitude_deg * 1e7;
-    hil_gps_msg.lon = longitude_deg * 1e7;
-    hil_gps_msg.alt = altitude_m * 1000;
+    hil_gps_msg.lat = pose_geodetic.x() * 1e7;
+    hil_gps_msg.lon = pose_geodetic.y() * 1e7;
+    hil_gps_msg.alt = pose_geodetic.z() * 1000;
     hil_gps_msg.eph = 100;
     hil_gps_msg.epv = 100;
-    hil_gps_msg.vn = speed_north_mps * 100;
-    hil_gps_msg.ve = speed_east_mps * 100;
-    hil_gps_msg.vd = speed_down_mps * 100;
+    hil_gps_msg.vn = vel_ned.x() * 100;
+    hil_gps_msg.ve = vel_ned.y() * 100;
+    hil_gps_msg.vd = vel_ned.z() * 100;
     hil_gps_msg.vel = std::sqrt(hil_gps_msg.vn * hil_gps_msg.vn + hil_gps_msg.ve * hil_gps_msg.ve);
 
     // Course over ground

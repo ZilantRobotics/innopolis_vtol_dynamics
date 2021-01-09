@@ -11,7 +11,7 @@
 #include "vtolDynamicsSim.hpp"
 #include <ros/package.h>
 #include <array>
-#include "cs_converted.hpp"
+#include "cs_converter.hpp"
 
 #define STORE_SIM_PARAMETERS    true
 #define FORCES_LOG              false
