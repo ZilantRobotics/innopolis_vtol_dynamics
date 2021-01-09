@@ -42,25 +42,21 @@ struct VtolParameters{
 
 struct State{
     /**
-     * @note Inertial frame of reference (CS - coordinate system)
+     * @note Inertial frame (NED)
      */
     Eigen::Vector3d initialPose;                    // meters
-    Eigen::Quaterniond initialAttitude;             // quaternion
-
     Eigen::Vector3d position;                       // meters
     Eigen::Vector3d linearVel;                      // m/sec
     Eigen::Vector3d linearAccel;                    // m/sec^2
 
+    /**
+     * @note Body frame (FRD)
+     */
+    Eigen::Quaterniond initialAttitude;             // quaternion
     Eigen::Quaterniond attitude;                    // quaternion
     Eigen::Vector3d angularVel;                     // rad/sec
     Eigen::Vector3d angularAccel;                   // rad/sec^2
 
-    Eigen::Vector3d windVelocity;                   // m/sec^2
-    Eigen::Vector3d gustVelocity;                   // m/sec^2
-
-    /**
-     * @note Body frame
-     */
     Eigen::Vector3d Flift;                          // N
     Eigen::Vector3d Fdrug;                          // N
     Eigen::Vector3d Fside;                          // N
@@ -86,6 +82,8 @@ struct State{
     /**
      * @note not ready yet
      */
+    Eigen::Vector3d windVelocity;                   // m/sec^2
+    Eigen::Vector3d gustVelocity;                   // m/sec^2
     double gustVariance;
     std::vector<double> prevActuators;              // rad/sec
     std::vector<double> crntActuators;              // rad/sec

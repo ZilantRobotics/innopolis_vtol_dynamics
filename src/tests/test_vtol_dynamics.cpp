@@ -384,22 +384,9 @@ void calculateNewState(double dt,
     vtolDynamicsSim.setInitialVelocity(initialLinearVelocity, initialAngularVelocity);
     vtolDynamicsSim.setInitialPosition(initialPosition, initialAttitude);
 
-    #define USE_NED_FRD true
-    #if USE_NED_FRD == false
-    Faero[2] *= -1;
-    Maero[0] *= -1;
-    Maero[1] *= -1;
-    #endif
-
     vtolDynamicsSim.calculateNewState(Maero, Faero, actuators, dt);
     angularAcceleration = vtolDynamicsSim.getAngularAcceleration();
     linearAcceleration = vtolDynamicsSim.getLinearAcceleration();
-
-    #if USE_NED_FRD == false
-    linearAcceleration[2] *= -1;
-    angularAcceleration[0] *= -1;
-    angularAcceleration[1] *= -1;
-    #endif
 }
 
 TEST(InnoVtolDynamicsSim, calculateNewStateFirstCaseOnlyAttitude){
