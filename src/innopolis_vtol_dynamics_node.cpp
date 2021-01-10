@@ -139,7 +139,7 @@ int8_t Uav_Dynamics::init(){
     }
 
     bool is_copter_airframe = (airframeType_ == STANDARD_VTOL) ? false : true;
-    px4 = new PX4Communicator(altRef_);
+    px4 = new MavlinkCommunicator(altRef_);
     int px4id = 0;
     if(px4->Init(px4id, is_copter_airframe) != 0) {
         std::cerr << "Unable to Init PX4 Communication" << std::endl;

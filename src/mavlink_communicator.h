@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /**
- * @file px4_communicator.h
+ * @file mavlink_communicator.h
  *
  * @author Roman Fedorenko <frontwise@gmail.com>
  * @author ThunderFly s.r.o., Vít Hanousek <info@thunderfly.cz>
@@ -44,35 +44,17 @@
 #ifndef PX4_COMMUNICATOR_H
 #define PX4_COMMUNICATOR_H
 
-
-#include <stdio.h>
-#include <mavlink/v2.0/common/mavlink.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <poll.h>
-#include <errno.h>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <random>
-
-#include "../libs/multicopterDynamicsSim/multicopterDynamicsSim.hpp"
-#include "uavDynamicsSimBase.hpp"
-
-#define TIMEOUTS 5
-#define TIMEOUTUS 0
+#include <geographiclib_conversions/geodetic_conv.hpp>
 
 
-class PX4Communicator
+class MavlinkCommunicator
 {
 public:
-    PX4Communicator(float lat_home);
+    MavlinkCommunicator(float lat_home);
 
     /**
      * @brief Init connection with PX4 using TCP
@@ -135,9 +117,11 @@ private:
     double abs_pressure_noise;
     double diff_pressure_noise;
 
-    unsigned int last_gps_time_usec;
     unsigned int last_mag_time_usec;
     unsigned int last_baro_time_usec;
+
+    static constexpr uint64_t mag_period_usec = 1e6 / 10;
+    static constexpr uint64_t baro_period_usec = 1e6 / 10;
 
     float ALT_HOME;
     bool is_copter_airframe_;

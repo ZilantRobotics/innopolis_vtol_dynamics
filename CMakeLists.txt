@@ -158,7 +158,7 @@ add_library(${PROJECT_NAME} src/vtolDynamicsSim.cpp
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/innopolis_vtol_dynamics_node.cpp src/px4_communicator.cpp)
+add_executable(${PROJECT_NAME}_node src/innopolis_vtol_dynamics_node.cpp src/mavlink_communicator.cpp)
 
 target_include_directories(${PROJECT_NAME}_node 
                 BEFORE

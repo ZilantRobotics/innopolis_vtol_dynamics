@@ -29,7 +29,7 @@
 #include <std_msgs/Empty.h>
 #include <rosgraph_msgs/Clock.h>
 
-#include "px4_communicator.h"
+#include "mavlink_communicator.h"
 #include "uavDynamicsSimBase.hpp"
 #include "flightgogglesDynamicsSim.hpp"
 
@@ -150,7 +150,7 @@ class Uav_Dynamics {
            motor 1 in the positive quadrant of the X-Y plane (i.e. front left). */
 
         UavDynamicsSimBase* uavDynamicsSim_;
-        PX4Communicator *px4;
+        MavlinkCommunicator *px4;
         //@}
 
         /// @name IMU measurements and variances
