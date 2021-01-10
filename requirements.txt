@@ -5,3 +5,18 @@ pymongo
 protobuf
 Pillow
 twisted
+
+# pyuavcan v1.0
+# pyuavcan[transport_can_pythoncan,transport_serial,cli]
+# pyserial
+
+# pyuavcan v0.1
+pyserial
+uavcan
+
+# common - colored logs
+coloredlogs
+
+# may be
+# lxml
+# future
