@@ -1,19 +1,28 @@
 # 1. Simulator parameters
+
+# use_sim_time means that dynamics node is working in clock server mode or not
+# http://wiki.ros.org/Clock#Running_a_Clock_Server
 use_sim_time: true
-use_rungekutta4integrator : false
-ignore_collisions: false
-use_ratethrust_controller: false
+
+# We use dynamics sim in real time only, so this parametr should always be 1.0
 clockscale: 1.0
 
+# This parameter is not ready yet
+ignore_collisions: false
+
+
 # 2. Drone position and initial state:
-# inno:
+
+# Home geodetic position.
+# Innopolis example: 55.7544426, 48.742684, -6.5
+# Gazebo eaxmple: 47.3977420, 8.5455940, 488.157
 lat_ref : 55.7544426
 lon_ref : 48.742684
 alt_ref : -6.5
-# or as in gazebo:
-# lat_ref : 47.3977420
-# lon_ref : 8.5455940
-# alt_ref : 488.157
+
+# Initial local position
 init_pose: [0.00, 0.00, 0.0,
             0.00, 0.00, +0.00, +1.00]   # roll, pitch, yaw, weight
-dynamics_type: "inno_vtol"              # doc=[inno_vtol, flightgoggles_multicopter]
+
+# Dynamics type: doc=[inno_vtol, flightgoggles_multicopter]
+dynamics_type: "inno_vtol"

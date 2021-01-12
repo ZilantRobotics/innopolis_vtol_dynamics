@@ -144,6 +144,11 @@ int MavlinkCommunicator::Clean(){
     return 0;
 }
 
+/**
+ * @return result
+ * -1 means error,
+ * 0 means ok
+ */
 int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
                                    Eigen::Vector3d pose_geodetic,
                                    Eigen::Quaterniond q_enu_flu,
@@ -169,7 +174,7 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
         geographiclib_conversions::MagneticField(pose_geodetic.x(), pose_geodetic.y(), pose_geodetic.z(),
                                                 mag_enu.x(), mag_enu.y(), mag_enu.z());
         static const auto q_frd_flu = Eigen::Quaterniond(0, 1, 0, 0);
-        Eigen::Vector3d mag_frd = q_frd_flu * q_enu_flu.inverse() * mag_enu;
+        Eigen::Vector3d mag_frd = q_frd_flu * q_enu_flu * mag_enu;
         sensor_msg.xmag = mag_frd[0] + mag_noise * standard_normal_distribution_(random_generator_);
         sensor_msg.ymag = mag_frd[1] + mag_noise * standard_normal_distribution_(random_generator_);
         sensor_msg.zmag = mag_frd[2] + mag_noise * standard_normal_distribution_(random_generator_);
@@ -218,15 +223,16 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
 
     if(send(px4MavlinkSock, buffer, packetlen, 0) != packetlen){
         return -1;
-    }else{
-        ROS_INFO_STREAM_THROTTLE(2, "PX4 Communicator: Send \033[1;31m hil_sensor \033[0m" <<
-            sensor_msg.temperature  << ", " << sensor_msg.abs_pressure  << ", " <<
-            sensor_msg.pressure_alt << ", " << sensor_msg.diff_pressure << ".");
     }
     return 0;
 }
 
 
+/**
+ * @return result
+ * -1 means error,
+ * 0 means ok
+ */
 int MavlinkCommunicator::SendHilGps(unsigned int time_usec,
                                 Eigen::Vector3d vel_ned,
                                 Eigen::Vector3d pose_geodetic){
@@ -259,15 +265,16 @@ int MavlinkCommunicator::SendHilGps(unsigned int time_usec,
     int packetlen = mavlink_msg_to_send_buffer(buffer, &msg);
     if(send(px4MavlinkSock, buffer, packetlen, 0) != packetlen){
         return -1;
-    }else{
-        ROS_INFO_STREAM_THROTTLE(2, "PX4 Communicator: Send \033[1;33m hil_gps \033[0m" << " [" <<
-                                 hil_gps_msg.lat << ", " <<
-                                 hil_gps_msg.lon << ", " <<
-                                 hil_gps_msg.alt << "].");
     }
     return 0;
 }
 
+/**
+ * @return status
+ * -1 means error,
+ * 0 means there is no actuator command
+ * 1 means there is actuator command
+ */
 int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>& command){
     mavlink_message_t msg;
     uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
@@ -278,9 +285,10 @@ int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>
 
     int p = poll(&fds[0], 1, (blocking?-1:2));
     if(p < 0){
-        std::cerr << "PX4 Communicator: PX4 Pool error\n" << std::endl;
+        ROS_ERROR("PX4 Communicator: PX4 Pool error :(");
+        return -1;
     }else if(p == 0){
-        // std::cerr << "PX4 Communicator:No PX data" << std::endl;
+        return 0;
     }else if(fds[0].revents & POLLIN){
         unsigned int slen = sizeof(px4_mavlink_addr);
         unsigned int len = recvfrom(px4MavlinkSock,
@@ -297,7 +305,7 @@ int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>
                     mavlink_msg_hil_actuator_controls_decode(&msg, &controls);
 
                     if(command.size() < 4){
-                        std::cerr << "command.size() < 4" << std::endl;
+                        ROS_ERROR("PX4 Communicator: command.size() < 4");
                         return -1;
                     }
 
@@ -313,22 +321,17 @@ int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>
                             command[6] = controls.controls[6];
                             command[7] = controls.controls[7];
                         }
-
-                        ROS_WARN_STREAM_THROTTLE(0.2, "Recv \033[1;29m control->cmd \033[0m [" <<
-                                "mc: "      << command[0] << ", " << command[1] << ", " <<
-                                               command[2] << ", " << command[3] << ", " <<
-                                "fw rpy: (" << command[4] << ", " <<
-                                               command[5] << ", " <<
-                                               command[6] << "), " <<
-                                "throttle " << command[7] << "].");
                     }
+                    return 1;
                 }else if (msg.msgid == MAVLINK_MSG_ID_ESTIMATOR_STATUS){
-                    ROS_INFO_STREAM_THROTTLE(2, "MAVLINK_MSG_ID_ESTIMATOR_STATUS");
+                    ROS_ERROR_STREAM_THROTTLE(2, "MAVLINK_MSG_ID_ESTIMATOR_STATUS");
+                }else{
+                    ROS_WARN_STREAM("PX4 Communicator: unknown msg with msgid = " << msg.msgid);
                 }
-                return 1;
             }
         }
+        ROS_WARN("PX4 Communicator: No cmd");
+        return 0;
     }
-
-    return 0;
+    return -1;
 }

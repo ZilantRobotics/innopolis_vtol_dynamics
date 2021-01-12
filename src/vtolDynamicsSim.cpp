@@ -15,7 +15,8 @@
 
 #define STORE_SIM_PARAMETERS    true
 #define FORCES_LOG              false
-#define MOMENTS_LOG             true
+#define MOMENTS_LOG             false
+#define AERODYNAMICS_LOG        false
 
 InnoVtolDynamicsSim::InnoVtolDynamicsSim(): distribution_(0.0, 1.0){
     state_.angularVel.setZero();
@@ -30,7 +31,6 @@ int8_t InnoVtolDynamicsSim::init(){
     std::string configPath = ros::package::getPath("innopolis_vtol_dynamics") + "/config/";
     loadTables(configPath + "aerodynamics_coeffs.yaml");
     loadParams(configPath + "vtol_params.yaml");
-    state_.Ftotal = Eigen::Vector3d(0, 0, params_.gravity * params_.mass);
     return 0;
 }
 
@@ -388,7 +388,6 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     state_.Mairspeed << Cmx, Cmy, Cmz;
     state_.Mairspeed *= 0.5 * dynamicPressure * params_.characteristicLength;
 
-    #define AERODYNAMICS_LOG false
     #if AERODYNAMICS_LOG == true
     if(abs(Faero[0]) > 20 || abs(Faero[1]) > 20 || abs(Faero[2]) > 20){
         std::cout << "in: AoA_deg=" << AoA_deg << std::endl;
