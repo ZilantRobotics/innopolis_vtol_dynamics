@@ -151,7 +151,7 @@ int MavlinkCommunicator::Clean(){
  */
 int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
                                    Eigen::Vector3d pose_geodetic,
-                                   Eigen::Quaterniond q_enu_flu,
+                                   Eigen::Quaterniond q_flu_to_enu,
                                    Eigen::Vector3d vel_frd,
                                    Eigen::Vector3d acc_frd,
                                    Eigen::Vector3d gyro_frd){
@@ -173,8 +173,10 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
         Eigen::Vector3d mag_enu;
         geographiclib_conversions::MagneticField(pose_geodetic.x(), pose_geodetic.y(), pose_geodetic.z(),
                                                 mag_enu.x(), mag_enu.y(), mag_enu.z());
-        static const auto q_frd_flu = Eigen::Quaterniond(0, 1, 0, 0);
-        Eigen::Vector3d mag_frd = q_frd_flu * q_enu_flu * mag_enu;
+        static const auto q_flu_to_frd = Eigen::Quaterniond(0, 1, 0, 0);
+
+        Eigen::Vector3d mag_frd = q_flu_to_frd * (q_flu_to_enu.inverse() * mag_enu);
+
         sensor_msg.xmag = mag_frd[0] + mag_noise * standard_normal_distribution_(random_generator_);
         sensor_msg.ymag = mag_frd[1] + mag_noise * standard_normal_distribution_(random_generator_);
         sensor_msg.zmag = mag_frd[2] + mag_noise * standard_normal_distribution_(random_generator_);

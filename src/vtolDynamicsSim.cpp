@@ -674,16 +674,22 @@ double InnoVtolDynamicsSim::polyval(const Eigen::VectorXd& poly, double val) con
 }
 
 /**
- * @note These methods should return in ENU and FLU format
+ * @note These methods should return in ENU format
  */
 Eigen::Vector3d InnoVtolDynamicsSim::getVehiclePosition() const{
     return Converter::nedToEnu(state_.position);
 }
-Eigen::Quaterniond InnoVtolDynamicsSim::getVehicleAttitude() const{
-    return Converter::frdToFlu(state_.attitude);
-}
 Eigen::Vector3d InnoVtolDynamicsSim::getVehicleVelocity() const{
     return Converter::nedToEnu(state_.linearVel);
+}
+
+/**
+ * @note These methods should return in FLU format
+ */
+Eigen::Quaterniond InnoVtolDynamicsSim::getVehicleAttitude() const{
+    auto q_frd_to_ned = state_.attitude;
+    auto q_flu_to_enu = Converter::frdNedTofluEnu(q_frd_to_ned);
+    return q_flu_to_enu;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getVehicleAngularVelocity() const{
     return state_.angularVel;
@@ -706,8 +712,8 @@ void InnoVtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOutFlu, Eigen::V
                              sqrt(params_.gyroVariance) * distribution_(generator_),
                              sqrt(params_.gyroVariance) * distribution_(generator_));
     Eigen::Quaterniond imuOrient(1, 0, 0, 0);
-    angularVelocity = Converter::fluToFrd(angularVelocity);
-    specificForce = Converter::fluToFrd(specificForce);
+    angularVelocity = Converter::frdToFlu(angularVelocity);
+    specificForce = Converter::frdToFlu(specificForce);
     accOutFlu = imuOrient.inverse() * specificForce + state_.accelBias + accNoise;
     gyroOutFlu = imuOrient.inverse() * angularVelocity + state_.gyroBias + gyroNoise;
 }
