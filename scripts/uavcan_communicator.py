@@ -7,6 +7,7 @@ Example of connection for version 0: https://legacy.uavcan.org/Implementations/P
 # Common
 import logging
 import sys
+from random import uniform
 
 # ROS
 import rospy
@@ -30,17 +31,15 @@ class UavcanCommunicatorV0:
         Simply create a node without starting it.
         param can_device_type - could be 'serial' or 'can-slcan'
         """
-        self.node_id = node_id
-        self.node_name = node_name
         self.handlers = []
 
         if can_device_type == 'serial':
-            self.kawrgs = {
+            kawrgs = {
                 "can_device_name" : "/dev/ttyACM0",
                 "baudrate" : 1000000,
             }
         elif can_device_type == 'can-slcan':
-            self.kawrgs = {
+            kawrgs = {
                 "can_device_name" : "slcan0",
                 "bustype" : "socketcan",
                 "bitrate" : 1000000,
@@ -49,7 +48,7 @@ class UavcanCommunicatorV0:
             rospy.logerr("UavcanCommunicatorV0: Wrong can device type")
             sys.exit()
 
-        self.node = self._create_node()
+        self.node = self._create_node(node_id, node_name, kawrgs)
 
     def subscribe(self, data_type, callback):
         """
@@ -93,16 +92,16 @@ class UavcanCommunicatorV0:
         else:
             rospy.logerr_throttle(5, "uavcan: can't spin.")
 
-    def _create_node(self):
+    def _create_node(self, node_id, node_name, kawrgs):
         node_info = uavcan.protocol.GetNodeInfo.Response()
-        node_info.name = self.node_name
+        node_info.name = node_name
         node_info.software_version.major = 0
         node_info.software_version.minor = 2
         node_info.hardware_version.unique_id = b'12345'
         try:
-            node = uavcan.make_node(node_id=self.node_id,
+            node = uavcan.make_node(node_id=node_id,
                                     node_info=node_info,
-                                    **self.kawrgs)
+                                    **kawrgs)
         except OSError as e:
             logging.warning(e)
             rospy.logerr(e)
@@ -124,11 +123,14 @@ class SubscriberManager:
             rospy.Subscriber(in_topic, in_data_type, callback)
         elif protocol_type == 'uavcan':
             self.communicator.subscribe(in_data_type, callback)
+        self.in_msgs[in_topic] = None
+        self.msg_timestamps[in_topic] = rospy.get_time()
 
     def _callback_save_msg(self, event, in_topic):
+        # print(event)
         self.in_msgs[in_topic] = event
         self.msg_timestamps[in_topic] = rospy.get_time()
-        rospy.loginfo_throttle(3, self.in_msgs[in_topic].transfer.payload)
+        # rospy.loginfo_throttle(3, self.in_msgs[in_topic].transfer.payload)
 
 
 class Publisher:
@@ -139,8 +141,13 @@ class Publisher:
     def __init__(self, subscriber_manager):
         self.in_msgs = subscriber_manager.in_msgs
         self.timestamp = rospy.get_time()
+        self.msg_timestamps = subscriber_manager.msg_timestamps
 
     def publish(self):
+        """ Publish if:
+        - timestamp of last received data is less than period + crnt_time
+        - timestamp of last sended data is bigger than period + crnt_time
+        """
         pass
 
     def fill_msg(self):
@@ -150,7 +157,7 @@ class Publisher:
 class IMU(Publisher):
     def __init__(self, subscriber_manager):
         super().__init__(subscriber_manager)
-        self.period = 0.1
+        self.period = 0.005
         self.communicator = subscriber_manager.communicator
 
     def publish(self):
@@ -162,8 +169,8 @@ class IMU(Publisher):
                 self.communicator.publish(msg)
 
     def fill_msg(self):
-        msg = uavcan.equipment.ahrs.RawIMU(rate_gyro_latest=[0.42, 0.27, 0.13],
-                                            accelerometer_latest=[0.42, 0.27, 27.13])
+        msg = uavcan.equipment.ahrs.RawIMU(rate_gyro_latest=[0.00, 0.00, 0.01],
+                                            accelerometer_latest=[0.00, 0.00, -9.81])
         return msg
 
 
@@ -175,19 +182,28 @@ class GPS(Publisher):
 
     def publish(self):
         crnt_time = rospy.get_time()
-        if self.timestamp + self.period < crnt_time:
+
+        last_mgs_timestamp = self.msg_timestamps['/sim/gps_position']
+
+        if last_mgs_timestamp > crnt_time - self.period and self.timestamp < crnt_time - self.period:
             self.timestamp = crnt_time
             msg = self.fill_msg()
             if msg is not None:
                 self.communicator.publish(msg)
 
     def fill_msg(self):
-        msg = uavcan.equipment.gnss.Fix(longitude_deg_1e8=4874268390,
-                                        latitude_deg_1e8=5575444250,
-                                        height_msl_mm=-6500,
-                                        sats_used=10,
-                                        status=3,
-                                        pdop=99)
+        if self.in_msgs['/sim/gps_position'] is None:
+            msg = None
+        else:
+            geodetioc_pose = [int(self.in_msgs['/sim/gps_position'].latitude),
+                              int(self.in_msgs['/sim/gps_position'].longitude),
+                              int(self.in_msgs['/sim/gps_position'].altitude)]
+            msg = uavcan.equipment.gnss.Fix(longitude_deg_1e8=geodetioc_pose[0],
+                                            latitude_deg_1e8=geodetioc_pose[1],
+                                            height_msl_mm=geodetioc_pose[2],
+                                            sats_used=10,
+                                            status=3,
+                                            pdop=99)
         return msg
 
 
@@ -228,11 +244,19 @@ class Baro(Publisher):
                 self.communicator.publish(msg)
 
     def fill_msg(self):
-        temperature = uavcan.equipment.air_data.StaticTemperature(static_temperature=42,
-                                                                  static_temperature_variance=42)
-        pressure = uavcan.equipment.air_data.StaticPressure(static_pressure=27,
-                                                            static_pressure_variance=42)
-        return [temperature, pressure]
+        temperature = 42.42+273
+        temperature_noise = uniform(0, 1)
+
+        pressure = 98600
+        pressure_noise = uniform(0, 2)
+
+        temperature_msg = uavcan.equipment.air_data.StaticTemperature(
+            static_temperature=temperature+temperature_noise,
+            static_temperature_variance=1)
+        pressure_msg = uavcan.equipment.air_data.StaticPressure(
+            static_pressure=pressure+pressure_noise,
+            static_pressure_variance=1)
+        return [temperature_msg, pressure_msg]
 
 class Magnetometr(Publisher):
     def __init__(self, subscriber_manager):
@@ -242,14 +266,31 @@ class Magnetometr(Publisher):
 
     def publish(self):
         crnt_time = rospy.get_time()
-        if self.timestamp + self.period < crnt_time:
+
+        attitude_timestamp = self.msg_timestamps['/sim/attitude']
+        gps_position_timestamp = self.msg_timestamps['/sim/gps_position']
+        last_mgs_timestamp = min(attitude_timestamp, gps_position_timestamp)
+
+        if last_mgs_timestamp > crnt_time - self.period and self.timestamp < crnt_time - self.period:
             self.timestamp = crnt_time
             msg = self.fill_msg()
             if msg is not None:
                 self.communicator.publish(msg)
+                print(msg)
 
     def fill_msg(self):
-        msg = uavcan.equipment.ahrs.MagneticFieldStrength()
+        if self.in_msgs['/sim/attitude'] is None or self.in_msgs['/sim/gps_position'] is None:
+            msg = None
+        else:
+            attitude = self.in_msgs['/sim/attitude'].quaternion
+            geodetioc_pose = [self.in_msgs['/sim/gps_position'].latitude,
+                              self.in_msgs['/sim/gps_position'].longitude,
+                              self.in_msgs['/sim/gps_position'].altitude]
+            # magnetic_field_ga = [+1.60e-05, -0.38e-05, -5.17e-05]
+            magnetic_field_ga = [+1.60e-05, -0.38e-05, -5.17e-05]
+            magnetic_field_ga = [-0.0720, +0.1050, 0.3480]
+
+            msg = uavcan.equipment.ahrs.MagneticFieldStrength(magnetic_field_ga=magnetic_field_ga)
         return msg
 
 class DiffPressure(Publisher):
@@ -267,8 +308,15 @@ class DiffPressure(Publisher):
                 self.communicator.publish(msg)
 
     def fill_msg(self):
-        msg = uavcan.equipment.air_data.RawAirData(static_pressure=42,
-                                                    differential_pressure=27)
+        static_pressure = 98600
+        static_pressure_noise = uniform(0, 1)
+
+        differential_pressure = 0
+        differential_pressure_noise = uniform(0, 1)
+
+        msg = uavcan.equipment.air_data.RawAirData(
+            static_pressure=static_pressure+static_pressure_noise,
+            differential_pressure=differential_pressure+differential_pressure_noise)
         return msg
 
 
