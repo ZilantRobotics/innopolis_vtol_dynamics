@@ -20,6 +20,7 @@ from sensor_msgs.msg import Joy
 # For uavcan v0.1
 # import serial
 import uavcan
+import can
 
 class UavcanCommunicatorV0:
     """
@@ -32,23 +33,31 @@ class UavcanCommunicatorV0:
         param can_device_type - could be 'serial' or 'can-slcan'
         """
         self.handlers = []
+        self.node = None
 
         if can_device_type == 'serial':
-            kawrgs = {
-                "can_device_name" : "/dev/ttyACM0",
-                "baudrate" : 1000000,
-            }
+            kawrgs = {"can_device_name" : "/dev/ttyACM0",
+                      "baudrate" : 1000000}
         elif can_device_type == 'can-slcan':
-            kawrgs = {
-                "can_device_name" : "slcan0",
-                "bustype" : "socketcan",
-                "bitrate" : 1000000,
-            }
+            kawrgs = {"can_device_name" : "slcan0",
+                      "bustype" : "socketcan",
+                      "bitrate" : 1000000}
         else:
             rospy.logerr("UavcanCommunicatorV0: Wrong can device type")
             sys.exit()
 
-        self.node = self._create_node(node_id, node_name, kawrgs)
+        node_info = uavcan.protocol.GetNodeInfo.Response()
+        node_info.name = node_name
+        node_info.software_version.major = 0
+        node_info.software_version.minor = 2
+        node_info.hardware_version.unique_id = b'12345'
+
+        self.node = uavcan.make_node(node_id=node_id, node_info=node_info, **kawrgs)
+
+    def __del__(self):
+        if self.node is not None:
+            self.node.close()
+
 
     def subscribe(self, data_type, callback):
         """
@@ -58,55 +67,36 @@ class UavcanCommunicatorV0:
         Example:
         data_type = uavcan.protocol.NodeStatus
         callback = lambda event: print(uavcan.to_yaml(event))
-        communicator.subscribe(uavcan.protocol.NodeStatus, callback)
+        communicator.subscribe(data_type, callback)
         """
-        if self.node is None:
-            rospy.logerr("UavcanCommunicatorV0: can't subscribe.")
-        else:
-            self.handlers.append(self.node.add_handler(data_type, callback))
+        self.handlers.append(self.node.add_handler(data_type, callback))
 
     def publish(self, data_type, priority=uavcan.TRANSFER_PRIORITY_LOWEST):
         """
         param data_type - https://legacy.uavcan.org/Specification/7._List_of_standard_data_types/
-        using constructor with corresponding positional arguments
 
-        Example with gps:
+        Example:
         fix2 = uavcan.equipment.gnss.Fix2(pdop=10)
         communicator.publish(fix2)
         """
-        if self.node is not None:
+        try:
             self.node.broadcast(data_type, priority=priority)
-        else:
-            rospy.logerr_throttle(5, "uavcan: can't publish.")
+        except can.CanError as e:
+            rospy.logerr(e)
+        except uavcan.driver.common.TxQueueFullError as e:
+            rospy.logerr(e)
 
     def spin(self):
         """
         Note: cycle instead of thread because v0.1 is not thread-safe
         It can't be threading.Thread(target=self.node.spin, daemon=True).start()
         """
-        if self.node is not None:
-            try:
-                self.node.spin(0.0001)
-            except uavcan.transport.TransferError as e:
-                print('spin Transferuavcan.transport.TransferErrorError')
-        else:
-            rospy.logerr_throttle(5, "uavcan: can't spin.")
-
-    def _create_node(self, node_id, node_name, kawrgs):
-        node_info = uavcan.protocol.GetNodeInfo.Response()
-        node_info.name = node_name
-        node_info.software_version.major = 0
-        node_info.software_version.minor = 2
-        node_info.hardware_version.unique_id = b'12345'
         try:
-            node = uavcan.make_node(node_id=node_id,
-                                    node_info=node_info,
-                                    **kawrgs)
-        except OSError as e:
-            logging.warning(e)
-            rospy.logerr(e)
-            node = None
-        return node
+            self.node.spin(0.00005)
+        except uavcan.transport.TransferError as e:
+            rospy.logerr('spin %s', e)
+        except can.CanError as e:
+            rospy.logerr('spin %s', e)
 
 
 class SubscriberManager:
@@ -127,7 +117,6 @@ class SubscriberManager:
         self.msg_timestamps[in_topic] = rospy.get_time()
 
     def _callback_save_msg(self, event, in_topic):
-        # print(event)
         self.in_msgs[in_topic] = event
         self.msg_timestamps[in_topic] = rospy.get_time()
         # rospy.loginfo_throttle(3, self.in_msgs[in_topic].transfer.payload)
@@ -159,6 +148,7 @@ class IMU(Publisher):
         super().__init__(subscriber_manager)
         self.period = 0.005
         self.communicator = subscriber_manager.communicator
+        self.number_of_published_msg = 0
 
     def publish(self):
         crnt_time = rospy.get_time()
@@ -166,11 +156,19 @@ class IMU(Publisher):
             self.timestamp = crnt_time
             msg = self.fill_msg()
             if msg is not None:
+                self.number_of_published_msg += 1
                 self.communicator.publish(msg)
 
     def fill_msg(self):
-        msg = uavcan.equipment.ahrs.RawIMU(rate_gyro_latest=[0.00, 0.00, 0.01],
-                                            accelerometer_latest=[0.00, 0.00, -9.81])
+        gyro = [0.00, 0.00, 0.1]
+        gyro_noise = [uniform(-0.0001, 0.0001), uniform(-0.0001, 0.0001), uniform(-0.0001, 0.0001)]
+
+        accel = [0.00, 0.00, -19.81]
+        accel_noise = [uniform(-0.01, 0.01), uniform(-0.01, 0.01), uniform(-0.01, 0.01)]
+
+        msg = uavcan.equipment.ahrs.RawIMU(
+            rate_gyro_latest=[sum(i) for i in zip(gyro, gyro_noise)],
+            accelerometer_latest=[sum(i) for i in zip(accel, accel_noise)])
         return msg
 
 
@@ -276,7 +274,6 @@ class Magnetometr(Publisher):
             msg = self.fill_msg()
             if msg is not None:
                 self.communicator.publish(msg)
-                print(msg)
 
     def fill_msg(self):
         if self.in_msgs['/sim/attitude'] is None or self.in_msgs['/sim/gps_position'] is None:
@@ -286,11 +283,12 @@ class Magnetometr(Publisher):
             geodetioc_pose = [self.in_msgs['/sim/gps_position'].latitude,
                               self.in_msgs['/sim/gps_position'].longitude,
                               self.in_msgs['/sim/gps_position'].altitude]
-            # magnetic_field_ga = [+1.60e-05, -0.38e-05, -5.17e-05]
-            magnetic_field_ga = [+1.60e-05, -0.38e-05, -5.17e-05]
+            # [+1.60e-05, -0.38e-05, -5.17e-05]
             magnetic_field_ga = [-0.0720, +0.1050, 0.3480]
+            magnetic_field_ga_noise = [0.001, 0.001, 0.001]
 
-            msg = uavcan.equipment.ahrs.MagneticFieldStrength(magnetic_field_ga=magnetic_field_ga)
+            msg = uavcan.equipment.ahrs.MagneticFieldStrength(
+                magnetic_field_ga=[sum(i) for i in zip(magnetic_field_ga, magnetic_field_ga_noise)])
         return msg
 
 class DiffPressure(Publisher):
@@ -323,20 +321,46 @@ class DiffPressure(Publisher):
 class PX4UavcanCommunicator:
     def __init__(self):
         rospy.init_node('px4_uavcan_communicator', log_level=rospy.DEBUG)
-        self.rate = rospy.Rate(10000)
+        self.rate = rospy.Rate(1000)
         rospy.sleep(1)
 
-        self.communicator = UavcanCommunicatorV0(can_device_type='can-slcan')
-        self.subscriber_manager = SubscriberManager(self.communicator)
         self.publishers = list()
-        self._subscribe_and_advertise()
+        self.uavcan_spin_time = 0
+        self.ros_spin_time = 0
+        self.publishing_time = 0
+        self.last_log_time = 0
+        self.log_period = 1
+
+        self.communicator = None
+        while not rospy.is_shutdown() and self.communicator is None:
+            try:
+                self.communicator = UavcanCommunicatorV0(can_device_type='can-slcan')
+                self.subscriber_manager = SubscriberManager(self.communicator)
+                self._subscribe_and_advertise()
+            except OSError as e:
+                rospy.logerr("{}. Check you device. Trying to reconnect.".format(e))
+                rospy.sleep(2)
+
 
     def spin_and_publish(self):
+        start_time = rospy.get_time()
         self.communicator.spin()
-        self.rate.sleep()
+        self.uavcan_spin_time += rospy.get_time() - start_time
 
+        start_time = rospy.get_time()
+        self.rate.sleep()
+        self.ros_spin_time += rospy.get_time() - start_time
+
+        start_time = rospy.get_time()
         for publisher in self.publishers:
             publisher.publish()
+        self.publishing_time += rospy.get_time() - start_time
+
+        rospy.logdebug_throttle(1, "Log: time usage: uavcan={}, ros={}, pub={}; imu_pub_times={}".format(
+            round(self.uavcan_spin_time, 1),
+            round(self.ros_spin_time, 2),
+            round(self.publishing_time, 1),
+            self.publishers[5].number_of_published_msg))
 
     def _subscribe_and_advertise(self):
         self.subscriber_manager.subscribe("uavcan", uavcan.equipment.esc.RawCommand, 'Joy')
