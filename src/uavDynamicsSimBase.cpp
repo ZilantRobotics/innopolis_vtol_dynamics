@@ -39,3 +39,7 @@ void UavDynamicsSimBase::publishStaticMotorTransform(const ros::Time & timeStamp
     staticMotorTfPub_->sendTransform(transformMotor);
 
 }
+
+void UavDynamicsSimBase::land(){
+
+}

@@ -120,8 +120,8 @@ private:
     unsigned int last_mag_time_usec;
     unsigned int last_baro_time_usec;
 
-    static constexpr uint64_t mag_period_usec = 1e6 / 10;
-    static constexpr uint64_t baro_period_usec = 1e6 / 10;
+    static constexpr uint64_t mag_period_usec = 1e6 / 100;
+    static constexpr uint64_t baro_period_usec = 1e6 / 50;
 
     float ALT_HOME;
     bool is_copter_airframe_;

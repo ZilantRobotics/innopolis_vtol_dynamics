@@ -144,6 +144,23 @@ void InnoVtolDynamicsSim::setInitialVelocity(const Eigen::Vector3d & linearVeloc
     state_.angularVel = angularVelocity;
 }
 
+void InnoVtolDynamicsSim::land(){
+    state_.Fspecific << 0, 0, -params_.gravity;
+    state_.linearVel.setZero();
+    state_.position[2] = 0.00;
+
+    #define YAW_ROTATE_ON_LAND_DEBUG false
+    #if YAW_ROTATE_ON_LAND_DEBUG == false
+    state_.attitude = state_.initialAttitude;
+    state_.angularVel.setZero();
+    #elif YAW_ROTATE_ON_LAND_DEBUG == true
+    state_.angularVel << 0.000, 0.000, 2*3.1415/60;
+    Eigen::Quaterniond attitudeDelta = state_.attitude * Eigen::Quaterniond(0, state_.angularVel(0), state_.angularVel(1), state_.angularVel(2));
+    state_.attitude.coeffs() += attitudeDelta.coeffs() * 0.5 * 0.001;
+    state_.attitude.normalize();
+    #endif
+}
+
 void InnoVtolDynamicsSim::initStaticMotorTransform(){
     Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
     auto time = ros::Time::now();
@@ -466,7 +483,6 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     Eigen::Vector3d Fspecific = std::accumulate(&state_.Fmotors[0], &state_.Fmotors[5], Faero);
     Eigen::Vector3d Ftotal = Fspecific + rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity);
 
-    state_.Fspecific = Fspecific;
     state_.Ftotal = Ftotal;
     state_.Mtotal = MtotalInBodyCS;
 
@@ -474,28 +490,21 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     state_.linearVel += state_.linearAccel * dt_sec;
     state_.position += state_.linearVel * dt_sec;
 
-    if(state_.position[2] > 0){
-        state_.Fspecific << 0, 0, -params_.gravity;
-        state_.linearVel << 0.0, 0.0, 0.0;
-        state_.angularVel << 0.0, 0.0, 0.0;
-        state_.position[2] = 0.00;
-        state_.attitude = state_.initialAttitude;
-    }
-
     #if MOMENTS_LOG == true
     static int counter = 0;
+    constexpr int max_count = 1000;
     static Eigen::Vector3d MtotalSum(0, 0, 0);
     static Eigen::Vector3d MaeroSum(0, 0, 0);
     static Eigen::Vector3d MsteerSum(0, 0, 0);
     static Eigen::Vector3d Mairspeed(0, 0, 0);
     static Eigen::Vector3d AngularVelocitySum(0, 0, 0);
-    if(counter > 250){
+    if(counter > max_count){
         counter = 0;
-        MtotalSum /= 250;
-        MaeroSum /= 250;
-        MsteerSum /= 250;
-        Mairspeed /= 250;
-        AngularVelocitySum /= 250;
+        MtotalSum /= max_count;
+        MaeroSum /= max_count;
+        MsteerSum /= max_count;
+        Mairspeed /= max_count;
+        AngularVelocitySum /= max_count;
         std::cout << "Mtotal: " << MtotalSum.transpose() << ", " <<
                      "Maero: " << MaeroSum.transpose() << ", " <<
                      "Msteer: " << MsteerSum.transpose() << ", " <<
@@ -513,6 +522,12 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     AngularVelocitySum += state_.angularVel;
     counter++;
     #endif
+
+    if(state_.position[2] >= 0){
+        land();
+    }else{
+        state_.Fspecific = Fspecific;
+    }
 
     #if STORE_SIM_PARAMETERS == true
     state_.MmotorsTotal[0] = std::accumulate(&state_.Mmotors[0][0], &state_.Mmotors[5][0], 0);

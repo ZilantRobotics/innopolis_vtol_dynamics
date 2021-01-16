@@ -124,6 +124,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         virtual void setReferencePosition(double latRef, double lonRef, double altRef) override;
         virtual void setInitialPosition(const Eigen::Vector3d & position,
                                         const Eigen::Quaterniond& attitude) override;
+        virtual void land() override;
         virtual void process(double dt_secs,
                              const std::vector<double>& motorSpeedCommandIn,
                              bool isCmdPercent) override;

@@ -175,7 +175,11 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
                                                 mag_enu.x(), mag_enu.y(), mag_enu.z());
         static const auto q_flu_to_frd = Eigen::Quaterniond(0, 1, 0, 0);
 
-        Eigen::Vector3d mag_frd = q_flu_to_frd * (q_flu_to_enu.inverse() * mag_enu);
+        // there should be some mistake, is not it?
+        // if we really want frd, we actually need to multiple
+        // but in this situation YAW (and may smth) is inversed
+        // Eigen::Vector3d mag_frd = q_flu_to_frd * (q_flu_to_enu.inverse() * mag_enu);
+        Eigen::Vector3d mag_frd = (q_flu_to_enu.inverse() * mag_enu);
 
         sensor_msg.xmag = mag_frd[0] + mag_noise * standard_normal_distribution_(random_generator_);
         sensor_msg.ymag = mag_frd[1] + mag_noise * standard_normal_distribution_(random_generator_);

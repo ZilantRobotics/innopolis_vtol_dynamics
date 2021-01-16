@@ -198,7 +198,6 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
     } else {
         ros::Time loopStartTime = ros::Time::now();
         dt_secs_ = (loopStartTime - currentTime_).toSec();
-        std::cout << "ros::Time::now" << loopStartTime << ", " << dt_secs_ << std::endl;
 
         currentTime_ = loopStartTime;
     }
@@ -268,6 +267,8 @@ void Uav_Dynamics::proceedQuadcopterDynamics(double period){
             auto time_dif_sec = (crnt_time - prev_time).count() / 1000000000.0;
 
             uavDynamicsSim_->process(time_dif_sec, propSpeedCommand_, true);
+        }else{
+            uavDynamicsSim_->land();
         }
 
         std::this_thread::sleep_until(time_point);
@@ -308,9 +309,9 @@ void Uav_Dynamics::sendHilSensor(double period){
         Eigen::Vector3d pose_geodetic;
         uavDynamicsSim_->enu2Geodetic(pose_enu.x(), pose_enu.y(), pose_enu.z(),
                                       &pose_geodetic.x(), &pose_geodetic.y(), &pose_geodetic.z());
-        Eigen::Quaterniond q_enu_to_flu = uavDynamicsSim_->getVehicleAttitude();
+        Eigen::Quaterniond q_flu_to_enu = uavDynamicsSim_->getVehicleAttitude();
         Eigen::Vector3d vel_enu = uavDynamicsSim_->getVehicleVelocity();
-        Eigen::Vector3d vel_frd = Converter::enuToFrd(vel_enu, q_enu_to_flu);
+        Eigen::Vector3d vel_frd = Converter::enuToFrd(vel_enu, q_flu_to_enu);
         Eigen::Vector3d acc_flu(0, 0, -9.8), gyro_flu(0, 0, 0);
         uavDynamicsSim_->getIMUMeasurement(acc_flu, gyro_flu);
         Eigen::Vector3d acc_frd = Converter::fluToFrd(acc_flu);
@@ -318,7 +319,7 @@ void Uav_Dynamics::sendHilSensor(double period){
 
         int send_status = px4->SendHilSensor(currentTime_.toNSec() / 1000,
                                              pose_geodetic,
-                                             q_enu_to_flu,
+                                             q_flu_to_enu,
                                              vel_frd,
                                              acc_frd,
                                              gyro_frd);
@@ -549,7 +550,7 @@ void Uav_Dynamics::publishUavPosition(void){
     }
     pose.orientation.x = euler_angles[0];
     pose.orientation.y = euler_angles[1];
-    pose.orientation.z = euler_angles[2];
+    pose.orientation.z = euler_angles[2] - 90;
 
     positionPub_.publish(pose);
 }
