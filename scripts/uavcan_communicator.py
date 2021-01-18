@@ -7,7 +7,7 @@ Example of connection for version 0: https://legacy.uavcan.org/Implementations/P
 # Common
 import logging
 import sys
-from random import uniform
+import numpy as np
 
 # ROS
 import rospy
@@ -92,7 +92,7 @@ class UavcanCommunicatorV0:
         It can't be threading.Thread(target=self.node.spin, daemon=True).start()
         """
         try:
-            self.node.spin(0.00005)
+            self.node.spin(0.00001)
         except uavcan.transport.TransferError as e:
             rospy.logerr('spin %s', e)
         except can.CanError as e:
@@ -160,11 +160,11 @@ class IMU(Publisher):
                 self.communicator.publish(msg)
 
     def fill_msg(self):
-        gyro = [0.00, 0.00, 0.1]
-        gyro_noise = [uniform(-0.0001, 0.0001), uniform(-0.0001, 0.0001), uniform(-0.0001, 0.0001)]
+        gyro = [0.00, 0.00, 0.0]
+        gyro_noise = list(np.random.normal(0, 0.0001, 3))
 
-        accel = [0.00, 0.00, -19.81]
-        accel_noise = [uniform(-0.01, 0.01), uniform(-0.01, 0.01), uniform(-0.01, 0.01)]
+        accel = [0.00, 0.00, -9.81]
+        accel_noise = list(np.random.normal(0, 0.05, 3))
 
         msg = uavcan.equipment.ahrs.RawIMU(
             rate_gyro_latest=[sum(i) for i in zip(gyro, gyro_noise)],
@@ -193,11 +193,11 @@ class GPS(Publisher):
         if self.in_msgs['/sim/gps_position'] is None:
             msg = None
         else:
-            geodetioc_pose = [int(self.in_msgs['/sim/gps_position'].latitude),
-                              int(self.in_msgs['/sim/gps_position'].longitude),
-                              int(self.in_msgs['/sim/gps_position'].altitude)]
-            msg = uavcan.equipment.gnss.Fix(longitude_deg_1e8=geodetioc_pose[0],
-                                            latitude_deg_1e8=geodetioc_pose[1],
+            geodetioc_pose = [int(self.in_msgs['/sim/gps_position'].latitude * 100000000),
+                              int(self.in_msgs['/sim/gps_position'].longitude * 100000000),
+                              int(self.in_msgs['/sim/gps_position'].altitude * 1000)]
+            msg = uavcan.equipment.gnss.Fix(latitude_deg_1e8=geodetioc_pose[0],
+                                            longitude_deg_1e8=geodetioc_pose[1],
                                             height_msl_mm=geodetioc_pose[2],
                                             sats_used=10,
                                             status=3,
@@ -243,10 +243,10 @@ class Baro(Publisher):
 
     def fill_msg(self):
         temperature = 42.42+273
-        temperature_noise = uniform(0, 1)
+        temperature_noise = float(np.random.normal(0, 1, 1))
 
         pressure = 98600
-        pressure_noise = uniform(0, 2)
+        pressure_noise = float(np.random.normal(0, 2, 1))
 
         temperature_msg = uavcan.equipment.air_data.StaticTemperature(
             static_temperature=temperature+temperature_noise,
@@ -307,10 +307,10 @@ class DiffPressure(Publisher):
 
     def fill_msg(self):
         static_pressure = 98600
-        static_pressure_noise = uniform(0, 1)
+        static_pressure_noise = float(np.random.normal(0, 1, 1))
 
         differential_pressure = 0
-        differential_pressure_noise = uniform(0, 1)
+        differential_pressure_noise = float(np.random.normal(0, 1, 1))
 
         msg = uavcan.equipment.air_data.RawAirData(
             static_pressure=static_pressure+static_pressure_noise,
@@ -321,7 +321,7 @@ class DiffPressure(Publisher):
 class PX4UavcanCommunicator:
     def __init__(self):
         rospy.init_node('px4_uavcan_communicator', log_level=rospy.DEBUG)
-        self.rate = rospy.Rate(1000)
+        self.rate = rospy.Rate(10000)
         rospy.sleep(1)
 
         self.publishers = list()
