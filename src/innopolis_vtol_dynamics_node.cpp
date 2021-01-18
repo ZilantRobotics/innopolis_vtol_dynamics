@@ -9,10 +9,14 @@
  */
 
 #include <rosgraph_msgs/Clock.h>
-#include <geometry_msgs/TransformStamped.h>
 #include <visualization_msgs/Marker.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/QuaternionStamped.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/Imu.h>
 
 #include "innopolis_vtol_dynamics_node.hpp"
 #include "flightgogglesDynamicsSim.hpp"
@@ -36,7 +40,7 @@ int main(int argc, char **argv){
 }
 
 
-Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), propSpeedCommand_(8, 0.){
+Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), actuators_(8, 0.){
 }
 
 
@@ -102,13 +106,27 @@ int8_t Uav_Dynamics::init(){
         }
     }
 
-    // Init subscribers and publishers
-    // Allow for up to 100ms sim time buffer of outgoing IMU messages
-    // This should improve IMU integration methods on slow client nodes (see issue #63)
-    imuPub_ = node_.advertise<sensor_msgs::Imu>("/uav/sensors/imu", 96);
-    positionPub_ = node_.advertise<geometry_msgs::Pose>("/uav/position", 1);
-    speedPub_ = node_.advertise<geometry_msgs::TwistStamped>("/uav/speed", 1);
-    controlPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/control", 1);
+    geodeticConverter_.initialiseReference(latRef_, lonRef_, altRef_);
+
+    // Topics name:
+    constexpr char IMU_TOPIC_NAME[]      = "/uav/imu";
+    constexpr char GPS_POSE_TOPIC_NAME[] = "/uav/gps_position";
+    constexpr char ATTITUDE_TOPIC_NAME[] = "/uav/attitude";
+    constexpr char VELOCITY_TOPIC_NAME[] = "/uav/velocity";
+    constexpr char ACTUATOR_TOPIC_NAME[] = "/uav/actuators";
+    constexpr char ARM_TOPIC_NAME[]      = "/uav/arm";
+
+    // Init subscribers and publishers for communicator
+    // Imu should has up to 100ms sim time buffer (see issue #63)
+    actuatorsSub_ = node_.subscribe(ACTUATOR_TOPIC_NAME, 1, &Uav_Dynamics::actuatorsCallback, this);
+    armSub_ = node_.subscribe(ARM_TOPIC_NAME, 1, &Uav_Dynamics::armCallback, this);
+
+    imuPub_ = node_.advertise<sensor_msgs::Imu>(IMU_TOPIC_NAME, 96);
+    gpsPositionPub_ = node_.advertise<sensor_msgs::NavSatFix>(GPS_POSE_TOPIC_NAME, 1);
+    attitudePub_ = node_.advertise<geometry_msgs::QuaternionStamped>(ATTITUDE_TOPIC_NAME, 1);
+    speedPub_ = node_.advertise<geometry_msgs::Twist>(VELOCITY_TOPIC_NAME, 1);
+
+    // Other publishers and subscribers
     forcesPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/threads_info", 1);
 
     totalForcePub_ = node_.advertise<visualization_msgs::Marker>("/uav/Ftotal", 1);
@@ -132,10 +150,8 @@ int8_t Uav_Dynamics::init(){
 
     velocityPub_ = node_.advertise<visualization_msgs::Marker>("/uav/linearVelocity", 1);
 
-    inputCommandSub_ = node_.subscribe("/uav/input/rateThrust", 1, &Uav_Dynamics::inputCallback, this);
     inputMotorspeedCommandSub_ = node_.subscribe("/uav/input/motorspeed", 1, &Uav_Dynamics::inputMotorspeedCallback, this);
     collisionSub_ = node_.subscribe("/uav/collision", 1, &Uav_Dynamics::collisionCallback, this);
-    armSub_ = node_.subscribe("/uav/input/arm", 1, &Uav_Dynamics::armCallback, this);
     resetSub_ = node_.subscribe("/uav/input/reset", 1, &Uav_Dynamics::resetCallback, this);
     frameRateSub_ = node_.subscribe("/uav/camera/debug/fps", 1, &Uav_Dynamics::fpsCallback, this);
 
@@ -148,7 +164,7 @@ int8_t Uav_Dynamics::init(){
     }
 
     bool is_copter_airframe = (airframeType_ == STANDARD_VTOL) ? false : true;
-    px4 = new MavlinkCommunicator(altRef_);
+    px4 = new MavlinkCommunicator(node_, altRef_);
     int px4id = 0;
     if(px4->Init(px4id, is_copter_airframe) != 0) {
         std::cerr << "Unable to Init PX4 Communication" << std::endl;
@@ -162,12 +178,6 @@ int8_t Uav_Dynamics::init(){
 
     proceedDynamicsTask = std::thread(&Uav_Dynamics::proceedQuadcopterDynamics, this, dt_secs_);
     proceedDynamicsTask.detach();
-
-    sendHilGpsTask = std::thread(&Uav_Dynamics::sendHilGps, this, HIL_GPS_PERIOD_SEC);
-    sendHilGpsTask.detach();
-
-    sendHilSensorTask = std::thread(&Uav_Dynamics::sendHilSensor, this, HIL_SENSOR_PERIOD_SEC);
-    sendHilSensorTask.detach();
 
     receiveTask = std::thread(&Uav_Dynamics::receive, this, RECEIVE_PERIOD_SEC);
     receiveTask.detach();
@@ -205,7 +215,7 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
     // In case of collision reset state and disarm
     if(resetRequested_ || (hasCollided_ && !ignoreCollisions_)){
         resetState();
-        lastCommandMsg_.reset();
+        // lastCommandMsg_ set zero
         lastMotorspeedCommandMsg_.reset();
         hasCollided_ = false;
         armed_ = false;
@@ -229,12 +239,10 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
 
         std::array<float, 5> completeness;
         completeness[0] = abs(threadCounter_[0] * dt_secs_) / ANALYSIS_INTERVAL;
-        completeness[1] = abs(threadCounter_[1] * HIL_GPS_PERIOD_SEC / ANALYSIS_INTERVAL);
-        completeness[2] = abs(threadCounter_[2] * HIL_SENSOR_PERIOD_SEC / ANALYSIS_INTERVAL);
-        completeness[3] = abs(threadCounter_[3] * RECEIVE_PERIOD_SEC / ANALYSIS_INTERVAL);
-        completeness[4] = abs(threadCounter_[4] * ROS_PUB_PERIOD_SEC / ANALYSIS_INTERVAL);
+        completeness[1] = abs(threadCounter_[1] * RECEIVE_PERIOD_SEC / ANALYSIS_INTERVAL);
+        completeness[2] = abs(threadCounter_[2] * ROS_PUB_PERIOD_SEC / ANALYSIS_INTERVAL);
 
-        for(size_t idx = 0; idx < 5; idx++){
+        for(size_t idx = 0; idx < 3; idx++){
             if(completeness[idx] < 0.9){
                 is_ok = false;
             }
@@ -242,11 +250,11 @@ void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event)
         }
 
         if(is_ok){
-            ROS_INFO_THROTTLE(10, "Thread diagnostic is ok: %f, %f, %f, %f, %f",
-                completeness[0], completeness[1], completeness[2], completeness[3], completeness[4]);
+            ROS_INFO_THROTTLE(10, "Thread diagnostic is ok: %f, %f, %f",
+                completeness[0], completeness[1], completeness[2]);
         }else{
-            ROS_ERROR("Thread diagnostic is bad: %f, %f, %f, %f, %f",
-                completeness[0], completeness[1], completeness[2], completeness[3], completeness[4]);
+            ROS_ERROR("Thread diagnostic is bad: %f, %f, %f",
+                completeness[0], completeness[1], completeness[2]);
         }
 
         prev_time = currentTime_.toSec();
@@ -266,70 +274,58 @@ void Uav_Dynamics::proceedQuadcopterDynamics(double period){
             crnt_time = std::chrono::system_clock::now();
             auto time_dif_sec = (crnt_time - prev_time).count() / 1000000000.0;
 
-            uavDynamicsSim_->process(time_dif_sec, propSpeedCommand_, true);
+            uavDynamicsSim_->process(time_dif_sec, actuators_, true);
         }else{
             uavDynamicsSim_->land();
         }
 
-        std::this_thread::sleep_until(time_point);
-    }
-}
-
-void Uav_Dynamics::sendHilGps(double period){
-    while(ros::ok()){
-        auto crnt_time = std::chrono::system_clock::now();
-        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
-        auto time_point = crnt_time + sleed_period;
-        threadCounter_[1]++;
-
-        // Get data from sim and perform convertion
-        Eigen::Vector3d vel_ned = Converter::enuToNed(uavDynamicsSim_->getVehicleVelocity());
-        Eigen::Vector3d pose_geodetic, pose_enu = uavDynamicsSim_->getVehiclePosition();
-        uavDynamicsSim_->enu2Geodetic(pose_enu.x(), pose_enu.y(), pose_enu.z(),
-                                      &pose_geodetic.x(), &pose_geodetic.y(), &pose_geodetic.z());
-
-        int send_status = px4->SendHilGps(currentTime_.toNSec() / 1000, vel_ned, pose_geodetic);
-        if(send_status == -1){
-            ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Send to PX4 failed" << strerror(errno));
-        }
+        publishStateToCommunicator();
 
         std::this_thread::sleep_until(time_point);
     }
 }
 
-void Uav_Dynamics::sendHilSensor(double period){
-    while(ros::ok()){
-        auto crnt_time = std::chrono::system_clock::now();
-        auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
-        auto time_point = crnt_time + sleed_period;
-        threadCounter_[2]++;
+void Uav_Dynamics::publishStateToCommunicator(){
+    // Get state in ROS notation
+    Eigen::Vector3d enuPosition(uavDynamicsSim_->getVehiclePosition());
+    auto attitudeFluToEnu = uavDynamicsSim_->getVehicleAttitude();
+    Eigen::Vector3d accFlu(0, 0, -9.8), gyroFlu(0, 0, 0);
+    uavDynamicsSim_->getIMUMeasurement(accFlu, gyroFlu);
+    Eigen::Vector3d linVelEnu = uavDynamicsSim_->getVehicleVelocity();
+    Eigen::Vector3d angVelFlu = uavDynamicsSim_->getVehicleAngularVelocity();
 
-        // Get data from sim and perform convertion
-        Eigen::Vector3d pose_enu = uavDynamicsSim_->getVehiclePosition();
-        Eigen::Vector3d pose_geodetic;
-        uavDynamicsSim_->enu2Geodetic(pose_enu.x(), pose_enu.y(), pose_enu.z(),
-                                      &pose_geodetic.x(), &pose_geodetic.y(), &pose_geodetic.z());
-        Eigen::Quaterniond q_flu_to_enu = uavDynamicsSim_->getVehicleAttitude();
-        Eigen::Vector3d vel_enu = uavDynamicsSim_->getVehicleVelocity();
-        Eigen::Vector3d vel_frd = Converter::enuToFrd(vel_enu, q_flu_to_enu);
-        Eigen::Vector3d acc_flu(0, 0, -9.8), gyro_flu(0, 0, 0);
-        uavDynamicsSim_->getIMUMeasurement(acc_flu, gyro_flu);
-        Eigen::Vector3d acc_frd = Converter::fluToFrd(acc_flu);
-        Eigen::Vector3d gyro_frd = Converter::fluToFrd(gyro_flu);
+    // Convert state from ROS notation into PX4
+    Eigen::Vector3d gpsPosition;
+    geodeticConverter_.enu2Geodetic(enuPosition[0], enuPosition[1], enuPosition[2],
+                                    &gpsPosition[0], &gpsPosition[1], &gpsPosition[2]);
 
-        int send_status = px4->SendHilSensor(currentTime_.toNSec() / 1000,
-                                             pose_geodetic,
-                                             q_flu_to_enu,
-                                             vel_frd,
-                                             acc_frd,
-                                             gyro_frd);
-        if(send_status == -1){
-            ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Sent to PX4 failed" << strerror(errno));
-        }
+    Eigen::Vector3d accFrd = Converter::fluToFrd(accFlu);
+    Eigen::Vector3d gyroFrd = Converter::fluToFrd(gyroFlu);
 
-        std::this_thread::sleep_until(time_point);
+    Eigen::Vector3d linVelNed = Converter::enuToNed(linVelEnu);
+
+    auto attitudeFrdToNed = attitudeFluToEnu;
+
+    // Publish state to communicator
+    auto crntTimeSec = currentTime_.toSec();
+    if(gpsLastPubTimeSec_ + GPS_POSITION_PERIOD < crntTimeSec){
+        publishUavGpsPosition(gpsPosition);
+        gpsLastPubTimeSec_ = crntTimeSec;
+    }
+    if(attitudeLastPubTimeSec_ + ATTITUDE_PERIOD < crntTimeSec){
+        publishUavAttitude(attitudeFrdToNed);
+        attitudeLastPubTimeSec_ = crntTimeSec;
+    }
+    if(velocityLastPubTimeSec_ + VELOCITY_PERIOD < crntTimeSec){
+        publishUavSpeed(linVelNed, angVelFlu);
+        velocityLastPubTimeSec_ = crntTimeSec;
+    }
+    if(imuLastPubTimeSec_ + IMU_PERIOD < crntTimeSec){
+        publishIMUMeasurement(accFrd, gyroFrd);
+        imuLastPubTimeSec_ = crntTimeSec;
     }
 }
+
 
 // The sequence of steps for lockstep are:
 // The simulation sends a sensor message HIL_SENSOR including a timestamp time_usec to update
@@ -346,19 +342,19 @@ void Uav_Dynamics::receive(double period){
         auto crnt_time = std::chrono::system_clock::now();
         auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
         auto time_point = crnt_time + sleed_period;
-        threadCounter_[3]++;
+        threadCounter_[1]++;
 
-        auto receive_result = px4->Receive(false, armed_, propSpeedCommand_);
+        auto receive_result = px4->Receive(false, armed_, actuators_);
         if(receive_result == 1){
             receivedPX4Actuator_ = true;
             if(armed_){
                 ROS_INFO_STREAM_THROTTLE(3, "Recv \033[1;29m control->cmd \033[0m [" <<
-                    "mc: "      << propSpeedCommand_[0] << ", "   << propSpeedCommand_[1] << ", " <<
-                                   propSpeedCommand_[2] << ", "   << propSpeedCommand_[3] << ", " <<
-                    "fw rpy: (" << propSpeedCommand_[4] << ", "   <<
-                                   propSpeedCommand_[5] << ", "   <<
-                                   propSpeedCommand_[6] << "), "  <<
-                    "throttle " << propSpeedCommand_[7] << "].");
+                    "mc: "      << actuators_[0] << ", "   << actuators_[1] << ", " <<
+                                   actuators_[2] << ", "   << actuators_[3] << ", " <<
+                    "fw rpy: (" << actuators_[4] << ", "   <<
+                                   actuators_[5] << ", "   <<
+                                   actuators_[6] << "), "  <<
+                    "throttle " << actuators_[7] << "].");
             }else{
                 ROS_INFO_THROTTLE(3, "Recv: disarmed");
             }
@@ -377,13 +373,9 @@ void Uav_Dynamics::publishToRos(double period){
         auto crnt_time = std::chrono::system_clock::now();
         auto sleed_period = std::chrono::microseconds(int(1000000 * period * clockScale_));
         auto time_point = crnt_time + sleed_period;
-        threadCounter_[4]++;
+        threadCounter_[2]++;
 
         publishState();
-        publishIMUMeasurement();
-        publishUavPosition();
-        publishUavSpeed();
-        publishControl();
 
         static auto next_time = std::chrono::system_clock::now();
         if(crnt_time > next_time){
@@ -399,8 +391,8 @@ void Uav_Dynamics::publishToRos(double period){
  * @brief Handle incoming rate thrust message
  * @param msg rateThrust message from keyboard/ joystick controller
  */
-void Uav_Dynamics::inputCallback(mav_msgs::RateThrust::Ptr msg){
-    ROS_INFO("inputCallback");
+void Uav_Dynamics::actuatorsCallback(sensor_msgs::Joy msg){
+    ROS_INFO("actuatorsCallback");
     lastCommandMsg_ = msg;
 }
 
@@ -408,7 +400,7 @@ void Uav_Dynamics::inputCallback(mav_msgs::RateThrust::Ptr msg){
  * @brief Handle arming message
  * @param msg Empty message, this will be received when drone is to be armed
  */
-void Uav_Dynamics::armCallback(std_msgs::Empty::Ptr msg){
+void Uav_Dynamics::armCallback(std_msgs::Bool msg){
     ROS_INFO("armCallback");
     armed_ = true;
 }
@@ -485,104 +477,76 @@ void Uav_Dynamics::publishState(void){
 /**
  * @brief Publish IMU measurement message
  */
-void Uav_Dynamics::publishIMUMeasurement(void){
-    Eigen::Vector3d imuAccOutput = Eigen::Vector3d::Zero();
-    Eigen::Vector3d imuGyroOutput = Eigen::Vector3d::Zero();
-    double gyroMeasNoiseVariance;
-    double accMeasNoiseVariance;
+void Uav_Dynamics::publishIMUMeasurement(Eigen::Vector3d accFrd, Eigen::Vector3d gyroFrd){
+    sensor_msgs::Imu msg;
+    msg.header.stamp = currentTime_;
 
-    sensor_msgs::Imu meas;
+    msg.angular_velocity.x = gyroFrd[0];
+    msg.angular_velocity.y = gyroFrd[1];
+    msg.angular_velocity.z = gyroFrd[2];
 
-    meas.header.stamp = currentTime_;
+    msg.linear_acceleration.x = accFrd[0];
+    msg.linear_acceleration.y = accFrd[1];
+    msg.linear_acceleration.z = accFrd[2];
 
-    uavDynamicsSim_->getIMUMeasurement(imuAccOutput, imuGyroOutput);
+    // msg.orientation_covariance[0] = -1;
+    // double gyroMeasNoiseVariance;
+    // double accMeasNoiseVariance;
+    // msg.angular_velocity_covariance[0] = gyroMeasNoiseVariance;
+    // msg.linear_acceleration_covariance[0] = accMeasNoiseVariance;
+    // for (size_t i = 1; i < 8; i++){
+    //     if (i == 4){
+    //         msg.angular_velocity_covariance[i] = gyroMeasNoiseVariance;
+    //         msg.linear_acceleration_covariance[i] = accMeasNoiseVariance;
+    //     }else{
+    //         msg.angular_velocity_covariance[i] = 0.;
+    //         msg.linear_acceleration_covariance[i] = 0.;
+    //     }
+    // }
+    // msg.angular_velocity_covariance[8] = gyroMeasNoiseVariance;
+    // msg.linear_acceleration_covariance[8] = accMeasNoiseVariance;
 
-    // Per message spec: set to -1 since orientation is not populated
-    meas.orientation_covariance[0] = -1;
-
-    meas.angular_velocity.x = imuGyroOutput(0);
-    meas.linear_acceleration.x = imuAccOutput(0);
-
-    meas.angular_velocity.y = imuGyroOutput(1);
-    meas.linear_acceleration.y = imuAccOutput(1);
-
-    meas.angular_velocity.z = imuGyroOutput(2);
-    meas.linear_acceleration.z = imuAccOutput(2);
-
-    meas.angular_velocity_covariance[0] = gyroMeasNoiseVariance;
-    meas.linear_acceleration_covariance[0] = accMeasNoiseVariance;
-    for (size_t i = 1; i < 8; i++){
-        if (i == 4){
-            meas.angular_velocity_covariance[i] = gyroMeasNoiseVariance;
-            meas.linear_acceleration_covariance[i] = accMeasNoiseVariance;
-        }else{
-            meas.angular_velocity_covariance[i] = 0.;
-            meas.linear_acceleration_covariance[i] = 0.;
-        }
-    }
-
-    meas.angular_velocity_covariance[8] = gyroMeasNoiseVariance;
-    meas.linear_acceleration_covariance[8] = accMeasNoiseVariance;
-
-    imuPub_.publish(meas);
+    imuPub_.publish(msg);
 }
+
+/**
+ * @brief Publish gps position message
+ */
+void Uav_Dynamics::publishUavGpsPosition(Eigen::Vector3d geoPosition){
+    sensor_msgs::NavSatFix gps_pose;
+    gps_pose.latitude = geoPosition[0];
+    gps_pose.longitude = geoPosition[1];
+    gps_pose.altitude = geoPosition[2];
+    gps_pose.header.stamp = currentTime_;
+    gpsPositionPub_.publish(gps_pose);
+}
+
+/**
+ * @brief Publish uav attitude
+ */
+void Uav_Dynamics::publishUavAttitude(Eigen::Quaterniond attitudeFrdToNed){
+    geometry_msgs::QuaternionStamped msg;
+    msg.quaternion.x = attitudeFrdToNed.x();
+    msg.quaternion.y = attitudeFrdToNed.y();
+    msg.quaternion.z = attitudeFrdToNed.z();
+    msg.quaternion.w = attitudeFrdToNed.w();
+    msg.header.stamp = currentTime_;
+    attitudePub_.publish(msg);
+}
+
 
 /**
  * @brief Publish position message
  */
-void Uav_Dynamics::publishUavPosition(void){
-    geometry_msgs::Pose pose;
-
-    auto position = uavDynamicsSim_->getVehiclePosition().transpose();
-    pose.position.x = position[0];
-    pose.position.y = position[1];
-    pose.position.z = position[2];
-
-    auto quant = uavDynamicsSim_->getVehicleAttitude();
-    auto euler_angles = quant.toRotationMatrix().eulerAngles(1, 0, 2);
-    for(int idx = 0; idx < 3; idx++){
-        euler_angles[idx] = euler_angles[idx] * 180 / 3.14;
-        if(euler_angles[idx] > 360){
-            euler_angles[idx] -= 360;
-        }else if(euler_angles[idx] < 0){
-            euler_angles[idx] += 360;
-        }
-    }
-    pose.orientation.x = euler_angles[0];
-    pose.orientation.y = euler_angles[1];
-    pose.orientation.z = euler_angles[2] - 90;
-
-    positionPub_.publish(pose);
-}
-
-/**
- * @brief Publish position message
- */
-void Uav_Dynamics::publishUavSpeed(void){
-    auto velocity = uavDynamicsSim_->getVehicleVelocity();
-    auto angular_velocity = uavDynamicsSim_->getVehicleAngularVelocity();
-
-    geometry_msgs::TwistStamped speed;
-    speed.header.stamp = currentTime_;
-    speed.twist.linear.x = velocity[0];
-    speed.twist.linear.y = velocity[1];
-    speed.twist.linear.z = velocity[2];
-    speed.twist.angular.x = angular_velocity[0];
-    speed.twist.angular.y = angular_velocity[1];
-    speed.twist.angular.z = angular_velocity[2];
+void Uav_Dynamics::publishUavSpeed(Eigen::Vector3d linVelNed, Eigen::Vector3d angVelFrd){
+    geometry_msgs::Twist speed;
+    speed.linear.x = linVelNed[0];
+    speed.linear.y = linVelNed[1];
+    speed.linear.z = linVelNed[2];
+    speed.angular.x = angVelFrd[0];
+    speed.angular.y = angVelFrd[1];
+    speed.angular.z = angVelFrd[2];
     speedPub_.publish(speed);
-}
-
-/**
- * @brief Publish control
- */
-void Uav_Dynamics::publishControl(void){
-    std_msgs::Float64MultiArray cmd;
-    cmd.data.resize(8);
-    for(size_t idx = 0; idx < propSpeedCommand_.size(); idx++){
-        cmd.data[idx] = propSpeedCommand_[idx];
-    }
-    controlPub_.publish(cmd);
 }
 
 /**

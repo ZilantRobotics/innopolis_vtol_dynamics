@@ -44,17 +44,24 @@
 #ifndef PX4_COMMUNICATOR_H
 #define PX4_COMMUNICATOR_H
 
+#include <thread>
 #include <netinet/in.h>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <random>
 #include <geographiclib_conversions/geodetic_conv.hpp>
 
+#include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/Imu.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/QuaternionStamped.h>
+
+#include "uavDynamicsSimBase.hpp"
 
 class MavlinkCommunicator
 {
 public:
-    MavlinkCommunicator(float lat_home);
+    explicit MavlinkCommunicator(ros::NodeHandle nodeHandler, float lat_home);
 
     /**
      * @brief Init connection with PX4 using TCP
@@ -96,35 +103,66 @@ public:
     int Receive(bool blocking, bool &armed, std::vector<double>& command);
 
 private:
-    static const unsigned int SENS_ACCEL       = 0b111;
-    static const unsigned int SENS_GYRO        = 0b111000;
-    static const unsigned int SENS_MAG         = 0b111000000;
-    static const unsigned int SENS_BARO        = 0b1101000000000;
-    static const unsigned int SENS_DIFF_PRESS  = 0b10000000000;
+    ros::NodeHandle nodeHandler_;
+    void communicate();
+    std::thread mainTask_;
 
-    struct sockaddr_in  px4_mavlink_addr;
-    struct sockaddr_in  simulator_mavlink_addr;
-    int listenMavlinkSock;
-    int px4MavlinkSock;
+    ros::Subscriber imuSub_;
+    ros::Subscriber gpsSub_;
+    ros::Subscriber attitudeSub_;
+    ros::Subscriber velocitySub_;
 
-    const int portBase = 4560;
+    geometry_msgs::QuaternionStamped attitudeMsg_;
+    sensor_msgs::NavSatFix gpsPositionMsg_;
+    sensor_msgs::Imu imuMsg_;
+    geometry_msgs::Twist velocityMsg_;
 
-    std::default_random_engine random_generator_;
-    std::normal_distribution<double> standard_normal_distribution_;
-    double mag_noise;
-    double baro_alt_noise;
-    double temp_noise;
-    double abs_pressure_noise;
-    double diff_pressure_noise;
+    Eigen::Quaterniond attitudeFrdToNed_;
+    Eigen::Vector3d gpsPosition_;
+    Eigen::Vector3d accFrd_;
+    Eigen::Vector3d gyroFrd_;
+    Eigen::Vector3d linearVelocityNed_;
+    Eigen::Vector3d angularVelocityNed_; // not interested yet
 
-    unsigned int last_mag_time_usec;
-    unsigned int last_baro_time_usec;
+    void attitudeCallback(geometry_msgs::QuaternionStamped attitude);
+    void gpsCallback(sensor_msgs::NavSatFix gpsPosition);
+    void imuCallback(sensor_msgs::Imu imu);
+    void velocityCallback(geometry_msgs::Twist velocity);
 
-    static constexpr uint64_t mag_period_usec = 1e6 / 100;
-    static constexpr uint64_t baro_period_usec = 1e6 / 50;
+    static const uint64_t SENS_ACCEL       = 0b111;
+    static const uint64_t SENS_GYRO        = 0b111000;
+    static const uint64_t SENS_MAG         = 0b111000000;
+    static const uint64_t SENS_BARO        = 0b1101000000000;
+    static const uint64_t SENS_DIFF_PRESS  = 0b10000000000;
 
-    float ALT_HOME;
-    bool is_copter_airframe_;
+    const int PORT_BASE = 4560;
+
+    const float ALT_HOME;
+
+    static constexpr uint64_t MAG_PERIOD_US = 1e6 / 100;
+    static constexpr uint64_t BARO_PERIOD_US = 1e6 / 50;
+    static constexpr uint64_t GPS_PERIOD_US = 1e6 / 10;
+    static constexpr uint64_t IMU_PERIOD_US = 1e6 / 500;
+
+    uint64_t lastMagTimeUsec_ = 0;
+    uint64_t lastBaroTimeUsec_ = 0;
+    uint64_t lastGpsTimeUsec_ = 0;
+    uint64_t lastImuTimeUsec_ = 0;
+
+    struct sockaddr_in px4MavlinkAddr_;
+    struct sockaddr_in simulatorMavlinkAddr_;
+    int listenMavlinkSock_;
+    int px4MavlinkSock_;
+
+    std::default_random_engine randomGenerator_;
+    std::normal_distribution<double> normalDistribution_;
+    double magNoise_;
+    double baroAltNoise_;
+    double tempNoise_;
+    double absPressureNoise_;
+    double diffPressureNoise_;
+
+    bool isCopterAirframe_;
 };
 
 

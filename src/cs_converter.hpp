@@ -21,7 +21,7 @@ namespace Converter
  * NED_px4 = Q_ENU_TO_NED * ENU_ros
  * NED_ros = Q_ENU_TO_NED.inverse() * ENU_px4
  */
-auto Q_ENU_TO_NED = Eigen::Quaterniond(0, 0.70711, 0.70711, 0);
+const auto Q_ENU_TO_NED = Eigen::Quaterniond(0, 0.70711, 0.70711, 0);
 
 /**
  * @brief Quaternion for rotation between body FLU and body FRD frames
@@ -71,11 +71,19 @@ Eigen::Vector3d enuToFrd(const Eigen::Vector3d& vel_enu, const Eigen::Quaternion
     return Q_FRD_FLU * q_flu_to_enu.inverse() * vel_enu;
 }
 
+Eigen::Vector3d nedToFrd(const Eigen::Vector3d& vel_ned, const Eigen::Quaterniond& q_flu_to_enu){
+    return Q_FRD_FLU * q_flu_to_enu.inverse() * (Q_ENU_TO_NED.inverse() * vel_ned);
+}
+
 /**
  * @note getVehicleAttitude (vtolDynamics)
  */
 Eigen::Quaterniond frdNedTofluEnu(Eigen::Quaterniond q_frd_to_ned){
     return Q_ENU_TO_NED.inverse() * Q_FRD_FLU * q_frd_to_ned;
+}
+
+Eigen::Quaterniond fluEnuToFrdNed(Eigen::Quaterniond q_flu_to_enu){
+    return Q_ENU_TO_NED * Q_FRD_FLU * q_flu_to_enu;
 }
 
 }

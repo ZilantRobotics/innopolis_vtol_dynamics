@@ -12,6 +12,7 @@
 #define UAV_DYNAMICS_HPP
 
 #include <thread>
+#include <geographiclib_conversions/geodetic_conv.hpp>
 
 #include <ros/ros.h>
 #include <ros/time.h>
@@ -20,7 +21,9 @@
 #include <mav_msgs/RateThrust.h>
 #include <mav_msgs/Actuators.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/Joy.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 
 #include "mavlink_communicator.h"
@@ -50,9 +53,6 @@ class Uav_Dynamics {
         double actualFps_  = -1;
         bool useSimTime_;
 
-        bool armed_ = false;
-        bool receivedPX4Actuator_ = false;
-
         double latRef_;
         double lonRef_;
         double altRef_;
@@ -68,23 +68,45 @@ class Uav_Dynamics {
 
         DynamicsType dynamicsType_;
         AirframeType airframeType_;
+
+        geodetic_converter::GeodeticConverter geodeticConverter_;
         //@}
 
 
         /// @name Communication with PX4
         //@{
-        ros::Publisher positionPub_;
-        ros::Publisher speedPub_;
-        ros::Publisher controlPub_;
+        ros::Subscriber actuatorsSub_;
+        ros::Subscriber armSub_;
+
+        ros::Publisher attitudePub_;
         ros::Publisher imuPub_;
-        ros::Subscriber inputMotorspeedCommandSub_;
+        ros::Publisher gpsPositionPub_;
+        ros::Publisher speedPub_;
 
-        std::vector<double> propSpeedCommand_;
-        mav_msgs::Actuators::Ptr lastMotorspeedCommandMsg_;
+        std::vector<double> actuators_;
+        bool armed_ = false;
+        bool receivedPX4Actuator_ = false;
+        sensor_msgs::Joy lastCommandMsg_;
 
-        void publishUavPosition();
-        void publishIMUMeasurement();
-        void publishUavSpeed();
+        void armCallback(std_msgs::Bool msg);
+        void actuatorsCallback(sensor_msgs::Joy msg);
+
+        void publishUavGpsPosition(Eigen::Vector3d geoPosition);
+        void publishUavAttitude(Eigen::Quaterniond attitude_frd_to_ned);
+        void publishUavSpeed(Eigen::Vector3d linVelNed, Eigen::Vector3d angVelFrd);
+        void publishIMUMeasurement(Eigen::Vector3d accFrd, Eigen::Vector3d gyroFrd);
+
+        const double GPS_POSITION_PERIOD = 0.0005;
+        const double ATTITUDE_PERIOD = 0.0005;
+        const double VELOCITY_PERIOD = 0.0005;
+        const double IMU_PERIOD = 0.0005;
+
+        double gpsLastPubTimeSec_ = 0;
+        double attitudeLastPubTimeSec_ = 0;
+        double velocityLastPubTimeSec_ = 0;
+        double imuLastPubTimeSec_ = 0;
+
+        void publishStateToCommunicator();
         //@}
 
 
@@ -108,7 +130,6 @@ class Uav_Dynamics {
         ros::Publisher forcesPub_;
 
         void publishState();
-        void publishControl();
         void publishForcesInfo();
         void publishStaticMotorTransform(const ros::Time & timeStamp,
                                          const char * frame_id,
@@ -145,9 +166,8 @@ class Uav_Dynamics {
 
         /// @name Not implemented yet stuff
         //@{
-        ros::Subscriber inputCommandSub_;
+        ros::Subscriber inputMotorspeedCommandSub_;
         ros::Subscriber collisionSub_;
-        ros::Subscriber armSub_;
         ros::Subscriber resetSub_;
         ros::Subscriber frameRateSub_;
 
@@ -155,11 +175,9 @@ class Uav_Dynamics {
         bool ignoreCollisions_;
         bool resetRequested_ = false;
 
-        mav_msgs::RateThrust::Ptr lastCommandMsg_;
+        mav_msgs::Actuators::Ptr lastMotorspeedCommandMsg_;
 
-        void inputCallback(mav_msgs::RateThrust::Ptr msg);
         void inputMotorspeedCallback(mav_msgs::Actuators::Ptr msg);
-        void armCallback(std_msgs::Empty::Ptr msg);
         void resetCallback(std_msgs::Empty::Ptr msg);
         void collisionCallback(std_msgs::Empty::Ptr msg);
         void fpsCallback(std_msgs::Float32::Ptr msg);

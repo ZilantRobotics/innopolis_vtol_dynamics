@@ -50,38 +50,58 @@
 
 #include "mavlink_communicator.h"
 
-MavlinkCommunicator::MavlinkCommunicator(float alt_home) :
-    ALT_HOME(alt_home){
-    standard_normal_distribution_ = std::normal_distribution<double>(0.0f, 0.1f);
+// int main(int argc, char **argv){
+//     ros::init(argc, argv, "innopolis_vtol_dynamics_node");
+//     if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
+//         ros::console::notifyLoggerLevelsChanged();
+//     }
+//     ros::NodeHandle nodeHandler;
 
-    mag_noise = 0.0000051;
-    baro_alt_noise = 0.0001;
-    temp_noise = 0.001;
-    abs_pressure_noise = 0.001;
+//     // temp parameters
+//     bool isCopterAirframe = false;
+//     float altRef = 0;
+//     int px4id = 0;
+
+//     MavlinkCommunicator communicator(altRef);
+//     if(communicator.Init(px4id, isCopterAirframe) != 0) {
+//         std::cerr << "Unable to Init PX4 Communication" << std::endl;
+//         ros::shutdown();
+//     }
+
+//     ros::spin();
+//     return 0;
+// }
+
+MavlinkCommunicator::MavlinkCommunicator(ros::NodeHandle nodeHandler, float alt_home) :
+    nodeHandler_(nodeHandler), ALT_HOME(alt_home){
+    normalDistribution_ = std::normal_distribution<double>(0.0f, 0.1f);
+
+    magNoise_ = 0.0000051;
+    baroAltNoise_ = 0.0001;
+    tempNoise_ = 0.001;
+    absPressureNoise_ = 0.001;
     // Let's use a rough guess of 0.01 hPa as the standard devitiation which roughly yields
     // about +/- 1 m/s noise.
-    diff_pressure_noise = 0.01;
-
-    last_mag_time_usec = 0;
-    last_baro_time_usec = 0;
+    diffPressureNoise_ = 0.01;
 }
 
 int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
-    is_copter_airframe_ = is_copter_airframe;
+    isCopterAirframe_ = is_copter_airframe;
 
-    memset((char *) &simulator_mavlink_addr, 0, sizeof(px4_mavlink_addr));
-    memset((char *) &px4_mavlink_addr, 0, sizeof(px4_mavlink_addr));
-    simulator_mavlink_addr.sin_family = AF_INET;
-    simulator_mavlink_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    simulator_mavlink_addr.sin_port = htons(portBase + portOffset);
+    memset((char *) &simulatorMavlinkAddr_, 0, sizeof(simulatorMavlinkAddr_));
+    memset((char *) &px4MavlinkAddr_, 0, sizeof(px4MavlinkAddr_));
+    simulatorMavlinkAddr_.sin_family = AF_INET;
+    simulatorMavlinkAddr_.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    simulatorMavlinkAddr_.sin_port = htons(PORT_BASE + portOffset);
 
-    if ((listenMavlinkSock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+    if ((listenMavlinkSock_ = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         std::cerr << "PX4 Communicator: Creating TCP socket failed: " << strerror(errno) << std::endl;
+        return -1;
     }
 
     // do not accumulate messages by waiting for ACK
     int yes = 1;
-    int result = setsockopt(listenMavlinkSock, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
+    int result = setsockopt(listenMavlinkSock_, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
     if (result != 0){
         std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
     }
@@ -90,7 +110,7 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
     struct linger nolinger;
     nolinger.l_onoff = 1;
     nolinger.l_linger = 0;
-    result = setsockopt(listenMavlinkSock, SOL_SOCKET, SO_LINGER, &nolinger, sizeof(nolinger));
+    result = setsockopt(listenMavlinkSock_, SOL_SOCKET, SO_LINGER, &nolinger, sizeof(nolinger));
     if (result != 0){
         std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
     }
@@ -99,34 +119,34 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
     // if the socket does not close but gets stuck in TIME_WAIT. This can happen
     // if the server is suddenly closed, for example, if the robot is deleted in gazebo.
     int socket_reuse = 1;
-    result = setsockopt(listenMavlinkSock, SOL_SOCKET, SO_REUSEADDR, &socket_reuse, sizeof(socket_reuse));
+    result = setsockopt(listenMavlinkSock_, SOL_SOCKET, SO_REUSEADDR, &socket_reuse, sizeof(socket_reuse));
     if (result != 0){
          std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
     }
 
     // Same as above but for a given port
-    result = setsockopt(listenMavlinkSock, SOL_SOCKET, SO_REUSEPORT, &socket_reuse, sizeof(socket_reuse));
+    result = setsockopt(listenMavlinkSock_, SOL_SOCKET, SO_REUSEPORT, &socket_reuse, sizeof(socket_reuse));
     if (result != 0){
         std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
     }
 
 
-    if (bind(listenMavlinkSock, (struct sockaddr *)&simulator_mavlink_addr, sizeof(simulator_mavlink_addr)) < 0){
+    if (bind(listenMavlinkSock_, (struct sockaddr *)&simulatorMavlinkAddr_, sizeof(simulatorMavlinkAddr_)) < 0){
         std::cerr << "PX4 Communicator: bind failed:  " << strerror(errno) << std::endl;
     }
 
     errno = 0;
-    result = listen(listenMavlinkSock, 5);
+    result = listen(listenMavlinkSock_, 5);
     if (result < 0){
         std::cerr << "PX4 Communicator: listen failed: " << strerror(errno) << std::endl;
     }
 
-    unsigned int px4_addr_len = sizeof(px4_mavlink_addr);
+    unsigned int px4_addr_len = sizeof(px4MavlinkAddr_);
     while(true) {
-        px4MavlinkSock = accept(listenMavlinkSock,
-                                (struct sockaddr *)&px4_mavlink_addr,
+        px4MavlinkSock_ = accept(listenMavlinkSock_,
+                                (struct sockaddr *)&px4MavlinkAddr_,
                                 &px4_addr_len);
-        if (px4MavlinkSock < 0){
+        if (px4MavlinkSock_ < 0){
             std::cerr << "PX4 Communicator: accept failed: " << strerror(errno) << std::endl;
         }else{
             std::cerr << "PX4 Communicator: PX4 Connected."<< std::endl;
@@ -134,13 +154,112 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
         }
     }
 
+    constexpr char IMU_TOPIC_NAME[]      = "/uav/imu";
+    constexpr char GPS_POSE_TOPIC_NAME[] = "/uav/gps_position";
+    constexpr char ATTITUDE_TOPIC_NAME[] = "/uav/attitude";
+    constexpr char VELOCITY_TOPIC_NAME[] = "/uav/velocity";
+
+    constexpr char ACTUATOR_TOPIC_NAME[] = "/uav/actuators";
+    constexpr char ARM_TOPIC_NAME[]      = "/uav/arm";
+
+    attitudeSub_ = nodeHandler_.subscribe(ATTITUDE_TOPIC_NAME, 1, &MavlinkCommunicator::attitudeCallback, this);
+    gpsSub_ = nodeHandler_.subscribe(GPS_POSE_TOPIC_NAME, 1, &MavlinkCommunicator::gpsCallback, this);
+    imuSub_ = nodeHandler_.subscribe(IMU_TOPIC_NAME, 1, &MavlinkCommunicator::imuCallback, this);
+    velocitySub_ = nodeHandler_.subscribe(VELOCITY_TOPIC_NAME, 1, &MavlinkCommunicator::velocityCallback, this);
+
+    mainTask_ = std::thread(&MavlinkCommunicator::communicate, this);
+    mainTask_.detach();
+
     return result;
+}
+
+void MavlinkCommunicator::communicate(){
+    while(ros::ok()){
+        auto crnt_time = std::chrono::system_clock::now();
+        auto sleed_period = std::chrono::microseconds(int(50));
+        auto time_point = crnt_time + sleed_period;
+
+        auto gpsTimeUsec = gpsPositionMsg_.header.stamp.toNSec() / 1000;
+        auto imuTimeUsec = imuMsg_.header.stamp.toNSec() / 1000;
+
+        if (gpsTimeUsec >= lastGpsTimeUsec_ + GPS_PERIOD_US){
+            // magic wait: if we don't wait just a little bit, GPS data will be too young for PX4
+            // print smth is enough
+            lastGpsTimeUsec_ = gpsTimeUsec;
+            static int gps_counter = 0;
+            gps_counter++;
+            std::cout << gps_counter << ", " << gpsTimeUsec << ", " << gpsPosition_.transpose() << std::endl;
+
+            int status = SendHilGps(gpsTimeUsec, linearVelocityNed_, gpsPosition_);
+
+            if(status == -1){
+                ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Send to PX4 failed" << strerror(errno));
+            }
+        }
+        if (imuTimeUsec >= lastImuTimeUsec_ + IMU_PERIOD_US){
+            lastImuTimeUsec_ = imuTimeUsec;
+
+            auto Q_ENU_TO_NED = Eigen::Quaterniond(0, 0.70711, 0.70711, 0);
+            const auto Q_FRD_FLU = Eigen::Quaterniond(0, 1, 0, 0);
+
+            // hack: at this moment simulator sends fluToEnu attitudeinstead of frdToNed
+            auto attitudeFluToEnu = attitudeFrdToNed_;
+
+            auto linearVelocityFrd = Q_FRD_FLU * attitudeFluToEnu.inverse() * (Q_ENU_TO_NED.inverse() * linearVelocityNed_);
+            int status = SendHilSensor(imuTimeUsec,
+                                       gpsPosition_,
+                                       attitudeFluToEnu,
+                                       linearVelocityFrd,
+                                       accFrd_,
+                                       gyroFrd_);
+
+            if(status == -1){
+                ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Send to PX4 failed" << strerror(errno));
+            }
+        }
+
+
+        std::this_thread::sleep_until(time_point);
+    }
+}
+
+void MavlinkCommunicator::attitudeCallback(geometry_msgs::QuaternionStamped attitude){
+    attitudeMsg_ = attitude;
+    attitudeFrdToNed_.x() = attitude.quaternion.x;
+    attitudeFrdToNed_.y() = attitude.quaternion.y;
+    attitudeFrdToNed_.z() = attitude.quaternion.z;
+    attitudeFrdToNed_.w() = attitude.quaternion.w;
+}
+
+void MavlinkCommunicator::gpsCallback(sensor_msgs::NavSatFix gpsPosition){
+    gpsPositionMsg_ = gpsPosition;
+    gpsPosition_[0] = gpsPosition.latitude;
+    gpsPosition_[1] = gpsPosition.longitude;
+    gpsPosition_[2] = gpsPosition.altitude;
+}
+
+void MavlinkCommunicator::imuCallback(sensor_msgs::Imu imu){
+    imuMsg_ = imu;
+    accFrd_[0] = imu.linear_acceleration.x;
+    accFrd_[1] = imu.linear_acceleration.y;
+    accFrd_[2] = imu.linear_acceleration.z;
+
+    gyroFrd_[0] = imu.angular_velocity.x;
+    gyroFrd_[1] = imu.angular_velocity.y;
+    gyroFrd_[2] = imu.angular_velocity.z;
+}
+
+void MavlinkCommunicator::velocityCallback(geometry_msgs::Twist velocity){
+    velocityMsg_ = velocity;
+    linearVelocityNed_[0] = velocity.linear.x;
+    linearVelocityNed_[1] = velocity.linear.y;
+    linearVelocityNed_[2] = velocity.linear.z;
 }
 
 
 int MavlinkCommunicator::Clean(){
-    close(px4MavlinkSock);
-    close(listenMavlinkSock);
+    close(px4MavlinkSock_);
+    close(listenMavlinkSock_);
     return 0;
 }
 
@@ -169,10 +288,11 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
     sensor_msg.fields_updated = SENS_ACCEL | SENS_GYRO;
 
     // 2. Fill Magnetc field with noise
-    if (time_usec - last_mag_time_usec > mag_period_usec){
+    if (time_usec - lastMagTimeUsec_ > MAG_PERIOD_US){
         Eigen::Vector3d mag_enu;
-        geographiclib_conversions::MagneticField(pose_geodetic.x(), pose_geodetic.y(), pose_geodetic.z(),
-                                                mag_enu.x(), mag_enu.y(), mag_enu.z());
+        geographiclib_conversions::MagneticField(
+            pose_geodetic.x(), pose_geodetic.y(), pose_geodetic.z(),
+            mag_enu.x(), mag_enu.y(), mag_enu.z());
         static const auto q_flu_to_frd = Eigen::Quaterniond(0, 1, 0, 0);
 
         // there should be some mistake, is not it?
@@ -181,15 +301,15 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
         // Eigen::Vector3d mag_frd = q_flu_to_frd * (q_flu_to_enu.inverse() * mag_enu);
         Eigen::Vector3d mag_frd = (q_flu_to_enu.inverse() * mag_enu);
 
-        sensor_msg.xmag = mag_frd[0] + mag_noise * standard_normal_distribution_(random_generator_);
-        sensor_msg.ymag = mag_frd[1] + mag_noise * standard_normal_distribution_(random_generator_);
-        sensor_msg.zmag = mag_frd[2] + mag_noise * standard_normal_distribution_(random_generator_);
+        sensor_msg.xmag = mag_frd[0] + magNoise_ * normalDistribution_(randomGenerator_);
+        sensor_msg.ymag = mag_frd[1] + magNoise_ * normalDistribution_(randomGenerator_);
+        sensor_msg.zmag = mag_frd[2] + magNoise_ * normalDistribution_(randomGenerator_);
         sensor_msg.fields_updated |= SENS_MAG;
-        last_mag_time_usec = time_usec;
+        lastMagTimeUsec_ = time_usec;
     }
 
     // 3. Fill Barometr and diff pressure
-    if (time_usec - last_baro_time_usec > baro_period_usec){
+    if (time_usec - lastBaroTimeUsec_ > BARO_PERIOD_US){
         // 3.1. abs_pressure using an ISA model for the tropsphere (valid up to 11km above MSL)
         const float LAPSE_RATE = 0.0065f;       // reduction in temperature with altitude(Kelvin/m)
         const float TEMPERATURE_MSL = 288.0f;   // temperature at MSL (Kelvin)
@@ -198,7 +318,7 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
         float pressure_ratio = powf((TEMPERATURE_MSL/temperature_local), 5.256f);
         const float PRESSURE_MSL = 101325.0f;
         sensor_msg.abs_pressure = PRESSURE_MSL / pressure_ratio * 0.01f;    // convert to hPa
-        sensor_msg.abs_pressure += abs_pressure_noise * standard_normal_distribution_(random_generator_);
+        sensor_msg.abs_pressure += absPressureNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.2. density using an ISA model for the tropsphere (valid up to 11km above MSL)
         const float density_ratio = powf((TEMPERATURE_MSL/temperature_local), 4.256f);
@@ -206,18 +326,18 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
 
         // 3.3. pressure altitude including effect of pressure noise
         sensor_msg.pressure_alt = pose_geodetic.z();
-        sensor_msg.pressure_alt += baro_alt_noise * standard_normal_distribution_(random_generator_);
+        sensor_msg.pressure_alt += baroAltNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.4. temperature in Celsius
         sensor_msg.temperature = temperature_local - 273.0f;
-        sensor_msg.temperature += temp_noise * standard_normal_distribution_(random_generator_);
+        sensor_msg.temperature += tempNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.5. diff pressure in hPa (Note: ignoring tailsitter case here)
         sensor_msg.diff_pressure = 0.005f * rho * vel_frd.norm() * vel_frd.norm();
-        sensor_msg.diff_pressure += diff_pressure_noise * standard_normal_distribution_(random_generator_);
+        sensor_msg.diff_pressure += diffPressureNoise_ * normalDistribution_(randomGenerator_);
 
         sensor_msg.fields_updated |= SENS_BARO | SENS_DIFF_PRESS;
-        last_baro_time_usec = time_usec;
+        lastBaroTimeUsec_ = time_usec;
     }
 
 
@@ -227,7 +347,7 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
     mavlink_msg_hil_sensor_encode_chan(1, 200, MAVLINK_COMM_0, &msg, &sensor_msg);
     packetlen = mavlink_msg_to_send_buffer(buffer, &msg);
 
-    if(send(px4MavlinkSock, buffer, packetlen, 0) != packetlen){
+    if(send(px4MavlinkSock_, buffer, packetlen, 0) != packetlen){
         return -1;
     }
     return 0;
@@ -269,7 +389,7 @@ int MavlinkCommunicator::SendHilGps(unsigned int time_usec,
     uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
     mavlink_msg_hil_gps_encode_chan(1, 200, MAVLINK_COMM_0, &msg, &hil_gps_msg);
     int packetlen = mavlink_msg_to_send_buffer(buffer, &msg);
-    if(send(px4MavlinkSock, buffer, packetlen, 0) != packetlen){
+    if(send(px4MavlinkSock_, buffer, packetlen, 0) != packetlen){
         return -1;
     }
     return 0;
@@ -278,7 +398,7 @@ int MavlinkCommunicator::SendHilGps(unsigned int time_usec,
 /**
  * @return status
  * -1 means error,
- * 0 means there is no actuator command
+ * 0 means there is no rx command
  * 1 means there is actuator command
  */
 int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>& command){
@@ -286,7 +406,7 @@ int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>
     uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
 
     struct pollfd fds[1] = {};
-    fds[0].fd = px4MavlinkSock;
+    fds[0].fd = px4MavlinkSock_;
     fds[0].events = POLLIN;
 
     int p = poll(&fds[0], 1, (blocking?-1:2));
@@ -294,14 +414,15 @@ int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>
         ROS_ERROR("PX4 Communicator: PX4 Pool error :(");
         return -1;
     }else if(p == 0){
+        ROS_ERROR("PX4 Communicator: no RX data");
         return 0;
     }else if(fds[0].revents & POLLIN){
-        unsigned int slen = sizeof(px4_mavlink_addr);
-        unsigned int len = recvfrom(px4MavlinkSock,
+        unsigned int slen = sizeof(px4MavlinkAddr_);
+        unsigned int len = recvfrom(px4MavlinkSock_,
                                     buffer,
                                     sizeof(buffer),
                                     0,
-                                    (struct sockaddr *)&px4_mavlink_addr,
+                                    (struct sockaddr *)&px4MavlinkAddr_,
                                     &slen);
         mavlink_status_t status;
         for (unsigned i = 0; i < len; ++i){
@@ -321,7 +442,7 @@ int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>
                         command[1] = controls.controls[1];
                         command[2] = controls.controls[2];
                         command[3] = controls.controls[3];
-                        if(is_copter_airframe_ == false){
+                        if(isCopterAirframe_ == false){
                             command[4] = controls.controls[4];
                             command[5] = controls.controls[5];
                             command[6] = controls.controls[6];
