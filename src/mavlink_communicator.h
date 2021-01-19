@@ -51,10 +51,13 @@
 #include <random>
 #include <geographiclib_conversions/geodetic_conv.hpp>
 
+#include <std_msgs/Bool.h>
+#include <sensor_msgs/Joy.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/QuaternionStamped.h>
+
 
 #include "uavDynamicsSimBase.hpp"
 
@@ -112,6 +115,9 @@ private:
     ros::Subscriber attitudeSub_;
     ros::Subscriber velocitySub_;
 
+    ros::Publisher armPub_;
+    ros::Publisher actuatorsPub_;
+
     geometry_msgs::QuaternionStamped attitudeMsg_;
     sensor_msgs::NavSatFix gpsPositionMsg_;
     sensor_msgs::Imu imuMsg_;
@@ -124,10 +130,15 @@ private:
     Eigen::Vector3d linearVelocityNed_;
     Eigen::Vector3d angularVelocityNed_; // not interested yet
 
-    void attitudeCallback(geometry_msgs::QuaternionStamped attitude);
-    void gpsCallback(sensor_msgs::NavSatFix gpsPosition);
-    void imuCallback(sensor_msgs::Imu imu);
-    void velocityCallback(geometry_msgs::Twist velocity);
+    bool isArmed_;
+
+    void attitudeCallback(geometry_msgs::QuaternionStamped::Ptr attitude);
+    void gpsCallback(sensor_msgs::NavSatFix::Ptr gpsPosition);
+    void imuCallback(sensor_msgs::Imu::Ptr imu);
+    void velocityCallback(geometry_msgs::Twist::Ptr velocity);
+
+    void publishArm();
+    void publishActuators(const std::vector<double>& actuators) const;
 
     static const uint64_t SENS_ACCEL       = 0b111;
     static const uint64_t SENS_GYRO        = 0b111000;

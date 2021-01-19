@@ -28,7 +28,9 @@
     <!-- 3. Run dynamic simulation -->
     <rosparam file="$(find innopolis_vtol_dynamics)/config/multicopter_params.yaml" command="load" ns="uav/multicopter_params" />
     <rosparam file="$(find innopolis_vtol_dynamics)/config/sim_params.yaml" command="load" ns="uav/sim_params" />
-    <node pkg="innopolis_vtol_dynamics" type="node" name="node" output="screen">
+    <node pkg="innopolis_vtol_dynamics" type="mavlink_communicator" name="px4_mavlink_communicator" output="screen">
+    </node>
+    <node pkg="innopolis_vtol_dynamics" type="node" name="inno_dynamics_sim" output="screen">
         <param name="vehicle" value="$(arg vehicle)" />/>
     </node>
 

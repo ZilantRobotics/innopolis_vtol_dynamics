@@ -7,9 +7,6 @@ use_sim_time: true
 # We use dynamics sim in real time only, so this parametr should always be 1.0
 clockscale: 1.0
 
-# This parameter is not ready yet
-ignore_collisions: false
-
 
 # 2. Drone position and initial state:
 
