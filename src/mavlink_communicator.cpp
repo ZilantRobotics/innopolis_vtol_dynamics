@@ -159,6 +159,7 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
         }
     }
 
+    constexpr char MAG_TOPIC_NAME[]      = "/uav/mag";
     constexpr char IMU_TOPIC_NAME[]      = "/uav/imu";
     constexpr char GPS_POSE_TOPIC_NAME[] = "/uav/gps_position";
     constexpr char ATTITUDE_TOPIC_NAME[] = "/uav/attitude";
@@ -178,6 +179,10 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
     imuSub_ = nodeHandler_.subscribe(IMU_TOPIC_NAME,
                                      1,
                                      &MavlinkCommunicator::imuCallback,
+                                     this);
+    magSub_ = nodeHandler_.subscribe(MAG_TOPIC_NAME,
+                                     1,
+                                     &MavlinkCommunicator::magCallback,
                                      this);
     velocitySub_ = nodeHandler_.subscribe(VELOCITY_TOPIC_NAME,
                                           1,
@@ -235,6 +240,7 @@ void MavlinkCommunicator::communicate(){
             status = SendHilSensor(imuTimeUsec,
                                    gpsPosition_,
                                    attitudeFluToEnu,
+                                   magFrd_,
                                    linearVelocityFrd,
                                    accFrd_,
                                    gyroFrd_);
@@ -274,6 +280,13 @@ void MavlinkCommunicator::imuCallback(sensor_msgs::Imu::Ptr imu){
     gyroFrd_[2] = imu->angular_velocity.z;
 }
 
+void MavlinkCommunicator::magCallback(sensor_msgs::MagneticField::Ptr mag){
+    magMsg_ = *mag;
+    magFrd_[0] = mag->magnetic_field.x;
+    magFrd_[1] = mag->magnetic_field.y;
+    magFrd_[2] = mag->magnetic_field.z;
+}
+
 void MavlinkCommunicator::velocityCallback(geometry_msgs::Twist::Ptr velocity){
     velocityMsg_ = *velocity;
     linearVelocityNed_[0] = velocity->linear.x;
@@ -311,6 +324,7 @@ int MavlinkCommunicator::Clean(){
 int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
                                    Eigen::Vector3d pose_geodetic,
                                    Eigen::Quaterniond q_flu_to_enu,
+                                   Eigen::Vector3d mag_frd,
                                    Eigen::Vector3d vel_frd,
                                    Eigen::Vector3d acc_frd,
                                    Eigen::Vector3d gyro_frd){
@@ -329,18 +343,6 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
 
     // 2. Fill Magnetc field with noise
     if (time_usec - lastMagTimeUsec_ > MAG_PERIOD_US){
-        Eigen::Vector3d mag_enu;
-        geographiclib_conversions::MagneticField(
-            pose_geodetic.x(), pose_geodetic.y(), pose_geodetic.z(),
-            mag_enu.x(), mag_enu.y(), mag_enu.z());
-        static const auto q_flu_to_frd = Eigen::Quaterniond(0, 1, 0, 0);
-
-        // there should be some mistake, is not it?
-        // if we really want frd, we actually need to multiple
-        // but in this situation YAW (and may smth) is inversed
-        // Eigen::Vector3d mag_frd = q_flu_to_frd * (q_flu_to_enu.inverse() * mag_enu);
-        Eigen::Vector3d mag_frd = (q_flu_to_enu.inverse() * mag_enu);
-
         sensor_msg.xmag = mag_frd[0] + magNoise_ * normalDistribution_(randomGenerator_);
         sensor_msg.ymag = mag_frd[1] + magNoise_ * normalDistribution_(randomGenerator_);
         sensor_msg.zmag = mag_frd[2] + magNoise_ * normalDistribution_(randomGenerator_);
@@ -350,27 +352,32 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
 
     // 3. Fill Barometr and diff pressure
     if (time_usec - lastBaroTimeUsec_ > BARO_PERIOD_US){
-        // 3.1. abs_pressure using an ISA model for the tropsphere (valid up to 11km above MSL)
-        const float LAPSE_RATE = 0.0065f;       // reduction in temperature with altitude(Kelvin/m)
-        const float TEMPERATURE_MSL = 288.0f;   // temperature at MSL (Kelvin)
+        // 3.1. ISA model for pressure, density, temperature
+        // (for the tropsphere - valid up to 11km above MSL)
+        const float PRESSURE_MSL_HPA = 1013.250f;
+        const float TEMPERATURE_MSL_KELVIN = 288.0f;
+        const float RHO_MSL = 1.225f;
+
+        const float LAPSE_TEMPERATURE_RATE = 1 / 152.4; // 0.00656
+
         float alt_msl = pose_geodetic.z();
-        float temperature_local = TEMPERATURE_MSL - LAPSE_RATE * alt_msl;
-        float pressure_ratio = powf((TEMPERATURE_MSL/temperature_local), 5.256f);
-        const float PRESSURE_MSL = 101325.0f;
-        sensor_msg.abs_pressure = PRESSURE_MSL / pressure_ratio * 0.01f;    // convert to hPa
-        sensor_msg.abs_pressure += absPressureNoise_ * normalDistribution_(randomGenerator_);
 
-        // 3.2. density using an ISA model for the tropsphere (valid up to 11km above MSL)
-        const float density_ratio = powf((TEMPERATURE_MSL/temperature_local), 4.256f);
-        float rho = 1.225f / density_ratio;
+        float temperature_local = TEMPERATURE_MSL_KELVIN - LAPSE_TEMPERATURE_RATE * alt_msl;
+        float pressure_ratio = powf((TEMPERATURE_MSL_KELVIN/temperature_local), 5.256f);
+        const float density_ratio = powf((TEMPERATURE_MSL_KELVIN/temperature_local), 4.256f);
+        float rho = RHO_MSL / density_ratio;
 
-        // 3.3. pressure altitude including effect of pressure noise
-        sensor_msg.pressure_alt = pose_geodetic.z();
-        sensor_msg.pressure_alt += baroAltNoise_ * normalDistribution_(randomGenerator_);
-
-        // 3.4. temperature in Celsius
+        // 3.2. temperature in Celsius
         sensor_msg.temperature = temperature_local - 273.0f;
         sensor_msg.temperature += tempNoise_ * normalDistribution_(randomGenerator_);
+
+        // 3.3. abs pressure
+        sensor_msg.abs_pressure = PRESSURE_MSL_HPA / pressure_ratio;
+        sensor_msg.abs_pressure += absPressureNoise_ * normalDistribution_(randomGenerator_);
+
+        // 3.4. pressure altitude including effect of pressure noise
+        sensor_msg.pressure_alt = pose_geodetic.z();
+        sensor_msg.pressure_alt += baroAltNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.5. diff pressure in hPa (Note: ignoring tailsitter case here)
         sensor_msg.diff_pressure = 0.005f * rho * vel_frd.norm() * vel_frd.norm();

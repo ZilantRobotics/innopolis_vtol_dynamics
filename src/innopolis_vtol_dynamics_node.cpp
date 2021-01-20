@@ -17,6 +17,7 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
 
 #include "innopolis_vtol_dynamics_node.hpp"
 #include "flightgogglesDynamicsSim.hpp"
@@ -101,11 +102,13 @@ int8_t Uav_Dynamics::init(){
 
     // Topics name:
     constexpr char IMU_TOPIC_NAME[]      = "/uav/imu";
+    constexpr char MAG_TOPIC_NAME[]      = "/uav/mag";
     constexpr char GPS_POSE_TOPIC_NAME[] = "/uav/gps_position";
     constexpr char ATTITUDE_TOPIC_NAME[] = "/uav/attitude";
     constexpr char VELOCITY_TOPIC_NAME[] = "/uav/velocity";
     constexpr char ACTUATOR_TOPIC_NAME[] = "/uav/actuators";
     constexpr char ARM_TOPIC_NAME[]      = "/uav/arm";
+
 
     // Init subscribers and publishers for communicator
     // Imu should has up to 100ms sim time buffer (see issue #63)
@@ -116,6 +119,7 @@ int8_t Uav_Dynamics::init(){
     gpsPositionPub_ = node_.advertise<sensor_msgs::NavSatFix>(GPS_POSE_TOPIC_NAME, 1);
     attitudePub_ = node_.advertise<geometry_msgs::QuaternionStamped>(ATTITUDE_TOPIC_NAME, 1);
     speedPub_ = node_.advertise<geometry_msgs::Twist>(VELOCITY_TOPIC_NAME, 1);
+    magPub_ = node_.advertise<sensor_msgs::MagneticField>(MAG_TOPIC_NAME, 1);
 
     // Other publishers and subscribers
     forcesPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/threads_info", 1);
@@ -266,8 +270,6 @@ void Uav_Dynamics::publishStateToCommunicator(){
 
     auto linVelNed = Converter::enuToNed(linVelEnu);
 
-    auto attitudeFrdToNed = attitudeFluToEnu;
-
     // Publish state to communicator
     auto crntTimeSec = currentTime_.toSec();
     if(gpsLastPubTimeSec_ + GPS_POSITION_PERIOD < crntTimeSec){
@@ -275,7 +277,7 @@ void Uav_Dynamics::publishStateToCommunicator(){
         gpsLastPubTimeSec_ = crntTimeSec;
     }
     if(attitudeLastPubTimeSec_ + ATTITUDE_PERIOD < crntTimeSec){
-        publishUavAttitude(attitudeFrdToNed);
+        publishUavAttitude(attitudeFluToEnu);
         attitudeLastPubTimeSec_ = crntTimeSec;
     }
     if(velocityLastPubTimeSec_ + VELOCITY_PERIOD < crntTimeSec){
@@ -285,6 +287,10 @@ void Uav_Dynamics::publishStateToCommunicator(){
     if(imuLastPubTimeSec_ + IMU_PERIOD < crntTimeSec){
         publishIMUMeasurement(accFrd, gyroFrd);
         imuLastPubTimeSec_ = crntTimeSec;
+    }
+    if(magLastPubTimeSec_ + MAG_PERIOD < crntTimeSec){
+        publishUavMag(gpsPosition, attitudeFluToEnu);
+        magLastPubTimeSec_ = crntTimeSec;
     }
 }
 
@@ -307,32 +313,24 @@ void Uav_Dynamics::publishToRos(double period){
     }
 }
 
-/**
- * @brief Handle incoming actuators message
- */
 void Uav_Dynamics::actuatorsCallback(sensor_msgs::Joy::Ptr msg){
     actuatorsTimestampSec_ = msg->header.stamp.toSec();
     actuatorsMsgCounter_++;
-    for(size_t idx = 0; idx < 8; idx++){
+    for(size_t idx = 0; idx < msg->axes.size(); idx++){
         actuators_[idx] = msg->axes[idx];
     }
 }
 
-/**
- * @brief Handle arming message
- */
 void Uav_Dynamics::armCallback(std_msgs::Bool msg){
     if(armed_ != msg.data){
-        // why it publish few times when sim starts? hack: use throttle
+        /**
+         * @note why it publish few times when sim starts? hack: use throttle
+         */
         ROS_INFO_STREAM_THROTTLE(1, "cmd: " << (msg.data ? "Arm" : "Disarm"));
     }
     armed_ = msg.data;
 }
 
-
-/**
- * @brief Publish UAV state transform message
- */
 void Uav_Dynamics::publishState(void){
     geometry_msgs::TransformStamped transform;
 
@@ -364,9 +362,6 @@ void Uav_Dynamics::publishState(void){
     tfPub_.sendTransform(transform);
 }
 
-/**
- * @brief Publish uav attitude
- */
 void Uav_Dynamics::publishUavAttitude(Eigen::Quaterniond attitudeFrdToNed){
     geometry_msgs::QuaternionStamped msg;
     msg.quaternion.x = attitudeFrdToNed.x();
@@ -377,10 +372,6 @@ void Uav_Dynamics::publishUavAttitude(Eigen::Quaterniond attitudeFrdToNed){
     attitudePub_.publish(msg);
 }
 
-
-/**
- * @brief Publish gps position message
- */
 void Uav_Dynamics::publishUavGpsPosition(Eigen::Vector3d geoPosition){
     sensor_msgs::NavSatFix gps_pose;
     gps_pose.latitude = geoPosition[0];
@@ -390,10 +381,6 @@ void Uav_Dynamics::publishUavGpsPosition(Eigen::Vector3d geoPosition){
     gpsPositionPub_.publish(gps_pose);
 }
 
-
-/**
- * @brief Publish IMU measurement message
- */
 void Uav_Dynamics::publishIMUMeasurement(Eigen::Vector3d accFrd, Eigen::Vector3d gyroFrd){
     sensor_msgs::Imu msg;
     msg.header.stamp = currentTime_;
@@ -409,10 +396,6 @@ void Uav_Dynamics::publishIMUMeasurement(Eigen::Vector3d accFrd, Eigen::Vector3d
     imuPub_.publish(msg);
 }
 
-
-/**
- * @brief Publish position message
- */
 void Uav_Dynamics::publishUavVelocity(Eigen::Vector3d linVelNed, Eigen::Vector3d angVelFrd){
     geometry_msgs::Twist speed;
     speed.linear.x = linVelNed[0];
@@ -424,6 +407,26 @@ void Uav_Dynamics::publishUavVelocity(Eigen::Vector3d linVelNed, Eigen::Vector3d
     speedPub_.publish(speed);
 }
 
+void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToNed){
+    Eigen::Vector3d magEnu;
+    geographiclib_conversions::MagneticField(
+        geoPosition.x(), geoPosition.y(), geoPosition.z(),
+        magEnu.x(), magEnu.y(), magEnu.z());
+
+    // there should be some mistake, is not it?
+    // if we really want frd, we actually need to multiple
+    // but in this situation YAW (and may smth) is inversed
+    // static const auto Q_FLU_TO_FRD = Eigen::Quaterniond(0, 1, 0, 0);
+    // Eigen::Vector3d magFrd = Q_FLU_TO_FRD * (attitudeFluToNed.inverse() * magEnu);
+    Eigen::Vector3d magFrd = (attitudeFluToNed.inverse() * magEnu);
+
+    sensor_msgs::MagneticField mag;
+    mag.header.stamp = ros::Time();
+    mag.magnetic_field.x = magFrd[0];
+    mag.magnetic_field.y = magFrd[1];
+    mag.magnetic_field.z = magFrd[2];
+    magPub_.publish(mag);
+}
 
 void fillArrow(visualization_msgs::Marker& arrow,
                const Eigen::Vector3d& vector3D,

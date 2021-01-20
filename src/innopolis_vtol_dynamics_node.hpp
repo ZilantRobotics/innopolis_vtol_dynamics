@@ -80,6 +80,7 @@ class Uav_Dynamics {
         ros::Publisher imuPub_;
         ros::Publisher gpsPositionPub_;
         ros::Publisher speedPub_;
+        ros::Publisher magPub_;
 
         std::vector<double> actuators_;
         uint64_t actuatorsTimestampSec_;
@@ -92,16 +93,19 @@ class Uav_Dynamics {
         void publishUavAttitude(Eigen::Quaterniond attitude_frd_to_ned);
         void publishUavVelocity(Eigen::Vector3d linVelNed, Eigen::Vector3d angVelFrd);
         void publishIMUMeasurement(Eigen::Vector3d accFrd, Eigen::Vector3d gyroFrd);
+        void publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToNed);
 
         const double GPS_POSITION_PERIOD = 0.0005;
         const double ATTITUDE_PERIOD = 0.0005;
         const double VELOCITY_PERIOD = 0.0005;
         const double IMU_PERIOD = 0.0005;
+        const double MAG_PERIOD = 0.01;
 
         double gpsLastPubTimeSec_ = 0;
         double attitudeLastPubTimeSec_ = 0;
         double velocityLastPubTimeSec_ = 0;
         double imuLastPubTimeSec_ = 0;
+        double magLastPubTimeSec_ = 0;
 
         void publishStateToCommunicator();
         //@}

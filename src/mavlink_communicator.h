@@ -49,12 +49,12 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <random>
-#include <geographiclib_conversions/geodetic_conv.hpp>
 
 #include <std_msgs/Bool.h>
 #include <sensor_msgs/Joy.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/QuaternionStamped.h>
 
@@ -89,6 +89,7 @@ public:
     int SendHilSensor(unsigned int time_usec,
                       Eigen::Vector3d pose_geodetic,
                       Eigen::Quaterniond q_enu_flu,
+                      Eigen::Vector3d mag_frd,
                       Eigen::Vector3d vel_frd,
                       Eigen::Vector3d acc_frd,
                       Eigen::Vector3d gyro_frd);
@@ -105,11 +106,13 @@ public:
      */
     int Receive(bool blocking, bool &armed, std::vector<double>& command);
 
+    void communicate();
+
 private:
     ros::NodeHandle nodeHandler_;
-    void communicate();
     std::thread mainTask_;
 
+    ros::Subscriber magSub_;
     ros::Subscriber imuSub_;
     ros::Subscriber gpsSub_;
     ros::Subscriber attitudeSub_;
@@ -119,23 +122,25 @@ private:
     ros::Publisher actuatorsPub_;
 
     geometry_msgs::QuaternionStamped attitudeMsg_;
+    geometry_msgs::Twist velocityMsg_;
     sensor_msgs::NavSatFix gpsPositionMsg_;
     sensor_msgs::Imu imuMsg_;
-    geometry_msgs::Twist velocityMsg_;
+    sensor_msgs::MagneticField magMsg_;
 
     Eigen::Quaterniond attitudeFrdToNed_;
     Eigen::Vector3d gpsPosition_;
     Eigen::Vector3d accFrd_;
     Eigen::Vector3d gyroFrd_;
     Eigen::Vector3d linearVelocityNed_;
-    Eigen::Vector3d angularVelocityNed_; // not interested yet
+    Eigen::Vector3d magFrd_;
 
     bool isArmed_;
 
     void attitudeCallback(geometry_msgs::QuaternionStamped::Ptr attitude);
+    void velocityCallback(geometry_msgs::Twist::Ptr velocity);
     void gpsCallback(sensor_msgs::NavSatFix::Ptr gpsPosition);
     void imuCallback(sensor_msgs::Imu::Ptr imu);
-    void velocityCallback(geometry_msgs::Twist::Ptr velocity);
+    void magCallback(sensor_msgs::MagneticField::Ptr mag);
 
     void publishArm();
     void publishActuators(const std::vector<double>& actuators) const;
