@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 This module allows to establish connection between PX4 and simulator via uavcan and ROS.
-Example of connection for version 0: https://legacy.uavcan.org/Implementations/Pyuavcan/Tutorials/
 """
 
 # Common
 import logging
 import sys
 import numpy as np
+import queue
 
 # ROS
 import rospy
@@ -19,7 +19,6 @@ from sensor_msgs.msg import Joy
 from sensor_msgs.msg import MagneticField
 
 # For uavcan v0.1
-# import serial
 import uavcan
 import can
 
@@ -35,10 +34,17 @@ MAG_SUB_TOPIC = "/uav/mag"
 JOY_TOPIC = "Joy"
 NODE_STATUS_TOPIC = "NodeStatus"
 
+ACTUATORS_PERIOD = 0.025
+IMU_PERIOD = 0.015
+GPS_PERIOD = 0.2
+BARO_PERIOD = 0.05
+MAG_PERIOD = 0.05
+DIFF_PRESSURE_PERIOD = 0.05
+
 class UavcanCommunicatorV0:
     """
-    General-purpose uavcan communicator.
-    It simply allows to create a node and provides subscribe and publish methods
+    Simple wrap on pyuavcan v0.1
+    Based on example: https://legacy.uavcan.org/Implementations/Pyuavcan/Tutorials/
     """
     def __init__(self, can_device_type, node_id=42, node_name="uavcan communicator"):
         """
@@ -108,23 +114,37 @@ class UavcanCommunicatorV0:
             rospy.logerr("tx uavcan.driver.common.TxQueueFullError {}, №{}".format(
                          e, self.tx_full_buffer_error))
         except queue.Full as e:
-            rospy.logerr("tx uavcan.driver.common.TxQueueFullError {}".format(e))
+            rospy.logerr("tx queue.Full {}".format(e))
 
-    def spin(self):
+    def create_spin_thread(self):
         """
-        Note: cycle instead of thread because v0.1 is not thread-safe
-        It can't be threading.Thread(target=self.node.spin, daemon=True).start()
+        This approach works fine for experimenting, however, it must never be used in production
+        because the library is not thread safe.
+        """
+        while not rospy.is_shutdown():
+            self.spin(period=-1)
+
+    def spin(self, period=0.00001):
+        """
+        period - blocking time, where -1 means infinity, 0 means non-blocking
         """
         try:
-            self.node.spin(0.00001)
+            if(period == -1):
+                self.node.spin()
+            else:
+                self.node.spin(period)
         except uavcan.transport.TransferError as e:
             self.spin_transfer_error_counter += 1
             rospy.logerr("spin uavcan.transport.TransferError {}, №{}".format(
-                         e, self.spin_transfer_error_counter))
+                        e, self.spin_transfer_error_counter))
         except can.CanError as e:
             self.spin_can_error_counter += 1
             rospy.logerr("spin can.CanError {}, №{}".format(
-                         e, self.spin_can_error_counter))
+                        e, self.spin_can_error_counter))
+        except queue.Full as e:
+            rospy.logerr("spin queue.Full {}".format(e))
+        except uavcan.driver.common.TxQueueFullError as e:
+            rospy.logerr("spin uavcan.driver.common.TxQueueFullError {}".format(e))
 
 
 class SubscriberManager:
@@ -133,7 +153,6 @@ class SubscriberManager:
         self.communicator = communicator
         self.in_msgs = dict()
         self.msg_timestamps = dict()
-        self.publishers = list()
 
     def subscribe(self, protocol_type, in_data_type, in_topic):
         callback = lambda event : self._callback_save_msg(event, in_topic)
@@ -147,7 +166,6 @@ class SubscriberManager:
     def _callback_save_msg(self, event, in_topic):
         self.in_msgs[in_topic] = event
         self.msg_timestamps[in_topic] = rospy.get_time()
-        # rospy.loginfo_throttle(3, self.in_msgs[in_topic].transfer.payload)
 
 
 class Publisher:
@@ -155,18 +173,30 @@ class Publisher:
     Simple wrap on publisher that has 2 key features:
     - it has access to all subscription data throught SubscriberManager field - self.in_msgs
     - it has method 'publish' that allows unifiedly perform publication of any data type"""
-    def __init__(self, subscriber_manager):
+    def __init__(self, subscriber_manager, sub_topic, pub_topic):
         self.in_msgs = subscriber_manager.in_msgs
         self.timestamp = rospy.get_time()
         self.msg_timestamps = subscriber_manager.msg_timestamps
-        self.number_of_published_msg = 0
+        self.number_of_msgs = 0
+        self.sub_topic = sub_topic
+        self.pub_topic = pub_topic
+        self.period = 1
+        self.publisher = None
+        self.TIMEOUT_PERIOD = 2
 
     def publish(self):
-        """ Publish if:
-        - timestamp of last received data is less than period + crnt_time
-        - timestamp of last sended data is bigger than period + crnt_time
-        """
-        pass
+        crnt_time = rospy.get_time()
+        last_mgs_timestamp = self.msg_timestamps[self.sub_topic]
+
+        if last_mgs_timestamp > crnt_time - self.period and self.timestamp < crnt_time - self.period:
+            msg = self.fill_msg()
+            if msg is not None and self.publisher is not None:
+                self.publisher.publish(msg)
+                self.number_of_msgs += 1
+                self.timestamp = crnt_time
+        elif self.timestamp + self.TIMEOUT_PERIOD < crnt_time:
+            rospy.logwarn_throttle(2, "{} was publishhed long time ago: {}".format(
+                                   self.pub_topic, self.timestamp))
 
     def fill_msg(self):
         return None
@@ -174,50 +204,31 @@ class Publisher:
 
 class IMU(Publisher):
     def __init__(self, subscriber_manager):
-        super().__init__(subscriber_manager)
-        self.period = 0.05
-        self.communicator = subscriber_manager.communicator
-
-    def publish(self):
-        crnt_time = rospy.get_time()
-        last_mgs_timestamp = self.msg_timestamps[IMU_SUB_TOPIC]
-
-        if last_mgs_timestamp > crnt_time - self.period and self.timestamp < crnt_time - self.period:
-            msg = self.fill_msg()
-            if msg is not None:
-                self.communicator.publish(msg)
-                self.number_of_published_msg += 1
-                self.timestamp = crnt_time
+        super().__init__(subscriber_manager, IMU_SUB_TOPIC, IMU_SUB_TOPIC)
+        self.period = IMU_PERIOD
+        self.publisher = subscriber_manager.communicator
 
     def fill_msg(self):
-        lin_accel = self.in_msgs[IMU_SUB_TOPIC].linear_acceleration
-        ang_vel = self.in_msgs[IMU_SUB_TOPIC].angular_velocity
+        if self.in_msgs[IMU_SUB_TOPIC] is not None:
+            lin_accel = self.in_msgs[IMU_SUB_TOPIC].linear_acceleration
+            ang_vel = self.in_msgs[IMU_SUB_TOPIC].angular_velocity
 
-        gyro = [ang_vel.x, ang_vel.y, ang_vel.z]
-        accel = [lin_accel.x, lin_accel.y, lin_accel.z]
+            gyro = [ang_vel.x, ang_vel.y, ang_vel.z]
+            accel = [lin_accel.x, lin_accel.y, lin_accel.z]
 
-        msg = uavcan.equipment.ahrs.RawIMU(
-            rate_gyro_latest=gyro,
-            accelerometer_latest=accel)
+            msg = uavcan.equipment.ahrs.RawIMU(
+                rate_gyro_latest=gyro,
+                accelerometer_latest=accel)
+        else:
+            msg = None
         return msg
 
 
 class GPS(Publisher):
     def __init__(self, subscriber_manager):
-        super().__init__(subscriber_manager)
-        self.period = 0.1
-        self.communicator = subscriber_manager.communicator
-
-    def publish(self):
-        crnt_time = rospy.get_time()
-        last_mgs_timestamp = self.msg_timestamps[GPS_POSITION_SUB_TOPIC]
-
-        if last_mgs_timestamp > crnt_time - self.period and self.timestamp < crnt_time - self.period:
-            msg = self.fill_msg()
-            if msg is not None:
-                self.communicator.publish(msg)
-                self.number_of_published_msg += 1
-                self.timestamp = crnt_time
+        super().__init__(subscriber_manager, GPS_POSITION_SUB_TOPIC, GPS_POSITION_SUB_TOPIC)
+        self.period = GPS_PERIOD
+        self.publisher = subscriber_manager.communicator
 
     def fill_msg(self):
         if self.in_msgs[GPS_POSITION_SUB_TOPIC] is None:
@@ -237,65 +248,69 @@ class GPS(Publisher):
 
 class Actuators(Publisher):
     def __init__(self, subscriber_manager):
-        super().__init__(subscriber_manager)
-        self.period = 0.05
-        self.publisher = rospy.Publisher(ACTUATORS_PUB_TOPIC, Joy, queue_size=10)
+        super().__init__(subscriber_manager, JOY_TOPIC, ACTUATORS_PUB_TOPIC)
+        self.period = ACTUATORS_PERIOD
+        self.publisher = rospy.Publisher(self.pub_topic, Joy, queue_size=10)
         self.msg = Joy()
         self.msg.header.frame_id = "kek"
         self.msg.axes = [0, 0, 0, 0, 0.5, 0, 0, -1]
 
-    def publish(self):
-        crnt_time = rospy.get_time()
-        last_mgs_timestamp = self.msg_timestamps[JOY_TOPIC]
-
-        if last_mgs_timestamp > crnt_time - self.period and self.timestamp < crnt_time - self.period:
-            msg = self.fill_msg()
-            if msg is not None:
-                self.publisher.publish(msg)
-                self.number_of_published_msg += 1
-                self.timestamp = crnt_time
-        elif self.timestamp + 10 * self.period < crnt_time:
-            rospy.logwarn_throttle(2, "Actuator msg was publishhed long time ago: {}".format(
-                                   self.timestamp))
-
     def fill_msg(self):
-        uavcan_joy_msg = self.in_msgs[JOY_TOPIC].transfer.payload.cmd
-        self.msg.header.stamp = rospy.get_rostime()
-        self.msg.axes[0] = 0
-        self.msg.axes[1] = 0
-        self.msg.axes[2] = 0
-        self.msg.axes[3] = 0
+        if self.in_msgs[self.sub_topic] is not None:
+            raw_cmd_msg = list(self.in_msgs[self.sub_topic].transfer.payload.cmd)
+            rospy.loginfo_throttle(1, raw_cmd_msg)
+            self.msg.header.stamp = rospy.get_rostime()
+            raw_cmd_len = len(raw_cmd_msg)
+            if raw_cmd_len == 0:
+                self.msg.axes[0] = 0
+                self.msg.axes[1] = 0
+                self.msg.axes[2] = 0
+                self.msg.axes[3] = 0
 
-        self.msg.axes[4] = 0.5
-        self.msg.axes[5] = 0
-        self.msg.axes[6] = 0
+                self.msg.axes[4] = 0.5
+                self.msg.axes[5] = 0
+                self.msg.axes[6] = 0
 
-        self.msg.axes[7] = -1
+                self.msg.axes[7] = -1
+            elif raw_cmd_len == 8:
+                self.msg.axes[0] = raw_cmd_msg[0]
+                self.msg.axes[1] = raw_cmd_msg[1]
+                self.msg.axes[2] = raw_cmd_msg[2]
+                self.msg.axes[3] = raw_cmd_msg[3]
 
+                self.msg.axes[4] = raw_cmd_msg[4]
+                self.msg.axes[5] = raw_cmd_msg[5]
+                self.msg.axes[6] = raw_cmd_msg[6]
+
+                self.msg.axes[7] = raw_cmd_msg[7]
+            else:
+                rospy.logwarn_throttle(1, "Wrong Actuators (RawCmd) size={}.".format(raw_cmd_len))
+        else:
+            return None
         return self.msg
 
 
 class Baro(Publisher):
     def __init__(self, subscriber_manager):
-        super().__init__(subscriber_manager)
-        self.period = 0.1
-        self.communicator = subscriber_manager.communicator
+        super().__init__(subscriber_manager, None, None)
+        self.period = BARO_PERIOD
+        self.publisher = subscriber_manager.communicator
 
     def publish(self):
         crnt_time = rospy.get_time()
         if self.timestamp + self.period < crnt_time:
             msgs = self.fill_msg()
             for msg in msgs:
-                self.communicator.publish(msg)
-                self.number_of_published_msg += 1
+                self.publisher.publish(msg)
+                self.number_of_msgs += 1
                 self.timestamp = crnt_time
 
     def fill_msg(self):
-        temperature = 42.42+273
-        temperature_noise = float(np.random.normal(0, 1, 1))
+        temperature = 27.42+273
+        temperature_noise = float(np.random.normal(0, 0.1, 1))
 
         pressure = 98600
-        pressure_noise = float(np.random.normal(0, 2, 1))
+        pressure_noise = float(np.random.normal(0, 0.2, 1))
 
         temperature_msg = uavcan.equipment.air_data.StaticTemperature(
             static_temperature=temperature+temperature_noise,
@@ -305,59 +320,46 @@ class Baro(Publisher):
             static_pressure_variance=1)
         return [temperature_msg, pressure_msg]
 
+
 class Magnetometr(Publisher):
     def __init__(self, subscriber_manager):
-        super().__init__(subscriber_manager)
-        self.period = 0.1
-        self.communicator = subscriber_manager.communicator
-
-    def publish(self):
-        crnt_time = rospy.get_time()
-        last_mgs_timestamp = self.msg_timestamps[MAG_SUB_TOPIC]
-
-        if last_mgs_timestamp > crnt_time - self.period and self.timestamp < crnt_time - self.period:
-            msg = self.fill_msg()
-            if msg is not None:
-                self.communicator.publish(msg)
-                self.number_of_published_msg += 1
-                self.timestamp = crnt_time
-
+        super().__init__(subscriber_manager, MAG_SUB_TOPIC, MAG_SUB_TOPIC)
+        self.period = MAG_PERIOD
+        self.publisher = subscriber_manager.communicator
 
     def fill_msg(self):
-        if self.in_msgs[ATTITUDE_SUB_TOPIC] is None or self.in_msgs[GPS_POSITION_SUB_TOPIC] is None:
-            msg = None
-        else:
+        if self.in_msgs[MAG_SUB_TOPIC] is not None:
             mag = self.in_msgs[MAG_SUB_TOPIC].magnetic_field
-            # magnetic_field_ga = [-0.0720, +0.1050, 0.3480]
             magnetic_field_ga = [mag.x, mag.y, mag.z]
-
-            magnetic_field_ga_noise = [0.001, 0.001, 0.001]
-
+            magnetic_field_ga_noise = list(np.random.normal(0, 0.001, 3))
             msg = uavcan.equipment.ahrs.MagneticFieldStrength(
                 magnetic_field_ga=[sum(i) for i in zip(magnetic_field_ga, magnetic_field_ga_noise)])
+        else:
+            msg = None
         return msg
+
 
 class DiffPressure(Publisher):
     def __init__(self, subscriber_manager):
-        super().__init__(subscriber_manager)
-        self.period = 0.1
-        self.communicator = subscriber_manager.communicator
+        super().__init__(subscriber_manager, None, None)
+        self.period = DIFF_PRESSURE_PERIOD
+        self.publisher = subscriber_manager.communicator
 
     def publish(self):
         crnt_time = rospy.get_time()
         if self.timestamp + self.period < crnt_time:
             msg = self.fill_msg()
             if msg is not None:
-                self.communicator.publish(msg)
-                self.number_of_published_msg += 1
+                self.publisher.publish(msg)
+                self.number_of_msgs += 1
                 self.timestamp = crnt_time
 
     def fill_msg(self):
         static_pressure = 98600
-        static_pressure_noise = float(np.random.normal(0, 1, 1))
+        static_pressure_noise = float(np.random.normal(0, 0.1, 1))
 
         differential_pressure = 0
-        differential_pressure_noise = float(np.random.normal(0, 1, 1))
+        differential_pressure_noise = float(np.random.normal(0, 0.1, 1))
 
         msg = uavcan.equipment.air_data.RawAirData(
             static_pressure=static_pressure+static_pressure_noise,
@@ -372,57 +374,37 @@ class PX4UavcanCommunicator:
         rospy.sleep(1)
 
         self.publishers = list()
-        self.uavcan_spin_time = 0
-        self.ros_spin_time = 0
-        self.publishing_time = 0
         self.last_log_time = 0
-        self.log_period = 1
+        self.LOG_PERIOD = 3
 
+        self._connect_uavcan()
+        self.subscriber_manager = SubscriberManager(self.communicator)
+        self._subscribe_and_advertise()
+
+    def create_uavcan_spin_thread(self):
+        import threading
+        threading.Thread(target=self.communicator.create_spin_thread, daemon=True).start()
+
+    def spin_and_publish(self):
+        self.rate.sleep()
+        for publisher in self.publishers:
+            publisher.publish()
+
+        if self.last_log_time + self.LOG_PERIOD < rospy.get_time():
+            self.last_log_time = rospy.get_time()
+            hz = list(map(lambda x : int(x.number_of_msgs/self.LOG_PERIOD), self.publishers))
+            rospy.logdebug("hz: act={}/gps={}/baro={}/diff_pres={}/imu={}/mag={}".format(*hz))
+            for publisher in self.publishers:
+                publisher.number_of_msgs = 0
+
+    def _connect_uavcan(self):
         self.communicator = None
         while not rospy.is_shutdown() and self.communicator is None:
             try:
                 self.communicator = UavcanCommunicatorV0(can_device_type="can-slcan")
-                self.subscriber_manager = SubscriberManager(self.communicator)
-                self._subscribe_and_advertise()
             except OSError as e:
                 rospy.logerr("{}. Check you device. Trying to reconnect.".format(e))
                 rospy.sleep(2)
-
-
-    def spin_and_publish(self):
-        start_time = rospy.get_time()
-        self.communicator.spin()
-        self.uavcan_spin_time += rospy.get_time() - start_time
-
-        start_time = rospy.get_time()
-        self.rate.sleep()
-        self.ros_spin_time += rospy.get_time() - start_time
-
-        start_time = rospy.get_time()
-        for publisher in self.publishers:
-            publisher.publish()
-        self.publishing_time += rospy.get_time() - start_time
-
-        DIAGNOSTIC_PERIOD = 3.0
-        if self.last_log_time + DIAGNOSTIC_PERIOD < rospy.get_time():
-            self.last_log_time = rospy.get_time()
-            rospy.logdebug("Log: time usage: uavcan={}, ros={}, pub={}; hz={}/{}/{}/{}/{}/{}".format(
-                round(self.uavcan_spin_time, 1),
-                round(self.ros_spin_time, 2),
-                round(self.publishing_time, 1),
-                int(self.publishers[0].number_of_published_msg / DIAGNOSTIC_PERIOD),
-                int(self.publishers[1].number_of_published_msg / DIAGNOSTIC_PERIOD),
-                int(self.publishers[2].number_of_published_msg / DIAGNOSTIC_PERIOD),
-                int(self.publishers[3].number_of_published_msg / DIAGNOSTIC_PERIOD),
-                int(self.publishers[4].number_of_published_msg / DIAGNOSTIC_PERIOD),
-                int(self.publishers[5].number_of_published_msg / DIAGNOSTIC_PERIOD)))
-            self.publishers[0].number_of_published_msg = 0
-            self.publishers[1].number_of_published_msg = 0
-            self.publishers[2].number_of_published_msg = 0
-            self.publishers[3].number_of_published_msg = 0
-            self.publishers[4].number_of_published_msg = 0
-            self.publishers[5].number_of_published_msg = 0
-
 
     def _subscribe_and_advertise(self):
         self.subscriber_manager.subscribe("uavcan", uavcan.equipment.esc.RawCommand, JOY_TOPIC)
@@ -436,14 +418,16 @@ class PX4UavcanCommunicator:
 
 
         self.publishers.append(Actuators(self.subscriber_manager))
-        self.publishers.append(Baro(self.subscriber_manager))
-        self.publishers.append(Magnetometr(self.subscriber_manager))
-        self.publishers.append(DiffPressure(self.subscriber_manager))
+
         self.publishers.append(GPS(self.subscriber_manager))
+        self.publishers.append(Baro(self.subscriber_manager))
+        self.publishers.append(DiffPressure(self.subscriber_manager))
         self.publishers.append(IMU(self.subscriber_manager))
+        self.publishers.append(Magnetometr(self.subscriber_manager))
 
 
 if __name__=="__main__":
     px4_uavcan_communicator = PX4UavcanCommunicator()
+    px4_uavcan_communicator.create_uavcan_spin_thread()
     while not rospy.is_shutdown():
         px4_uavcan_communicator.spin_and_publish()
