@@ -24,6 +24,7 @@
 #include <sensor_msgs/Joy.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/UInt8.h>
 #include <std_msgs/Empty.h>
 
 #include "uavDynamicsSimBase.hpp"
@@ -108,6 +109,13 @@ class Uav_Dynamics {
         double magLastPubTimeSec_ = 0;
 
         void publishStateToCommunicator();
+        //@}
+
+        /// @name Calibration
+        //@{
+        ros::Subscriber calibrationSub_;
+        uint8_t calibrationType_ = 0;
+        void calibrationCallback(std_msgs::UInt8 msg);
         //@}
 
         /// @name Diagnostic

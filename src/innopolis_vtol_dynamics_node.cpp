@@ -121,6 +121,9 @@ int8_t Uav_Dynamics::init(){
     speedPub_ = node_.advertise<geometry_msgs::Twist>(VELOCITY_TOPIC_NAME, 1);
     magPub_ = node_.advertise<sensor_msgs::MagneticField>(MAG_TOPIC_NAME, 1);
 
+    // Calibration
+    calibrationSub_ = node_.subscribe("/uav/calibration", 1, &Uav_Dynamics::calibrationCallback, this);
+
     // Other publishers and subscribers
     forcesPub_ = node_.advertise<std_msgs::Float64MultiArray>("/uav/threads_info", 1);
 
@@ -234,7 +237,9 @@ void Uav_Dynamics::proceedQuadcopterDynamics(double period){
         auto time_point = crnt_time + sleed_period;
         dynamicsCounter_++;
 
-        if(armed_){
+        if(calibrationType_ != UavDynamicsSimBase::CalibrationType_t::WORK_MODE){
+            uavDynamicsSim_->calibrate(calibrationType_);
+        }else if(armed_){
             static auto crnt_time = std::chrono::system_clock::now();
             auto prev_time = crnt_time;
             crnt_time = std::chrono::system_clock::now();
@@ -331,6 +336,13 @@ void Uav_Dynamics::armCallback(std_msgs::Bool msg){
     armed_ = msg.data;
 }
 
+void Uav_Dynamics::calibrationCallback(std_msgs::UInt8 msg){
+    if(calibrationType_ != msg.data){
+        ROS_INFO_STREAM_THROTTLE(1, "calibration type: " << msg.data + 0);
+    }
+    calibrationType_ = msg.data;
+}
+
 void Uav_Dynamics::publishState(void){
     geometry_msgs::TransformStamped transform;
 
@@ -416,9 +428,9 @@ void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond
     // there should be some mistake, is not it?
     // if we really want frd, we actually need to multiple
     // but in this situation YAW (and may smth) is inversed
-    // static const auto Q_FLU_TO_FRD = Eigen::Quaterniond(0, 1, 0, 0);
-    // Eigen::Vector3d magFrd = Q_FLU_TO_FRD * (attitudeFluToNed.inverse() * magEnu);
-    Eigen::Vector3d magFrd = (attitudeFluToNed.inverse() * magEnu);
+    static const auto Q_FLU_TO_FRD = Eigen::Quaterniond(0, 1, 0, 0);
+    Eigen::Vector3d magFrd = Q_FLU_TO_FRD * (attitudeFluToNed.inverse() * magEnu);
+    // Eigen::Vector3d magFrd = (attitudeFluToNed.inverse() * magEnu);
 
     sensor_msgs::MagneticField mag;
     mag.header.stamp = ros::Time();

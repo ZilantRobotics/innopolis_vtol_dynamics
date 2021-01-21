@@ -39,6 +39,25 @@ public:
     virtual void getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput) = 0;
     virtual void enu2Geodetic(double east, double north, double up,
                               double *latitude, double *longitude, double *altitude) = 0;
+    virtual int8_t calibrate(uint8_t calibrationType) {}
+
+
+    enum CalibrationType_t{
+        WORK_MODE,
+        MAG_1_NORMAL=1,             // ROLL OK              ROTATE YAW POSITIVE
+        MAG_2_OVERTURNED,           // ROLL INVERTED        ROTATE YAW NEGATIVE
+        MAG_3_HEAD_DOWN,            // PITCH POSITIVE pi/2  ROTATE YAW POSITIVE
+        MAG_4_HEAD_UP,              // PITCH NEGATIVE pi/2  ROTATE YAW NEGATIVE
+        MAG_5_TURNED_LEFT,          // ROLL POSITIVE pi/2   ROTATE YAW POSITIVE
+        MAG_6_TURNED_RIGHT,         // ROLL NEGATIVE pi/2   ROTATE YAW NEGATIVE
+
+        ACC_1_NORMAL=11,            // ROLL OK
+        ACC_2_OVERTURNED,           // ROLL INVERTED
+        ACC_3_HEAD_DOWN,            // PITCH POSITIVE pi/2
+        ACC_4_HEAD_UP,              // PITCH NEGATIVE pi/2
+        ACC_5_TURNED_LEFT,          // ROLL POSITIVE pi/2
+        ACC_6_TURNED_RIGHT,         // ROLL NEGATIVE pi/2
+    };
 
 protected:
     /**
