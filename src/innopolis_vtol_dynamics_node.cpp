@@ -207,14 +207,19 @@ void Uav_Dynamics::performDiagnostic(double periodSec){
         rosPubCounter_ = 0;
         actuatorsMsgCounter_ = 0;
 
-        ROS_INFO_STREAM("\033[1;29m actuators \033[0m [" <<
-                        "mc: "      <<  actuators_[0] << ", "   << actuators_[1] << ", " <<
-                                        actuators_[2] << ", "   << actuators_[3] << ", " <<
-                        "fw rpy: (" <<  actuators_[4] << ", "   <<
-                                        actuators_[5] << ", "   <<
-                                        actuators_[6] << "), "  <<
-                        "throttle " <<  actuators_[7] << "].");
-
+        auto enuPosition = uavDynamicsSim_->getVehiclePosition();
+        ROS_INFO_STREAM(
+            "\033[1;29m mc \033[0m [" <<        round(actuators_[0]) << ", " <<
+                                                round(actuators_[1]) << ", " <<
+                                                round(actuators_[2]) << ", " <<
+                                                round(actuators_[3]) << "]," <<
+            "\033[1;29m fw rpy \033[0m [" <<    round(actuators_[4]) << ", " <<
+                                                round(actuators_[5]) << ", " <<
+                                                round(actuators_[6]) << "]," <<
+            "\033[1;29m throttle \033[0m [" <<  round(actuators_[7]) << "]." <<
+            "\033[1;29m ned pose \033[0m [" <<  enuPosition[0] << ", " <<
+                                                enuPosition[1] << ", " <<
+                                                enuPosition[2] << "].");
         std::this_thread::sleep_until(crnt_time + sleed_period);
     }
 }
@@ -258,7 +263,7 @@ void Uav_Dynamics::proceedQuadcopterDynamics(double period){
 
 void Uav_Dynamics::publishStateToCommunicator(){
     // Get state in ROS notation
-    auto enuPosition(uavDynamicsSim_->getVehiclePosition());
+    auto enuPosition = uavDynamicsSim_->getVehiclePosition();
     auto attitudeFluToEnu = uavDynamicsSim_->getVehicleAttitude();
     Eigen::Vector3d accFlu(0, 0, -9.8), gyroFlu(0, 0, 0);
     uavDynamicsSim_->getIMUMeasurement(accFlu, gyroFlu);
@@ -366,10 +371,10 @@ void Uav_Dynamics::publishState(void){
     tfPub_.sendTransform(transform);
 
     transform.header.frame_id = "world";
-    transform.transform.rotation.x = 0;
+    transform.transform.rotation.x = 1.0;
     transform.transform.rotation.y = 0;
     transform.transform.rotation.z = 0;
-    transform.transform.rotation.w = 1;
+    transform.transform.rotation.w = 0;
     transform.child_frame_id = "uav/com";
     tfPub_.sendTransform(transform);
 }
@@ -429,8 +434,8 @@ void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond
     // if we really want frd, we actually need to multiple
     // but in this situation YAW (and may smth) is inversed
     static const auto Q_FLU_TO_FRD = Eigen::Quaterniond(0, 1, 0, 0);
-    Eigen::Vector3d magFrd = Q_FLU_TO_FRD * (attitudeFluToNed.inverse() * magEnu);
-    // Eigen::Vector3d magFrd = (attitudeFluToNed.inverse() * magEnu);
+    // Eigen::Vector3d magFrd = Q_FLU_TO_FRD * (attitudeFluToNed.inverse() * magEnu);
+    Eigen::Vector3d magFrd = (attitudeFluToNed.inverse() * magEnu);
 
     sensor_msgs::MagneticField mag;
     mag.header.stamp = ros::Time();

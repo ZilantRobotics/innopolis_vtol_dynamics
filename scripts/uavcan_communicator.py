@@ -17,6 +17,7 @@ from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Joy
 from sensor_msgs.msg import MagneticField
+from std_msgs.msg import Bool
 
 # For uavcan v0.1
 import uavcan
@@ -34,8 +35,9 @@ MAG_SUB_TOPIC = "/uav/mag"
 JOY_TOPIC = "Joy"
 NODE_STATUS_TOPIC = "NodeStatus"
 
+ARM_PERIOD = 0.2
 ACTUATORS_PERIOD = 0.025
-IMU_PERIOD = 0.015
+IMU_PERIOD = 0.005
 GPS_PERIOD = 0.2
 BARO_PERIOD = 0.05
 MAG_PERIOD = 0.05
@@ -60,7 +62,7 @@ class UavcanCommunicatorV0:
         self.spin_transfer_error_counter = 0
 
         if can_device_type == "serial":
-            kawrgs = {"can_device_name" : "/dev/ttyACM0",
+            kawrgs = {"can_device_name" : "/dev/ttyACM2",
                       "baudrate" : 1000000}
         elif can_device_type == "can-slcan":
             kawrgs = {"can_device_name" : "slcan0",
@@ -252,13 +254,19 @@ class Actuators(Publisher):
         self.period = ACTUATORS_PERIOD
         self.publisher = rospy.Publisher(self.pub_topic, Joy, queue_size=10)
         self.msg = Joy()
-        self.msg.header.frame_id = "kek"
+        self.msg.header.frame_id = "todo: come up with a topic name"
         self.msg.axes = [0, 0, 0, 0, 0.5, 0, 0, -1]
 
     def fill_msg(self):
+        """
+        input[0-7] are normalized into [-8192, 8191]; negative values indicate reverse rotation
+        output[0-3] are from -1.0 to +1.0
+        output[4] is from 0.0 to 1.0 with middle value 0.5
+        output[5-6] are from -1.0 to +1.0 with middle value 0
+        output[7] from -1.0 to 1.0 with default value 0
+        """
         if self.in_msgs[self.sub_topic] is not None:
             raw_cmd_msg = list(self.in_msgs[self.sub_topic].transfer.payload.cmd)
-            rospy.loginfo_throttle(1, raw_cmd_msg)
             self.msg.header.stamp = rospy.get_rostime()
             raw_cmd_len = len(raw_cmd_msg)
             if raw_cmd_len == 0:
@@ -273,22 +281,52 @@ class Actuators(Publisher):
 
                 self.msg.axes[7] = -1
             elif raw_cmd_len == 8:
-                self.msg.axes[0] = raw_cmd_msg[0]
-                self.msg.axes[1] = raw_cmd_msg[1]
-                self.msg.axes[2] = raw_cmd_msg[2]
-                self.msg.axes[3] = raw_cmd_msg[3]
+                if raw_cmd_msg[5] == -1:
+                    raw_cmd_msg[5] = 4096
+                if raw_cmd_msg[6] == -1:
+                    raw_cmd_msg[6] = 4096
+                self.msg.axes[0] = raw_cmd_msg[0] / 8191.0
+                self.msg.axes[1] = raw_cmd_msg[1] / 8191.0
+                self.msg.axes[2] = raw_cmd_msg[2] / 8191.0
+                self.msg.axes[3] = raw_cmd_msg[3] / 8191.0
 
-                self.msg.axes[4] = raw_cmd_msg[4]
-                self.msg.axes[5] = raw_cmd_msg[5]
-                self.msg.axes[6] = raw_cmd_msg[6]
+                self.msg.axes[4] = 0.5 + (raw_cmd_msg[4] - 4096) / 8191.0
+                self.msg.axes[5] = raw_cmd_msg[5] / 4096 - 1
+                self.msg.axes[6] = raw_cmd_msg[6] / 4096 - 1
 
-                self.msg.axes[7] = raw_cmd_msg[7]
+                self.msg.axes[7] = raw_cmd_msg[7] / 8191.0
             else:
-                rospy.logwarn_throttle(1, "Wrong Actuators (RawCmd) size={}.".format(raw_cmd_len))
+                rospy.logerr_throttle(1,
+                    "Wrong Actuators (RawCmd) size={}. May be wrong mixer?".format(raw_cmd_len))
         else:
             return None
         return self.msg
 
+
+class Arm(Publisher):
+    def __init__(self, subscriber_manager):
+        super().__init__(subscriber_manager, JOY_TOPIC, ARM_PUB_TOPIC)
+        self.period = ARM_PERIOD
+        self.publisher = rospy.Publisher(ARM_PUB_TOPIC, Bool, queue_size=10)
+        self.msg = Bool()
+
+    def publish(self):
+        crnt_time = rospy.get_time()
+        if self.timestamp + self.period < crnt_time:
+            msg = self.fill_msg()
+            self.publisher.publish(msg)
+            self.number_of_msgs += 1
+            self.timestamp = crnt_time
+
+    def fill_msg(self):
+        self.msg.data = False
+        if self.in_msgs[self.sub_topic] is not None:
+            raw_cmd_msg = list(self.in_msgs[self.sub_topic].transfer.payload.cmd)
+            if len(raw_cmd_msg) == 8:
+                for raw_cmd in raw_cmd_msg:
+                    if raw_cmd != -1:
+                        self.msg.data = True
+        return self.msg
 
 class Baro(Publisher):
     def __init__(self, subscriber_manager):
@@ -401,7 +439,7 @@ class PX4UavcanCommunicator:
         self.communicator = None
         while not rospy.is_shutdown() and self.communicator is None:
             try:
-                self.communicator = UavcanCommunicatorV0(can_device_type="can-slcan")
+                self.communicator = UavcanCommunicatorV0(can_device_type="serial")
             except OSError as e:
                 rospy.logerr("{}. Check you device. Trying to reconnect.".format(e))
                 rospy.sleep(2)
@@ -424,7 +462,7 @@ class PX4UavcanCommunicator:
         self.publishers.append(DiffPressure(self.subscriber_manager))
         self.publishers.append(IMU(self.subscriber_manager))
         self.publishers.append(Magnetometr(self.subscriber_manager))
-
+        self.publishers.append(Arm(self.subscriber_manager))
 
 if __name__=="__main__":
     px4_uavcan_communicator = PX4UavcanCommunicator()
