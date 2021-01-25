@@ -18,6 +18,10 @@ from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Joy
 from sensor_msgs.msg import MagneticField
 from std_msgs.msg import Bool
+from innopolis_vtol_dynamics.msg import RawAirData
+from innopolis_vtol_dynamics.msg import StaticTemperature
+from innopolis_vtol_dynamics.msg import StaticPressure
+
 
 # For uavcan v0.1
 import uavcan
@@ -31,17 +35,20 @@ ATTITUDE_SUB_TOPIC = "/uav/attitude"
 VELOCITY_SUB_TOPIC = "/uav/velocity"
 IMU_SUB_TOPIC = "/uav/imu"
 MAG_SUB_TOPIC = "/uav/mag"
+RAW_AIR_DATA_SUB_TOPIC = "/uav/raw_air_data"
+STATIC_TEMPERATURE_SUB_TOPIC = "/uav/static_temperature"
+STATIC_PRESSURE_SUB_TOPIC = "/uav/static_pressure"
 
 JOY_TOPIC = "Joy"
 NODE_STATUS_TOPIC = "NodeStatus"
 
 ARM_PERIOD = 0.2
 ACTUATORS_PERIOD = 0.025
-IMU_PERIOD = 0.005
-GPS_PERIOD = 0.2
-BARO_PERIOD = 0.05
-MAG_PERIOD = 0.05
-DIFF_PRESSURE_PERIOD = 0.05
+IMU_PERIOD = 0.003
+GPS_PERIOD = 0.1
+BARO_PERIOD = 0.03
+MAG_PERIOD = 0.03
+DIFF_PRESSURE_PERIOD = 0.03
 
 class UavcanCommunicatorV0:
     """
@@ -181,7 +188,7 @@ class Publisher:
         self.msg_timestamps = subscriber_manager.msg_timestamps
         self.number_of_msgs = 0
         self.sub_topic = sub_topic
-        self.pub_topic = pub_topic
+        self.publisher_name = pub_topic
         self.period = 1
         self.publisher = None
         self.TIMEOUT_PERIOD = 2
@@ -198,7 +205,7 @@ class Publisher:
                 self.timestamp = crnt_time
         elif self.timestamp + self.TIMEOUT_PERIOD < crnt_time:
             rospy.logwarn_throttle(2, "{} was publishhed long time ago: {}".format(
-                                   self.pub_topic, self.timestamp))
+                                   self.publisher_name, self.timestamp))
 
     def fill_msg(self):
         return None
@@ -233,15 +240,20 @@ class GPS(Publisher):
         self.publisher = subscriber_manager.communicator
 
     def fill_msg(self):
-        if self.in_msgs[GPS_POSITION_SUB_TOPIC] is None:
+        if self.in_msgs[GPS_POSITION_SUB_TOPIC] is None or\
+           self.in_msgs[VELOCITY_SUB_TOPIC] is None:
             msg = None
         else:
             geodetioc_pose = [int(self.in_msgs[GPS_POSITION_SUB_TOPIC].latitude * 100000000),
                               int(self.in_msgs[GPS_POSITION_SUB_TOPIC].longitude * 100000000),
                               int(self.in_msgs[GPS_POSITION_SUB_TOPIC].altitude * 1000)]
+            ned_velocity = [self.in_msgs[VELOCITY_SUB_TOPIC].linear.x,
+                            self.in_msgs[VELOCITY_SUB_TOPIC].linear.y,
+                            self.in_msgs[VELOCITY_SUB_TOPIC].linear.z]
             msg = uavcan.equipment.gnss.Fix(latitude_deg_1e8=geodetioc_pose[0],
                                             longitude_deg_1e8=geodetioc_pose[1],
                                             height_msl_mm=geodetioc_pose[2],
+                                            ned_velocity=ned_velocity,
                                             sats_used=10,
                                             status=3,
                                             pdop=99)
@@ -252,7 +264,7 @@ class Actuators(Publisher):
     def __init__(self, subscriber_manager):
         super().__init__(subscriber_manager, JOY_TOPIC, ACTUATORS_PUB_TOPIC)
         self.period = ACTUATORS_PERIOD
-        self.publisher = rospy.Publisher(self.pub_topic, Joy, queue_size=10)
+        self.publisher = rospy.Publisher(ACTUATORS_PUB_TOPIC, Joy, queue_size=10)
         self.msg = Joy()
         self.msg.header.frame_id = "todo: come up with a topic name"
         self.msg.axes = [0, 0, 0, 0, 0.5, 0, 0, -1]
@@ -330,7 +342,7 @@ class Arm(Publisher):
 
 class Baro(Publisher):
     def __init__(self, subscriber_manager):
-        super().__init__(subscriber_manager, None, None)
+        super().__init__(subscriber_manager, STATIC_PRESSURE_SUB_TOPIC, "Barometer")
         self.period = BARO_PERIOD
         self.publisher = subscriber_manager.communicator
 
@@ -344,19 +356,23 @@ class Baro(Publisher):
                 self.timestamp = crnt_time
 
     def fill_msg(self):
-        temperature = 27.42+273
-        temperature_noise = float(np.random.normal(0, 0.1, 1))
+        msgs = []
+        if self.in_msgs[STATIC_PRESSURE_SUB_TOPIC] is not None:
+            pressure = self.in_msgs[STATIC_PRESSURE_SUB_TOPIC].static_pressure * 100 # 98600
+            pressure_noise = float(np.random.normal(0, 0.1, 1))
+            pressure_msg = uavcan.equipment.air_data.StaticPressure(
+                static_pressure=pressure+pressure_noise,
+                static_pressure_variance=1)
+            msgs.append(pressure_msg)
 
-        pressure = 98600
-        pressure_noise = float(np.random.normal(0, 0.2, 1))
-
-        temperature_msg = uavcan.equipment.air_data.StaticTemperature(
-            static_temperature=temperature+temperature_noise,
-            static_temperature_variance=1)
-        pressure_msg = uavcan.equipment.air_data.StaticPressure(
-            static_pressure=pressure+pressure_noise,
-            static_pressure_variance=1)
-        return [temperature_msg, pressure_msg]
+        if self.in_msgs[STATIC_TEMPERATURE_SUB_TOPIC] is not None:
+            temperature = self.in_msgs[STATIC_TEMPERATURE_SUB_TOPIC].static_temperature # 23??
+            temperature_noise = float(np.random.normal(0, 0.2, 1))
+            temperature_msg = uavcan.equipment.air_data.StaticTemperature(
+                static_temperature=temperature+temperature_noise,
+                static_temperature_variance=1)
+            msgs.append(temperature_msg)
+        return msgs
 
 
 class Magnetometr(Publisher):
@@ -379,29 +395,28 @@ class Magnetometr(Publisher):
 
 class DiffPressure(Publisher):
     def __init__(self, subscriber_manager):
-        super().__init__(subscriber_manager, None, None)
+        super().__init__(subscriber_manager, RAW_AIR_DATA_SUB_TOPIC, "DiffPressure")
         self.period = DIFF_PRESSURE_PERIOD
         self.publisher = subscriber_manager.communicator
 
-    def publish(self):
-        crnt_time = rospy.get_time()
-        if self.timestamp + self.period < crnt_time:
-            msg = self.fill_msg()
-            if msg is not None:
-                self.publisher.publish(msg)
-                self.number_of_msgs += 1
-                self.timestamp = crnt_time
-
     def fill_msg(self):
-        static_pressure = 98600
-        static_pressure_noise = float(np.random.normal(0, 0.1, 1))
+        if self.in_msgs[STATIC_PRESSURE_SUB_TOPIC] is not None and \
+           self.in_msgs[STATIC_TEMPERATURE_SUB_TOPIC] is not None:
+            static_pressure = self.in_msgs[self.sub_topic].static_pressure * 100 # 98600
+            static_pressure_noise = float(np.random.normal(0, 0.1, 1))
 
-        differential_pressure = 0
-        differential_pressure_noise = float(np.random.normal(0, 0.1, 1))
+            differential_pressure = self.in_msgs[self.sub_topic].differential_pressure * 100 # 0
+            differential_pressure_noise = float(np.random.normal(0, 0.01, 1))
 
-        msg = uavcan.equipment.air_data.RawAirData(
+            temperature = self.in_msgs[STATIC_TEMPERATURE_SUB_TOPIC].static_temperature
+            temperature_noise = float(np.random.normal(0, 0.01, 1))
+
+            msg = uavcan.equipment.air_data.RawAirData(
+            static_air_temperature=temperature+temperature_noise,
             static_pressure=static_pressure+static_pressure_noise,
             differential_pressure=differential_pressure+differential_pressure_noise)
+        else:
+            msg = None
         return msg
 
 
@@ -448,11 +463,16 @@ class PX4UavcanCommunicator:
         self.subscriber_manager.subscribe("uavcan", uavcan.equipment.esc.RawCommand, JOY_TOPIC)
         self.subscriber_manager.subscribe("uavcan", uavcan.protocol.NodeStatus, NODE_STATUS_TOPIC)
 
-        self.subscriber_manager.subscribe("ros",    NavSatFix,            GPS_POSITION_SUB_TOPIC)
-        self.subscriber_manager.subscribe("ros",    QuaternionStamped,    ATTITUDE_SUB_TOPIC)
-        self.subscriber_manager.subscribe("ros",    Twist,                VELOCITY_SUB_TOPIC)
-        self.subscriber_manager.subscribe("ros",    Imu,                  IMU_SUB_TOPIC)
-        self.subscriber_manager.subscribe("ros",    MagneticField,        MAG_SUB_TOPIC)
+        self.subscriber_manager.subscribe("ros", NavSatFix,         GPS_POSITION_SUB_TOPIC)
+        self.subscriber_manager.subscribe("ros", QuaternionStamped, ATTITUDE_SUB_TOPIC)
+        self.subscriber_manager.subscribe("ros", Twist,             VELOCITY_SUB_TOPIC)
+        self.subscriber_manager.subscribe("ros", Imu,               IMU_SUB_TOPIC)
+        self.subscriber_manager.subscribe("ros", MagneticField,     MAG_SUB_TOPIC)
+
+        self.subscriber_manager.subscribe("ros", RawAirData,        RAW_AIR_DATA_SUB_TOPIC)
+        self.subscriber_manager.subscribe("ros", StaticTemperature, STATIC_TEMPERATURE_SUB_TOPIC)
+        self.subscriber_manager.subscribe("ros", StaticPressure,    STATIC_PRESSURE_SUB_TOPIC)
+
 
 
         self.publishers.append(Actuators(self.subscriber_manager))

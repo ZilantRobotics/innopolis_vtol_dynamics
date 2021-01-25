@@ -88,7 +88,6 @@ public:
      */
     int SendHilSensor(unsigned int time_usec,
                       Eigen::Vector3d pose_geodetic,
-                      Eigen::Quaterniond q_enu_flu,
                       Eigen::Vector3d mag_frd,
                       Eigen::Vector3d vel_frd,
                       Eigen::Vector3d acc_frd,

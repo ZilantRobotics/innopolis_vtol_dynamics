@@ -18,6 +18,9 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
+#include <innopolis_vtol_dynamics/RawAirData.h>
+#include <innopolis_vtol_dynamics/StaticPressure.h>
+#include <innopolis_vtol_dynamics/StaticTemperature.h>
 
 #include "innopolis_vtol_dynamics_node.hpp"
 #include "flightgogglesDynamicsSim.hpp"
@@ -101,14 +104,17 @@ int8_t Uav_Dynamics::init(){
     uavDynamicsSim_->setInitialPosition(initPosition, initAttitude);
 
     // Topics name:
-    constexpr char IMU_TOPIC_NAME[]      = "/uav/imu";
-    constexpr char MAG_TOPIC_NAME[]      = "/uav/mag";
-    constexpr char GPS_POSE_TOPIC_NAME[] = "/uav/gps_position";
-    constexpr char ATTITUDE_TOPIC_NAME[] = "/uav/attitude";
-    constexpr char VELOCITY_TOPIC_NAME[] = "/uav/velocity";
-    constexpr char ACTUATOR_TOPIC_NAME[] = "/uav/actuators";
-    constexpr char ARM_TOPIC_NAME[]      = "/uav/arm";
+    constexpr char IMU_TOPIC_NAME[]                 = "/uav/imu";
+    constexpr char MAG_TOPIC_NAME[]                 = "/uav/mag";
+    constexpr char GPS_POSE_TOPIC_NAME[]            = "/uav/gps_position";
+    constexpr char ATTITUDE_TOPIC_NAME[]            = "/uav/attitude";
+    constexpr char VELOCITY_TOPIC_NAME[]            = "/uav/velocity";
+    constexpr char ACTUATOR_TOPIC_NAME[]            = "/uav/actuators";
+    constexpr char ARM_TOPIC_NAME[]                 = "/uav/arm";
 
+    constexpr char RAW_AIR_DATA_TOPIC_NAME[]        = "/uav/raw_air_data";
+    constexpr char STATIC_TEMPERATURE_TOPIC_NAME[]  = "/uav/static_temperature";
+    constexpr char STATIC_PRESSURE_TOPIC_NAME[]     = "/uav/static_pressure";
 
     // Init subscribers and publishers for communicator
     // Imu should has up to 100ms sim time buffer (see issue #63)
@@ -120,6 +126,10 @@ int8_t Uav_Dynamics::init(){
     attitudePub_ = node_.advertise<geometry_msgs::QuaternionStamped>(ATTITUDE_TOPIC_NAME, 1);
     speedPub_ = node_.advertise<geometry_msgs::Twist>(VELOCITY_TOPIC_NAME, 1);
     magPub_ = node_.advertise<sensor_msgs::MagneticField>(MAG_TOPIC_NAME, 1);
+
+    rawAirDataPub_ = node_.advertise<innopolis_vtol_dynamics::RawAirData>(RAW_AIR_DATA_TOPIC_NAME, 1);
+    staticTemperaturePub_ = node_.advertise<innopolis_vtol_dynamics::StaticTemperature>(STATIC_TEMPERATURE_TOPIC_NAME, 1);
+    staticPressurePub_ = node_.advertise<innopolis_vtol_dynamics::StaticPressure>(STATIC_PRESSURE_TOPIC_NAME, 1);
 
     // Calibration
     calibrationSub_ = node_.subscribe("/uav/calibration", 1, &Uav_Dynamics::calibrationCallback, this);
@@ -280,6 +290,22 @@ void Uav_Dynamics::publishStateToCommunicator(){
 
     auto linVelNed = Converter::enuToNed(linVelEnu);
 
+    // Calculate temperature and pressure and density using ISA model
+    const float PRESSURE_MSL_HPA = 1013.250f;
+    const float TEMPERATURE_MSL_KELVIN = 288.0f;
+    const float RHO_MSL = 1.225f;
+
+    const float LAPSE_TEMPERATURE_RATE = 1 / 152.4; // 0.00656
+
+    float alt_msl = gpsPosition.z();
+
+    float temperatureLocalKelvin = TEMPERATURE_MSL_KELVIN - LAPSE_TEMPERATURE_RATE * alt_msl;
+    float pressureRatio = powf((TEMPERATURE_MSL_KELVIN/temperatureLocalKelvin), 5.256f);
+    const float densityRatio = powf((TEMPERATURE_MSL_KELVIN/temperatureLocalKelvin), 4.256f);
+    float rho = RHO_MSL / densityRatio;
+    float absPressure = PRESSURE_MSL_HPA / pressureRatio;
+    float diffPressure = 0.005f * rho * linVelNed.norm() * linVelNed.norm();
+
     // Publish state to communicator
     auto crntTimeSec = currentTime_.toSec();
     if(gpsLastPubTimeSec_ + GPS_POSITION_PERIOD < crntTimeSec){
@@ -301,6 +327,18 @@ void Uav_Dynamics::publishStateToCommunicator(){
     if(magLastPubTimeSec_ + MAG_PERIOD < crntTimeSec){
         publishUavMag(gpsPosition, attitudeFluToEnu);
         magLastPubTimeSec_ = crntTimeSec;
+    }
+    if(rawAirDataLastPubTimeSec_ + RAW_AIR_DATA_PERIOD < crntTimeSec){
+        publishUavAirData(absPressure, diffPressure);
+        rawAirDataLastPubTimeSec_ = crntTimeSec;
+    }
+    if(staticPressureLastPubTimeSec_ + STATIC_PRESSURE_PERIOD < crntTimeSec){
+        publishUavStaticPressure(absPressure);
+        staticPressureLastPubTimeSec_ = crntTimeSec;
+    }
+    if(staticTemperatureLastPubTimeSec_ + STATIC_TEMPERATURE_PERIOD < crntTimeSec){
+        publishUavStaticTemperature(temperatureLocalKelvin);
+        staticTemperatureLastPubTimeSec_ = crntTimeSec;
     }
 }
 
@@ -443,6 +481,28 @@ void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond
     mag.magnetic_field.y = magFrd[1];
     mag.magnetic_field.z = magFrd[2];
     magPub_.publish(mag);
+}
+
+void Uav_Dynamics::publishUavAirData(float absPressure, float diffPressure){
+    innopolis_vtol_dynamics::RawAirData msg;
+    msg.header.stamp = ros::Time();
+    msg.static_pressure = absPressure;
+    msg.differential_pressure = diffPressure;
+    rawAirDataPub_.publish(msg);
+}
+
+void Uav_Dynamics::publishUavStaticTemperature(float staticTemperature){
+    innopolis_vtol_dynamics::StaticTemperature msg;
+    msg.header.stamp = ros::Time();
+    msg.static_temperature = staticTemperature;
+    staticTemperaturePub_.publish(msg);
+}
+
+void Uav_Dynamics::publishUavStaticPressure(float staticPressure){
+    innopolis_vtol_dynamics::StaticPressure msg;
+    msg.header.stamp = ros::Time();
+    msg.static_pressure = staticPressure;
+    staticPressurePub_.publish(msg);
 }
 
 void fillArrow(visualization_msgs::Marker& arrow,

@@ -244,6 +244,11 @@ int8_t InnoVtolDynamicsSim::calibrate(uint8_t calType){
         }
         state_.Fspecific << 0, -params_.gravity, 0;
         state_.angularVel.setZero();
+    }else if(calType == 21){ // airspeed
+        state_.Fspecific << 0, -params_.gravity, 0;
+        state_.angularVel.setZero();
+        state_.linearVel[0] = 10.0;
+        state_.linearVel[1] = 10.0;
     }
 
     if(prevCalibrationType != calType){
@@ -253,10 +258,11 @@ int8_t InnoVtolDynamicsSim::calibrate(uint8_t calType){
         ROS_WARN_STREAM_THROTTLE(1, "cal " << calType + 0);
     }
 
-    Eigen::Quaterniond attitudeDelta = state_.attitude * Eigen::Quaterniond(0, state_.angularVel(0), state_.angularVel(1), state_.angularVel(2));
-    state_.attitude.coeffs() += attitudeDelta.coeffs() * 0.5 * 0.001;
-    state_.attitude.normalize();
+    constexpr float DELTA_TIME = 0.001;
 
+    Eigen::Quaterniond attitudeDelta = state_.attitude * Eigen::Quaterniond(0, state_.angularVel(0), state_.angularVel(1), state_.angularVel(2));
+    state_.attitude.coeffs() += attitudeDelta.coeffs() * 0.5 * DELTA_TIME;
+    state_.attitude.normalize();
     return 1;
 }
 

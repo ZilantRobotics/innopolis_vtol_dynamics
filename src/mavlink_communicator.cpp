@@ -239,7 +239,6 @@ void MavlinkCommunicator::communicate(){
             auto linearVelocityFrd = Converter::enuToFrd(linearVelocityEnu, attitudeFluToEnu);
             status = SendHilSensor(imuTimeUsec,
                                    gpsPosition_,
-                                   attitudeFluToEnu,
                                    magFrd_,
                                    linearVelocityFrd,
                                    accFrd_,
@@ -322,30 +321,29 @@ int MavlinkCommunicator::Clean(){
  * 0 means ok
  */
 int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
-                                   Eigen::Vector3d pose_geodetic,
-                                   Eigen::Quaterniond q_flu_to_enu,
-                                   Eigen::Vector3d mag_frd,
-                                   Eigen::Vector3d vel_frd,
-                                   Eigen::Vector3d acc_frd,
-                                   Eigen::Vector3d gyro_frd){
+                                   Eigen::Vector3d gpsPosition,
+                                   Eigen::Vector3d magFrd,
+                                   Eigen::Vector3d linVelFrd,
+                                   Eigen::Vector3d accFrd,
+                                   Eigen::Vector3d gyroFrd){
     // Output data
     mavlink_hil_sensor_t sensor_msg;
     sensor_msg.time_usec = time_usec;
 
     // 1. Fill acc and gyro in FRD frame
-    sensor_msg.xacc = acc_frd[0];
-    sensor_msg.yacc = acc_frd[1];
-    sensor_msg.zacc = acc_frd[2];
-    sensor_msg.xgyro = gyro_frd[0];
-    sensor_msg.ygyro = gyro_frd[1];
-    sensor_msg.zgyro = gyro_frd[2];
+    sensor_msg.xacc = accFrd[0];
+    sensor_msg.yacc = accFrd[1];
+    sensor_msg.zacc = accFrd[2];
+    sensor_msg.xgyro = gyroFrd[0];
+    sensor_msg.ygyro = gyroFrd[1];
+    sensor_msg.zgyro = gyroFrd[2];
     sensor_msg.fields_updated = SENS_ACCEL | SENS_GYRO;
 
     // 2. Fill Magnetc field with noise
     if (time_usec - lastMagTimeUsec_ > MAG_PERIOD_US){
-        sensor_msg.xmag = mag_frd[0] + magNoise_ * normalDistribution_(randomGenerator_);
-        sensor_msg.ymag = mag_frd[1] + magNoise_ * normalDistribution_(randomGenerator_);
-        sensor_msg.zmag = mag_frd[2] + magNoise_ * normalDistribution_(randomGenerator_);
+        sensor_msg.xmag = magFrd[0] + magNoise_ * normalDistribution_(randomGenerator_);
+        sensor_msg.ymag = magFrd[1] + magNoise_ * normalDistribution_(randomGenerator_);
+        sensor_msg.zmag = magFrd[2] + magNoise_ * normalDistribution_(randomGenerator_);
         sensor_msg.fields_updated |= SENS_MAG;
         lastMagTimeUsec_ = time_usec;
     }
@@ -360,7 +358,7 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
 
         const float LAPSE_TEMPERATURE_RATE = 1 / 152.4; // 0.00656
 
-        float alt_msl = pose_geodetic.z();
+        float alt_msl = gpsPosition.z();
 
         float temperature_local = TEMPERATURE_MSL_KELVIN - LAPSE_TEMPERATURE_RATE * alt_msl;
         float pressure_ratio = powf((TEMPERATURE_MSL_KELVIN/temperature_local), 5.256f);
@@ -376,11 +374,11 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
         sensor_msg.abs_pressure += absPressureNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.4. pressure altitude including effect of pressure noise
-        sensor_msg.pressure_alt = pose_geodetic.z();
+        sensor_msg.pressure_alt = gpsPosition.z();
         sensor_msg.pressure_alt += baroAltNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.5. diff pressure in hPa (Note: ignoring tailsitter case here)
-        sensor_msg.diff_pressure = 0.005f * rho * vel_frd.norm() * vel_frd.norm();
+        sensor_msg.diff_pressure = 0.005f * rho * linVelFrd.norm() * linVelFrd.norm();
         sensor_msg.diff_pressure += diffPressureNoise_ * normalDistribution_(randomGenerator_);
 
         sensor_msg.fields_updated |= SENS_BARO | SENS_DIFF_PRESS;
@@ -407,20 +405,20 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
  * 0 means ok
  */
 int MavlinkCommunicator::SendHilGps(unsigned int time_usec,
-                                Eigen::Vector3d vel_ned,
-                                Eigen::Vector3d pose_geodetic){
+                                Eigen::Vector3d linearVelNed,
+                                Eigen::Vector3d gpsPosition){
     // Fill gps msg
     mavlink_hil_gps_t hil_gps_msg;
     hil_gps_msg.time_usec = time_usec;
     hil_gps_msg.fix_type = 3;
-    hil_gps_msg.lat = pose_geodetic.x() * 1e7;
-    hil_gps_msg.lon = pose_geodetic.y() * 1e7;
-    hil_gps_msg.alt = pose_geodetic.z() * 1000;
+    hil_gps_msg.lat = gpsPosition.x() * 1e7;
+    hil_gps_msg.lon = gpsPosition.y() * 1e7;
+    hil_gps_msg.alt = gpsPosition.z() * 1000;
     hil_gps_msg.eph = 100;
     hil_gps_msg.epv = 100;
-    hil_gps_msg.vn = vel_ned.x() * 100;
-    hil_gps_msg.ve = vel_ned.y() * 100;
-    hil_gps_msg.vd = vel_ned.z() * 100;
+    hil_gps_msg.vn = linearVelNed.x() * 100;
+    hil_gps_msg.ve = linearVelNed.y() * 100;
+    hil_gps_msg.vd = linearVelNed.z() * 100;
     hil_gps_msg.vel = std::sqrt(hil_gps_msg.vn * hil_gps_msg.vn + hil_gps_msg.ve * hil_gps_msg.ve);
 
     // Course over ground

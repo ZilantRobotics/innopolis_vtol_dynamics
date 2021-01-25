@@ -24,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
     tf2
     tf2_ros
     geographiclib_conversions
+    message_generation
 )
 
 find_package(mavlink)
@@ -62,11 +63,12 @@ find_package(mavlink)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  RawAirData.msg
+  StaticPressure.msg
+  StaticTemperature.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -83,10 +85,10 @@ find_package(mavlink)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msg
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -120,7 +122,7 @@ find_package(mavlink)
 catkin_package(
 #  INCLUDE_DIRS include
     LIBRARIES innopolis_vtol_dynamics
-    CATKIN_DEPENDS roscpp std_msgs mav_msgs sensor_msgs geometry_msgs tf2 tf2_ros roslib
+    CATKIN_DEPENDS roscpp std_msgs mav_msgs sensor_msgs geometry_msgs tf2 tf2_ros roslib message_runtime
 #  DEPENDS system_lib
 )
 

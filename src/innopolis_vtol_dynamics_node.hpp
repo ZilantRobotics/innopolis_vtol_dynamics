@@ -75,38 +75,53 @@ class Uav_Dynamics {
         /// @name Communication with PX4
         //@{
         ros::Subscriber actuatorsSub_;
-        ros::Subscriber armSub_;
-
-        ros::Publisher attitudePub_;
-        ros::Publisher imuPub_;
-        ros::Publisher gpsPositionPub_;
-        ros::Publisher speedPub_;
-        ros::Publisher magPub_;
-
         std::vector<double> actuators_;
         uint64_t actuatorsTimestampSec_;
-        bool armed_ = false;
-
-        void armCallback(std_msgs::Bool msg);
         void actuatorsCallback(sensor_msgs::Joy::Ptr msg);
 
-        void publishUavGpsPosition(Eigen::Vector3d geoPosition);
+        ros::Subscriber armSub_;
+        bool armed_ = false;
+        void armCallback(std_msgs::Bool msg);
+
+        ros::Publisher attitudePub_;
+        double attitudeLastPubTimeSec_ = 0;
+        const double ATTITUDE_PERIOD = 0.0005;
         void publishUavAttitude(Eigen::Quaterniond attitude_frd_to_ned);
-        void publishUavVelocity(Eigen::Vector3d linVelNed, Eigen::Vector3d angVelFrd);
+
+        ros::Publisher imuPub_;
+        double imuLastPubTimeSec_ = 0;
+        const double IMU_PERIOD = 0.0005;
         void publishIMUMeasurement(Eigen::Vector3d accFrd, Eigen::Vector3d gyroFrd);
+
+        ros::Publisher gpsPositionPub_;
+        double gpsLastPubTimeSec_ = 0;
+        const double GPS_POSITION_PERIOD = 0.0005;
+        void publishUavGpsPosition(Eigen::Vector3d geoPosition);
+
+        ros::Publisher speedPub_;
+        double velocityLastPubTimeSec_ = 0;
+        const double VELOCITY_PERIOD = 0.0005;
+        void publishUavVelocity(Eigen::Vector3d linVelNed, Eigen::Vector3d angVelFrd);
+
+        ros::Publisher magPub_;
+        double magLastPubTimeSec_ = 0;
+        const double MAG_PERIOD = 0.01;
         void publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToNed);
 
-        const double GPS_POSITION_PERIOD = 0.0005;
-        const double ATTITUDE_PERIOD = 0.0005;
-        const double VELOCITY_PERIOD = 0.0005;
-        const double IMU_PERIOD = 0.0005;
-        const double MAG_PERIOD = 0.01;
+        ros::Publisher rawAirDataPub_;
+        double rawAirDataLastPubTimeSec_ = 0;
+        const double RAW_AIR_DATA_PERIOD = 0.1;
+        void publishUavAirData(float absPressure, float diffPressure);
 
-        double gpsLastPubTimeSec_ = 0;
-        double attitudeLastPubTimeSec_ = 0;
-        double velocityLastPubTimeSec_ = 0;
-        double imuLastPubTimeSec_ = 0;
-        double magLastPubTimeSec_ = 0;
+        ros::Publisher staticTemperaturePub_;
+        double staticTemperatureLastPubTimeSec_ = 0;
+        const double STATIC_TEMPERATURE_PERIOD = 0.1;
+        void publishUavStaticTemperature(float staticTemperature);
+
+        ros::Publisher staticPressurePub_;
+        double staticPressureLastPubTimeSec_ = 0;
+        const double STATIC_PRESSURE_PERIOD = 0.1;
+        void publishUavStaticPressure(float staticPressure);
 
         void publishStateToCommunicator();
         //@}
