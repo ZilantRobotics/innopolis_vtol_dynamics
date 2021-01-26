@@ -28,6 +28,10 @@
 #include "cs_converter.hpp"
 
 
+static char GLOBAL_FRAME_ID[] = "world";
+static char UAV_FRAME_ID[] = "/uav/enu";
+
+
 int main(int argc, char **argv){
     ros::init(argc, argv, "innopolis_vtol_dynamics_node");
     if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
@@ -218,18 +222,11 @@ void Uav_Dynamics::performDiagnostic(double periodSec){
         actuatorsMsgCounter_ = 0;
 
         auto enuPosition = uavDynamicsSim_->getVehiclePosition();
-        ROS_INFO_STREAM(
-            "\033[1;29m mc \033[0m [" <<        round(actuators_[0]) << ", " <<
-                                                round(actuators_[1]) << ", " <<
-                                                round(actuators_[2]) << ", " <<
-                                                round(actuators_[3]) << "]," <<
-            "\033[1;29m fw rpy \033[0m [" <<    round(actuators_[4]) << ", " <<
-                                                round(actuators_[5]) << ", " <<
-                                                round(actuators_[6]) << "]," <<
-            "\033[1;29m throttle \033[0m [" <<  round(actuators_[7]) << "]." <<
-            "\033[1;29m ned pose \033[0m [" <<  enuPosition[0] << ", " <<
-                                                enuPosition[1] << ", " <<
-                                                enuPosition[2] << "].");
+        ROS_INFO("\033[1;29m mc \033[0m [%.2f, %.2f, %.2f, %.2f], \033[1;29m fw rpy \033[0m [%.2f, %.2f, %.2f] \033[1;29m throttle \033[0m [%.2f], \033[1;29m ned pose \033[0m [%.1f, %.1f, %.1f]",
+            actuators_[0], actuators_[1], actuators_[2], actuators_[3],
+            actuators_[4], actuators_[5], actuators_[6],
+            actuators_[7],
+            enuPosition[0], enuPosition[1], enuPosition[2]);
         std::this_thread::sleep_until(crnt_time + sleed_period);
     }
 }
@@ -392,27 +389,25 @@ void Uav_Dynamics::publishState(void){
     transform.header.stamp = ros::Time::now();
     transform.header.frame_id = "world";
 
-    Eigen::Vector3d position = uavDynamicsSim_->getVehiclePosition();
-    Eigen::Quaterniond attitude = uavDynamicsSim_->getVehicleAttitude();
+    auto enuPosition = uavDynamicsSim_->getVehiclePosition();
+    auto fluAttitude = uavDynamicsSim_->getVehicleAttitude();
 
-    transform.transform.translation.x = position(0);
-    transform.transform.translation.y = position(1);
-    transform.transform.translation.z = position(2);
-
-    transform.transform.rotation.x = attitude.x();
-    transform.transform.rotation.y = attitude.y();
-    transform.transform.rotation.z = attitude.z();
-    transform.transform.rotation.w = attitude.w();
-
-    transform.child_frame_id = "uav/imu";
+    transform.transform.translation.x = enuPosition(0);
+    transform.transform.translation.y = enuPosition(1);
+    transform.transform.translation.z = enuPosition(2);
+    transform.transform.rotation.x = fluAttitude.x();
+    transform.transform.rotation.y = fluAttitude.y();
+    transform.transform.rotation.z = fluAttitude.z();
+    transform.transform.rotation.w = fluAttitude.w();
+    transform.child_frame_id = UAV_FRAME_ID;
 
     tfPub_.sendTransform(transform);
 
-    transform.header.frame_id = "world";
-    transform.transform.rotation.x = 1.0;
+    transform.header.frame_id = GLOBAL_FRAME_ID;
+    transform.transform.rotation.x = 0;
     transform.transform.rotation.y = 0;
     transform.transform.rotation.z = 0;
-    transform.transform.rotation.w = 0;
+    transform.transform.rotation.w = 1;
     transform.child_frame_id = "uav/com";
     tfPub_.sendTransform(transform);
 }
@@ -553,7 +548,7 @@ void Uav_Dynamics::publishForcesAndMomentsInfo(void){
 
     if(dynamicsType_ == INNO_VTOL){
         visualization_msgs::Marker arrow;
-        arrow.header.frame_id = "uav/imu";
+        arrow.header.frame_id = UAV_FRAME_ID;
         arrow.header.stamp = ros::Time();
         arrow.id = 0;
         arrow.type = visualization_msgs::Marker::ARROW;
@@ -591,7 +586,7 @@ void Uav_Dynamics::publishForcesAndMomentsInfo(void){
             fillArrow(arrow, Mmotors[motorIdx], Eigen::Vector3d(0.5, 0.5, 0.0));
             motorsMomentsPub_[motorIdx].publish(arrow);
         }
-        arrow.header.frame_id = "uav/imu";
+        arrow.header.frame_id = UAV_FRAME_ID;
 
         auto Mtotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal();
         fillArrow(arrow, Mtotal, Eigen::Vector3d(0.0, 0.5, 0.5));
@@ -613,12 +608,12 @@ void Uav_Dynamics::publishForcesAndMomentsInfo(void){
         fillArrow(arrow, Fmotors[4] / 10, Eigen::Vector3d(0.0, 0.5, 0.5));
         motorsForcesPub_[4].publish(arrow);
 
-        arrow.header.frame_id = "uav/imu";
+        arrow.header.frame_id = UAV_FRAME_ID;
         auto Ftotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFtotal();
         fillArrow(arrow, Ftotal, Eigen::Vector3d(0.0, 1.0, 1.0));
         totalForcePub_.publish(arrow);
 
-        arrow.header.frame_id = "uav/imu";
+        arrow.header.frame_id = UAV_FRAME_ID;
         auto velocity = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getBodyLinearVelocity();
         fillArrow(arrow, velocity, Eigen::Vector3d(0.7, 0.5, 1.3));
         velocityPub_.publish(arrow);

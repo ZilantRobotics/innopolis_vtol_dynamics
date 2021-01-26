@@ -22,9 +22,9 @@
 
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 0" />
+      <origin xyz="0 0 0" rpy="3.14 0 3.14"/>
       <geometry>
-        <box size="${PROP_LOCATION_X * 2} ${PROP_LOCATION_Y * 2} ${PROP_LOCATION_Z * 2}"/>
+        <mesh filename="package://innopolis_vtol_dynamics/meshes/vtol.dae" scale="0.00333 0.00333 0.00333"/>
       </geometry>
       <material name="grey"/>
     </visual>
@@ -42,13 +42,6 @@
   </joint>
 
   <link name="ICE">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 1.57 0"/>
-      <geometry>
-        <cylinder radius="${ICE_RADIUS}" length="${ICE_WIDTH}" />
-      </geometry>
-      <material name="light_black"/>
-    </visual>
     <collision>
       <origin xyz="0 0 0"/>
       <geometry>
@@ -64,13 +57,6 @@
   </joint>
 
   <link name="motor0">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
-      </geometry>
-      <material name="light_black"/>
-    </visual>
     <collision>
       <origin xyz="0 0 0"/>
       <geometry>
@@ -86,13 +72,6 @@
   </joint>
 
   <link name="motor1">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
-      </geometry>
-      <material name="light_black"/>
-    </visual>
     <collision>
       <origin xyz="0 0 0"/>
       <geometry>
@@ -108,13 +87,6 @@
   </joint>
 
   <link name="motor2">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
-      </geometry>
-      <material name="light_black"/>
-    </visual>
     <collision>
       <origin xyz="0 0 0"/>
       <geometry>
@@ -130,13 +102,6 @@
   </joint>
 
   <link name="motor3">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <cylinder radius="${MOTOR_RADIUS}" length="${MOTOR_WIDTH}" />
-      </geometry>
-      <material name="light_black"/>
-    </visual>
     <collision>
       <origin xyz="0 0 0"/>
       <geometry>

@@ -186,28 +186,29 @@ int8_t InnoVtolDynamicsSim::calibrate(uint8_t calType){
         state_.angularVel << 0.000, 0.000, -MAG_ROTATION_SPEED;
     }else if(calType == MAG_3_HEAD_DOWN){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0.707, 0, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0, 0.707, 0);
         }
         state_.Fspecific << -params_.gravity, 0, 0;
-        state_.angularVel << 0.000, 0.000, MAG_ROTATION_SPEED;
+        state_.angularVel << MAG_ROTATION_SPEED, 0.000, 0.000;
     }else if(calType == MAG_4_HEAD_UP){
+        if(prevCalibrationType != calType){
+            // state_.attitude = Eigen::Quaterniond(0.707, -0.707, 0, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0, -0.707, 0);
+        }
+        state_.Fspecific << params_.gravity, 0, 0;
+        state_.angularVel << -MAG_ROTATION_SPEED, 0.000, 0.000;
+    }else if(calType == MAG_5_TURNED_LEFT){
+        if(prevCalibrationType != calType){
+            state_.attitude = Eigen::Quaterniond(0.707, 0.707, 0, 0);
+        }
+        state_.Fspecific << 0, params_.gravity, 0;
+        state_.angularVel << 0.000, +MAG_ROTATION_SPEED, 0.000;
+    }else if(calType == MAG_6_TURNED_RIGHT){
         if(prevCalibrationType != calType){
             state_.attitude = Eigen::Quaterniond(0.707, -0.707, 0, 0);
         }
-        state_.Fspecific << params_.gravity, 0, 0;
-        state_.angularVel << 0.000, 0.000, -MAG_ROTATION_SPEED;
-    }else if(calType == MAG_5_TURNED_LEFT){
-        if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0, 0.707, 0);
-        }
-        state_.Fspecific << 0, params_.gravity, 0;
-        state_.angularVel << 0.000, 0.000, +MAG_ROTATION_SPEED;
-    }else if(calType == MAG_6_TURNED_RIGHT){
-        if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0, -0.707, 0);
-        }
         state_.Fspecific << 0, -params_.gravity, 0;
-        state_.angularVel << 0.000, 0.000, -MAG_ROTATION_SPEED;
+        state_.angularVel << 0.000, -MAG_ROTATION_SPEED, 0.000;
     }else if(calType == ACC_1_NORMAL){
         if(prevCalibrationType != calType){
             state_.attitude = Eigen::Quaterniond(1, 0, 0, 0);
@@ -222,30 +223,30 @@ int8_t InnoVtolDynamicsSim::calibrate(uint8_t calType){
         state_.angularVel.setZero();
     }else if(calType == ACC_3_HEAD_DOWN){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0.707, 0, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0, 0.707, 0);
         }
         state_.Fspecific << -params_.gravity, 0, 0;
         state_.angularVel.setZero();
     }else if(calType == ACC_4_HEAD_UP){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, -0.707, 0, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0, -0.707, 0);
         }
         state_.Fspecific << params_.gravity, 0, 0;
         state_.angularVel.setZero();
     }else if(calType == ACC_5_TURNED_LEFT){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0, 0.707, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0.707, 0, 0);
         }
         state_.Fspecific << 0, params_.gravity, 0;
         state_.angularVel.setZero();
     }else if(calType == ACC_6_TURNED_RIGHT){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0, -0.707, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, -0.707, 0, 0);
         }
         state_.Fspecific << 0, -params_.gravity, 0;
         state_.angularVel.setZero();
     }else if(calType == 21){ // airspeed
-        state_.Fspecific << 0, -params_.gravity, 0;
+        state_.Fspecific << 0, 0, -params_.gravity;
         state_.angularVel.setZero();
         state_.linearVel[0] = 10.0;
         state_.linearVel[1] = 10.0;
@@ -273,7 +274,7 @@ void InnoVtolDynamicsSim::initStaticMotorTransform(){
         "uav/motor0", "uav/motor1", "uav/motor2", "uav/motor3", "uav/motor4"};
     for(size_t idx = 0; idx < 5; idx++){
         motorFrame.translation() = params_.propellersLocation[idx];
-        publishStaticMotorTransform(time, "uav/imu", motorNames[idx], motorFrame);
+        publishStaticMotorTransform(time, "uav/enu", motorNames[idx], motorFrame);
     }
 }
 
