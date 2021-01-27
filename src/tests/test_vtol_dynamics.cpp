@@ -20,31 +20,28 @@ TEST(InnoVtolDynamicsSim, calculateAnglesOfAtack){
     Eigen::Vector3d airSpeed;
     double result, expected;
 
-    airSpeed << 0, 0, 0;
-    expected = 0;
-    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    std::vector<std::pair<Eigen::Vector3d, double>> dataset;
+    dataset.push_back((std::make_pair(Eigen::Vector3d(0, 0, 0),     0.0)));
 
-    airSpeed << 10, 1, 1;
-    expected = 0.099669;
-    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    dataset.push_back((std::make_pair(Eigen::Vector3d(10, 1, 1),    0.099669)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 10, 1),    0.785398)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 1, 10),    1.471128)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 2, 3),     1.2490)));
 
-    airSpeed << 1, 10, 1;
-    expected = 0.785398;
-    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    dataset.push_back((std::make_pair(Eigen::Vector3d(-10, 1, 1),   3.041924)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(-1, 10, 1),   2.356194)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(-1, 1, 10),   1.670465)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(-1, 2, 3),    1.892547)));
 
-    airSpeed << 1, 1, 10;
-    expected = 1.471128;
-    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    dataset.push_back((std::make_pair(Eigen::Vector3d(10, 1, -1),   -0.099669)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 10, -1),   -0.785398)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 1, -10),   -1.471128)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 2, -3),    -1.249046)));
 
-    airSpeed << 1, 2, 3;
-    expected = 1.2490;
-    result = vtolDynamicsSim.calculateAnglesOfAtack(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
-
+    for(auto pair : dataset){
+        result = vtolDynamicsSim.calculateAnglesOfAtack(pair.first);
+        ASSERT_TRUE(abs(result - pair.second) < 0.001);
+    }
 }
 
 TEST(InnoVtolDynamicsSim, calculateAnglesOfSideslip){
@@ -52,30 +49,28 @@ TEST(InnoVtolDynamicsSim, calculateAnglesOfSideslip){
     Eigen::Vector3d airSpeed;
     double result, expected;
 
-    airSpeed = Eigen::Vector3d(0, 0, 0);
-    expected = 0.0;
-    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    std::vector<std::pair<Eigen::Vector3d, double>> dataset;
+    dataset.push_back((std::make_pair(Eigen::Vector3d(0, 0, 0),     0.0)));
 
-    airSpeed << 10, 1, 1;
-    expected = 0.099177;
-    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    dataset.push_back((std::make_pair(Eigen::Vector3d(10, 1, 1),    0.099177)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 10, 1),    1.430307)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 1, 10),    0.099177)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 2, 3),     0.563943)));
 
-    airSpeed << 1, 10, 1;
-    expected = 1.430307;
-    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    dataset.push_back((std::make_pair(Eigen::Vector3d(10, -1, 1),   -0.099177)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, -10, 1),   -1.430307)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, -1, 10),   -0.099177)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, -2, 3),    -0.563943)));
 
-    airSpeed << 1, 1, 10;
-    expected = 0.099177;
-    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    dataset.push_back((std::make_pair(Eigen::Vector3d(10, 1, -1),   0.099177)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 10, -1),   1.430307)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 1, -10),   0.099177)));
+    dataset.push_back((std::make_pair(Eigen::Vector3d(1, 2, -3),    0.563943)));
 
-    airSpeed << 1, 2, 3;
-    expected = 0.563943;
-    result = vtolDynamicsSim.calculateAnglesOfSideslip(airSpeed);
-    ASSERT_TRUE(abs(result - expected) < 0.001);
+    for(auto pair : dataset){
+        result = vtolDynamicsSim.calculateAnglesOfSideslip(pair.first);
+        ASSERT_TRUE(abs(result - pair.second) < 0.001);
+    }
 }
 
 TEST(InnoVtolDynamicsSim, findRow){
