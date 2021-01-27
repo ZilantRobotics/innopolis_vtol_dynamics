@@ -24,7 +24,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="3.14 0 3.14"/>
       <geometry>
-        <mesh filename="package://innopolis_vtol_dynamics/meshes/vtol.dae" scale="0.00333 0.00333 0.00333"/>
+        <mesh filename="package://innopolis_vtol_dynamics/meshes/vtol.stl" scale="0.00333 0.00333 0.00333"/>
       </geometry>
       <material name="grey"/>
     </visual>
