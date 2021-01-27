@@ -76,7 +76,9 @@ class Uav_Dynamics {
         //@{
         ros::Subscriber actuatorsSub_;
         std::vector<double> actuators_;
-        uint64_t actuatorsTimestampSec_;
+        uint64_t lastActuatorsTimestampUsec_;
+        uint64_t prevActuatorsTimestampUsec_;
+        uint64_t maxDelayUsec_;
         void actuatorsCallback(sensor_msgs::Joy::Ptr msg);
 
         ros::Subscriber armSub_;
@@ -85,42 +87,42 @@ class Uav_Dynamics {
 
         ros::Publisher attitudePub_;
         double attitudeLastPubTimeSec_ = 0;
-        const double ATTITUDE_PERIOD = 0.0005;
+        const double ATTITUDE_PERIOD = 0.005;
         void publishUavAttitude(Eigen::Quaterniond attitude_frd_to_ned);
 
         ros::Publisher imuPub_;
         double imuLastPubTimeSec_ = 0;
-        const double IMU_PERIOD = 0.0005;
+        const double IMU_PERIOD = 0.005;
         void publishIMUMeasurement(Eigen::Vector3d accFrd, Eigen::Vector3d gyroFrd);
 
         ros::Publisher gpsPositionPub_;
         double gpsLastPubTimeSec_ = 0;
-        const double GPS_POSITION_PERIOD = 0.0005;
+        const double GPS_POSITION_PERIOD = 0.1;
         void publishUavGpsPosition(Eigen::Vector3d geoPosition);
 
         ros::Publisher speedPub_;
         double velocityLastPubTimeSec_ = 0;
-        const double VELOCITY_PERIOD = 0.0005;
+        const double VELOCITY_PERIOD = 0.05;
         void publishUavVelocity(Eigen::Vector3d linVelNed, Eigen::Vector3d angVelFrd);
 
         ros::Publisher magPub_;
         double magLastPubTimeSec_ = 0;
-        const double MAG_PERIOD = 0.01;
+        const double MAG_PERIOD = 0.03;
         void publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToNed);
 
         ros::Publisher rawAirDataPub_;
         double rawAirDataLastPubTimeSec_ = 0;
-        const double RAW_AIR_DATA_PERIOD = 0.1;
+        const double RAW_AIR_DATA_PERIOD = 0.05;
         void publishUavAirData(float absPressure, float diffPressure);
 
         ros::Publisher staticTemperaturePub_;
         double staticTemperatureLastPubTimeSec_ = 0;
-        const double STATIC_TEMPERATURE_PERIOD = 0.1;
+        const double STATIC_TEMPERATURE_PERIOD = 0.05;
         void publishUavStaticTemperature(float staticTemperature);
 
         ros::Publisher staticPressurePub_;
         double staticPressureLastPubTimeSec_ = 0;
-        const double STATIC_PRESSURE_PERIOD = 0.1;
+        const double STATIC_PRESSURE_PERIOD = 0.05;
         void publishUavStaticPressure(float staticPressure);
 
         void publishStateToCommunicator();
@@ -135,7 +137,7 @@ class Uav_Dynamics {
 
         /// @name Diagnostic
         //@{
-        uint64_t actuatorsMsgCounter_;
+        uint64_t actuatorsMsgCounter_ = 0;
         uint64_t dynamicsCounter_;
         uint64_t rosPubCounter_;
         //@}

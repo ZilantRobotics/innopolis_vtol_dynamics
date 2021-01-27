@@ -213,16 +213,33 @@ void Uav_Dynamics::performDiagnostic(double periodSec){
         // Monitor thread and ros topic frequency
         float dynamicsCompleteness = dynamicsCounter_ * dt_secs_ / (clockScale_ * periodSec);
         float rosPubCompleteness = rosPubCounter_ * ROS_PUB_PERIOD_SEC / (clockScale_ * periodSec);
-        ROS_INFO_STREAM("Diagnostic for last " << periodSec << " secs: " <<
-                        "dyn=" << dynamicsCompleteness << ", " <<
-                        "ros_pub=" << rosPubCompleteness << ", " <<
-                        "actuators_recv=" << actuatorsMsgCounter_ << " times.");
+        std::stringstream diagnosticStream;
+        diagnosticStream << "time elapsed: " << periodSec << " secs. ";
+        if(dynamicsCompleteness < 0.9){
+            diagnosticStream << "\033[1;31mdyn=" << dynamicsCompleteness << "\033[0m, ";
+        }else{
+            diagnosticStream << "dyn=" << dynamicsCompleteness << ", ";
+        }
+        if(dynamicsCompleteness < 0.9){
+            diagnosticStream << "\033[1;31mros_pub=" << rosPubCompleteness << "\033[0m, ";
+        }else{
+            diagnosticStream << "ros_pub=" << rosPubCompleteness << ", ";
+        }
+        if(actuatorsMsgCounter_ < 100 || maxDelayUsec_ > 20000 || maxDelayUsec_ == 0){
+            diagnosticStream << "\033[1;31mactuators_recv=" << actuatorsMsgCounter_ << "times"
+                          << "/" << maxDelayUsec_ << "\033[0m us.";
+        }else{
+            diagnosticStream << "actuators_recv=" << actuatorsMsgCounter_ << "times"
+                          << "/" << maxDelayUsec_ << " us.";
+        }
         dynamicsCounter_ = 0;
         rosPubCounter_ = 0;
         actuatorsMsgCounter_ = 0;
+        maxDelayUsec_ = 0;
+        ROS_INFO_STREAM("InnoDynamicsSim:" << diagnosticStream.str());
 
         auto enuPosition = uavDynamicsSim_->getVehiclePosition();
-        ROS_INFO("\033[1;29m mc \033[0m [%.2f, %.2f, %.2f, %.2f], \033[1;29m fw rpy \033[0m [%.2f, %.2f, %.2f] \033[1;29m throttle \033[0m [%.2f], \033[1;29m ned pose \033[0m [%.1f, %.1f, %.1f]",
+        ROS_INFO("InnoDynamicsSim: \033[1;29m mc \033[0m [%.2f, %.2f, %.2f, %.2f], \033[1;29m fw rpy \033[0m [%.2f, %.2f, %.2f] \033[1;29m throttle \033[0m [%.2f], \033[1;29m ned pose \033[0m [%.1f, %.1f, %.1f]",
             actuators_[0], actuators_[1], actuators_[2], actuators_[3],
             actuators_[4], actuators_[5], actuators_[6],
             actuators_[7],
@@ -359,8 +376,14 @@ void Uav_Dynamics::publishToRos(double period){
 }
 
 void Uav_Dynamics::actuatorsCallback(sensor_msgs::Joy::Ptr msg){
-    actuatorsTimestampSec_ = msg->header.stamp.toSec();
+    prevActuatorsTimestampUsec_ = lastActuatorsTimestampUsec_;
+    lastActuatorsTimestampUsec_ = msg->header.stamp.toNSec() / 1000;
+    auto crntDelayUsec = lastActuatorsTimestampUsec_ - prevActuatorsTimestampUsec_;
+    if(crntDelayUsec > maxDelayUsec_){
+        maxDelayUsec_ = crntDelayUsec;
+    }
     actuatorsMsgCounter_++;
+
     for(size_t idx = 0; idx < msg->axes.size(); idx++){
         actuators_[idx] = msg->axes[idx];
     }
