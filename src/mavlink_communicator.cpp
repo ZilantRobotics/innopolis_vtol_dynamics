@@ -208,22 +208,20 @@ void MavlinkCommunicator::communicate(){
         auto imuTimeUsec = imuMsg_.header.stamp.toNSec() / 1000;
 
         std::vector<double> actuators(8);
-        int status = Receive(false, isArmed_, actuators);
-        if(status == 1){
+        if(Receive(false, isArmed_, actuators) == 1){
             publishActuators(actuators);
             publishArm();
         }
 
-        if (gpsTimeUsec >= lastGpsTimeUsec_ + GPS_PERIOD_US){
+        /**
+         * @note For some reasons sometimes PX4 ignores GPS all messages after first if we
+         * send it too soon. So, just ignoring first few messages is ok.
+         * @todo Understand why and may be develop a better approach
+         */
+        if (gpsMsgCounter_ >= 5 && gpsTimeUsec >= lastGpsTimeUsec_ + GPS_PERIOD_US){
             lastGpsTimeUsec_ = gpsTimeUsec;
-            /**
-             * @note For some reasons if we send GPS data with actual timestamp, PX4 would ignore
-             * most of measurements. But making a little offset solves this problem.
-             */
-            constexpr uint64_t GPS_TIME_OFFSET_US = 50;
-            status = SendHilGps(gpsTimeUsec - GPS_TIME_OFFSET_US, linearVelocityNed_, gpsPosition_);
 
-            if(status == -1){
+            if(SendHilGps(gpsTimeUsec, linearVelocityNed_, gpsPosition_) == -1){
                 ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: GPS failed." << strerror(errno));
             }
         }
@@ -237,12 +235,12 @@ void MavlinkCommunicator::communicate(){
 
             auto linearVelocityEnu = Converter::nedToEnu(linearVelocityNed_);
             auto linearVelocityFrd = Converter::enuToFrd(linearVelocityEnu, attitudeFluToEnu);
-            status = SendHilSensor(imuTimeUsec,
-                                   gpsPosition_,
-                                   magFrd_,
-                                   linearVelocityFrd,
-                                   accFrd_,
-                                   gyroFrd_);
+            int status = SendHilSensor(imuTimeUsec,
+                                       gpsPosition_,
+                                       magFrd_,
+                                       linearVelocityFrd,
+                                       accFrd_,
+                                       gyroFrd_);
 
             if(status == -1){
                 ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Imu failed." << strerror(errno));
@@ -263,6 +261,7 @@ void MavlinkCommunicator::attitudeCallback(geometry_msgs::QuaternionStamped::Ptr
 
 void MavlinkCommunicator::gpsCallback(sensor_msgs::NavSatFix::Ptr gpsPosition){
     gpsPositionMsg_ = *gpsPosition;
+    gpsMsgCounter_++;
     gpsPosition_[0] = gpsPosition->latitude;
     gpsPosition_[1] = gpsPosition->longitude;
     gpsPosition_[2] = gpsPosition->altitude;
@@ -434,7 +433,7 @@ int MavlinkCommunicator::SendHilGps(unsigned int time_usec,
     uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
     mavlink_msg_hil_gps_encode_chan(1, 200, MAVLINK_COMM_0, &msg, &hil_gps_msg);
     int packetlen = mavlink_msg_to_send_buffer(buffer, &msg);
-    if(send(px4MavlinkSock_, buffer, packetlen, 0) != packetlen){
+    if(packetlen == 0 || send(px4MavlinkSock_, buffer, packetlen, 0) != packetlen){
         return -1;
     }
     return 0;

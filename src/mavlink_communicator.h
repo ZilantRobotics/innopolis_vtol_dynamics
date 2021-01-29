@@ -112,37 +112,39 @@ private:
     std::thread mainTask_;
 
     ros::Subscriber magSub_;
-    ros::Subscriber imuSub_;
-    ros::Subscriber gpsSub_;
-    ros::Subscriber attitudeSub_;
-    ros::Subscriber velocitySub_;
-
-    ros::Publisher armPub_;
-    ros::Publisher actuatorsPub_;
-
-    geometry_msgs::QuaternionStamped attitudeMsg_;
-    geometry_msgs::Twist velocityMsg_;
-    sensor_msgs::NavSatFix gpsPositionMsg_;
-    sensor_msgs::Imu imuMsg_;
     sensor_msgs::MagneticField magMsg_;
-
-    Eigen::Quaterniond attitudeFrdToNed_;
-    Eigen::Vector3d gpsPosition_;
-    Eigen::Vector3d accFrd_;
-    Eigen::Vector3d gyroFrd_;
-    Eigen::Vector3d linearVelocityNed_;
     Eigen::Vector3d magFrd_;
-
-    bool isArmed_;
-
-    void attitudeCallback(geometry_msgs::QuaternionStamped::Ptr attitude);
-    void velocityCallback(geometry_msgs::Twist::Ptr velocity);
-    void gpsCallback(sensor_msgs::NavSatFix::Ptr gpsPosition);
-    void imuCallback(sensor_msgs::Imu::Ptr imu);
     void magCallback(sensor_msgs::MagneticField::Ptr mag);
 
-    void publishArm();
+    ros::Subscriber imuSub_;
+    sensor_msgs::Imu imuMsg_;
+    Eigen::Vector3d accFrd_;
+    Eigen::Vector3d gyroFrd_;
+    void imuCallback(sensor_msgs::Imu::Ptr imu);
+
+    ros::Subscriber gpsSub_;
+    sensor_msgs::NavSatFix gpsPositionMsg_;
+    Eigen::Vector3d gpsPosition_;
+    uint64_t gpsMsgCounter_ = 0;
+    void gpsCallback(sensor_msgs::NavSatFix::Ptr gpsPosition);
+
+    ros::Subscriber attitudeSub_;
+    geometry_msgs::QuaternionStamped attitudeMsg_;
+    Eigen::Quaterniond attitudeFrdToNed_;
+    void attitudeCallback(geometry_msgs::QuaternionStamped::Ptr attitude);
+
+    ros::Subscriber velocitySub_;
+    geometry_msgs::Twist velocityMsg_;
+    Eigen::Vector3d linearVelocityNed_;
+    void velocityCallback(geometry_msgs::Twist::Ptr velocity);
+
+    ros::Publisher actuatorsPub_;
     void publishActuators(const std::vector<double>& actuators) const;
+
+    ros::Publisher armPub_;
+    bool isArmed_;
+    void publishArm();
+
 
     static const uint64_t SENS_ACCEL       = 0b111;
     static const uint64_t SENS_GYRO        = 0b111000;
