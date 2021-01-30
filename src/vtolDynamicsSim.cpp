@@ -421,6 +421,11 @@ double InnoVtolDynamicsSim::calculateDynamicPressure(double airSpeedMod){
     return params_.atmoRho * airSpeedMod * airSpeedMod * params_.wingArea;
 }
 
+/**
+ * @return AoA
+ * it must be [0, 3.14] if angle is [0, +180]
+ * it must be [0, -3.14] if angle is [0, -180]
+ */
 double InnoVtolDynamicsSim::calculateAnglesOfAtack(const Eigen::Vector3d& airSpeed) const{
     double A = sqrt(airSpeed[0] * airSpeed[0] + airSpeed[2] * airSpeed[2]);
     if(A < 0.001){
@@ -493,7 +498,13 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     auto Cmz = -polyval(polynomialCoeffs, AoA_deg);
 
     double Cmx_aileron = calculateCmxAileron(aileron_pos, airspeedModClamped);
-    double Cmy_elevator = calculateCmyElevator(elevator_pos, airspeedModClamped);
+    /**
+     * @note InnoDynamics from octave has some mistake in elevator logic
+     * It always generate non positive moment in both positive and negative position
+     * Temporary decision is to create positive moment in positive position and
+     * negative moment in negative position
+     */
+    double Cmy_elevator = calculateCmyElevator(abs(elevator_pos), airspeedModClamped);
     double Cmz_rudder = calculateCmzRudder(rudder_pos, airspeedModClamped);
 
     auto Mx = Cmx + Cmx_aileron * aileron_pos;
