@@ -108,7 +108,7 @@ class Uav_Dynamics {
         ros::Publisher magPub_;
         double magLastPubTimeSec_ = 0;
         const double MAG_PERIOD = 0.03;
-        void publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToNed);
+        void publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToEnu);
 
         ros::Publisher rawAirDataPub_;
         double rawAirDataLastPubTimeSec_ = 0;

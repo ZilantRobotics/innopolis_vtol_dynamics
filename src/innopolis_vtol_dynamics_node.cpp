@@ -480,18 +480,14 @@ void Uav_Dynamics::publishUavVelocity(Eigen::Vector3d linVelNed, Eigen::Vector3d
     speedPub_.publish(speed);
 }
 
-void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToNed){
+void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToEnu){
     Eigen::Vector3d magEnu;
     geographiclib_conversions::MagneticField(
         geoPosition.x(), geoPosition.y(), geoPosition.z(),
         magEnu.x(), magEnu.y(), magEnu.z());
 
-    // there should be some mistake, is not it?
-    // if we really want frd, we actually need to multiple
-    // but in this situation YAW (and may smth) is inversed
-    static const auto Q_FLU_TO_FRD = Eigen::Quaterniond(0, 1, 0, 0);
-    // Eigen::Vector3d magFrd = Q_FLU_TO_FRD * (attitudeFluToNed.inverse() * magEnu);
-    Eigen::Vector3d magFrd = (attitudeFluToNed.inverse() * magEnu);
+    Eigen::Vector3d magflu = attitudeFluToEnu.inverse() * magEnu;
+    Eigen::Vector3d magFrd = Converter::fluToFrd(magflu);
 
     sensor_msgs::MagneticField mag;
     mag.header.stamp = ros::Time();
