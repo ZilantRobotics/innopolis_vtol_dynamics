@@ -1,0 +1,15 @@
+<launch>
+    <!--
+        Prerequirements:
+        DONT_RUN=1 make px4_sitl gazebo_iris
+     -->
+    <arg name="vehicle"                 default="iris"                 doc="[standard_vtol, iris]"/>
+    <arg name="run_rviz"                default="false"                         doc="[true, false]"/>
+    <arg name="sitl_instead_of_hitl"    default="true"                          doc="[true means sitl, false means true hitl]"/>
+
+    <include file="$(find innopolis_vtol_dynamics)/launch/dynamics.launch">
+        <arg name="vehicle" value="$(arg vehicle)"/>
+        <arg name="run_rviz" value="$(arg run_rviz)"/>
+        <arg name="sitl_instead_of_hitl" value="$(arg sitl_instead_of_hitl)"/>
+    </include>
+</launch>

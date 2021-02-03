@@ -24,23 +24,19 @@ public:
      */
     virtual int8_t init() = 0;
     virtual void initStaticMotorTransform() = 0;
-
-    virtual void setReferencePosition(double latRef, double lonRef, double altRef) = 0;
     virtual void setInitialPosition(const Eigen::Vector3d & position,
                                     const Eigen::Quaterniond& attitude) = 0;
-    virtual void land();
 
-    virtual void process(double dt_secs, const std::vector<double> & motorSpeedCommandIn, bool isCmdPercent) = 0;
+    virtual void land();
+    virtual void process(double dt_secs,
+                         const std::vector<double> & motorSpeedCommandIn,
+                         bool isCmdPercent) = 0;
 
     virtual Eigen::Vector3d getVehiclePosition() const = 0;
     virtual Eigen::Quaterniond getVehicleAttitude() const = 0;
     virtual Eigen::Vector3d getVehicleVelocity(void) const = 0;
     virtual Eigen::Vector3d getVehicleAngularVelocity(void) const = 0;
     virtual void getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput) = 0;
-    virtual void enu2Geodetic(double east, double north, double up,
-                              double *latitude, double *longitude, double *altitude) = 0;
-    virtual int8_t calibrate(uint8_t calibrationType) {}
-
 
     enum CalibrationType_t{
         WORK_MODE,
@@ -58,6 +54,7 @@ public:
         ACC_5_TURNED_LEFT,          // ROLL POSITIVE pi/2
         ACC_6_TURNED_RIGHT,         // ROLL NEGATIVE pi/2
     };
+    virtual int8_t calibrate(CalibrationType_t calibrationType) {}
 
 protected:
     /**

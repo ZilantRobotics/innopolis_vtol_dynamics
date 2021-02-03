@@ -129,9 +129,6 @@ void InnoVtolDynamicsSim::loadParams(const std::string& path){
     params_.gyroVariance = config["gyroVariance"].as<double>();
 }
 
-void InnoVtolDynamicsSim::setReferencePosition(double latRef, double lonRef, double altRef){
-    geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
-}
 void InnoVtolDynamicsSim::setInitialPosition(const Eigen::Vector3d & position,
                                              const Eigen::Quaterniond& attitude){
     state_.position = position;
@@ -162,7 +159,7 @@ void InnoVtolDynamicsSim::land(){
     #endif
 }
 
-int8_t InnoVtolDynamicsSim::calibrate(uint8_t calType){
+int8_t InnoVtolDynamicsSim::calibrate(CalibrationType_t calType){
     constexpr float MAG_ROTATION_SPEED = 2 * 3.1415 / 20;
     static uint8_t prevCalibrationType = 0;
     state_.linearVel.setZero();
@@ -843,10 +840,6 @@ void InnoVtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOutFlu, Eigen::V
     specificForce = Converter::frdToFlu(specificForce);
     accOutFlu = imuOrient.inverse() * specificForce + state_.accelBias + accNoise;
     gyroOutFlu = imuOrient.inverse() * angularVelocity + state_.gyroBias + gyroNoise;
-}
-void InnoVtolDynamicsSim::enu2Geodetic(double east, double north, double up,
-                                   double *latitude, double *longitude, double *altitude){
-    geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
 }
 
 /**

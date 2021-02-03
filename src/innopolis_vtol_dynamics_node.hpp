@@ -68,6 +68,8 @@ class Uav_Dynamics {
         DynamicsType dynamicsType_;
         AirframeType airframeType_;
 
+        std::string dynamicsTypeName_;
+
         geodetic_converter::GeodeticConverter geodeticConverter_;
         //@}
 
@@ -131,7 +133,7 @@ class Uav_Dynamics {
         /// @name Calibration
         //@{
         ros::Subscriber calibrationSub_;
-        uint8_t calibrationType_ = 0;
+        UavDynamicsSimBase::CalibrationType_t calibrationType_ = UavDynamicsSimBase::WORK_MODE;
         void calibrationCallback(std_msgs::UInt8 msg);
         //@}
 
@@ -184,6 +186,12 @@ class Uav_Dynamics {
 
         const float ROS_PUB_PERIOD_SEC = 0.05;
         //@}
+
+        enum DynamicsNotation_t{
+            PX4_NED_FRD = 0,
+            ROS_ENU_FLU = 1,
+        };
+        DynamicsNotation_t dynamicsNotation_;
 };
 
 #endif

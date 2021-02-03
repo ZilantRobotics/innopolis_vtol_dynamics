@@ -26,6 +26,7 @@
 #include "flightgogglesDynamicsSim.hpp"
 #include "vtolDynamicsSim.hpp"
 #include "cs_converter.hpp"
+#include "sensors_isa_model.hpp"
 
 
 static char GLOBAL_FRAME_ID[] = "world";
@@ -37,6 +38,7 @@ int main(int argc, char **argv){
     if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
         ros::console::notifyLoggerLevelsChanged();
     }
+
     ros::NodeHandle node_handler;
     Uav_Dynamics uav_dynamics_node(node_handler);
     if(uav_dynamics_node.init() == -1){
@@ -44,6 +46,7 @@ int main(int argc, char **argv){
         ros::shutdown();
         return 0;
     }
+
     ros::spin();
     return 0;
 }
@@ -59,13 +62,13 @@ Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), actuators_(8, 0.){
 int8_t Uav_Dynamics::init(){
     // Get Simulator parameters
     std::vector<double> initPose(7);
-    std::string dynamics_type, vehicle;
+    std::string vehicle;
     const std::string SIM_PARAMS_PATH = "/uav/sim_params/";
     if(!ros::param::get(SIM_PARAMS_PATH + "use_sim_time",       useSimTime_ ) ||
        !ros::param::get(SIM_PARAMS_PATH + "lat_ref",            latRef_) ||
        !ros::param::get(SIM_PARAMS_PATH + "lon_ref",            lonRef_) ||
        !ros::param::get(SIM_PARAMS_PATH + "alt_ref",            altRef_) ||
-       !ros::param::get(SIM_PARAMS_PATH + "dynamics_type",      dynamics_type) ||
+       !ros::param::get(SIM_PARAMS_PATH + "dynamics_type",      dynamicsTypeName_) ||
        !node_.getParam("/inno_dynamics_sim/vehicle",            vehicle) ||
        !ros::param::get(SIM_PARAMS_PATH + "init_pose",          initPose)){
         ROS_ERROR("Dynamics: There is no at least one of required simulator parameters.");
@@ -75,19 +78,26 @@ int8_t Uav_Dynamics::init(){
      * @brief Init dynamics simulator
      * @todo it's better to use some build method instead of manually call new
      */
-    if(dynamics_type == "flightgoggles_multicopter"){
+    const char DYNAMICS_TYPE_FLIGHTGOGGLES[] = "flightgoggles_multicopter";
+    const char DYNAMICS_TYPE_INNO_VTOL[] = "inno_vtol";
+    const char AIRFRAME_TYPE_STANDARD_VTOL[] = "standard_vtol";
+    const char AIRFRAME_TYPE_IRIS[] = "iris";
+    if(dynamicsTypeName_ == DYNAMICS_TYPE_FLIGHTGOGGLES){
         dynamicsType_ = FLIGHTGOGGLES_MULTICOPTER;
         uavDynamicsSim_ = new FlightgogglesDynamics;
-    }else if(dynamics_type == "inno_vtol"){
+        dynamicsNotation_ = ROS_ENU_FLU;
+    }else if(dynamicsTypeName_ == DYNAMICS_TYPE_INNO_VTOL){
         uavDynamicsSim_ = new InnoVtolDynamicsSim;
         dynamicsType_ = INNO_VTOL;
+        dynamicsNotation_ = ROS_ENU_FLU;
     }else{
-        ROS_ERROR("Dynamics type with name \"%s\" is not exist.", dynamics_type.c_str());
+        ROS_ERROR("Dynamics type with name \"%s\" is not exist.", dynamicsTypeName_.c_str());
         return -1;
     }
-    if(vehicle == "standard_vtol"){
+
+    if(vehicle == AIRFRAME_TYPE_STANDARD_VTOL){
         airframeType_ = STANDARD_VTOL;
-    }else if(vehicle == "iris"){
+    }else if(vehicle == AIRFRAME_TYPE_IRIS){
         airframeType_ = IRIS;
     }else{
         ROS_ERROR("Wrong vehicle. It should be 'standard_vtol' or 'iris'");
@@ -99,7 +109,6 @@ int8_t Uav_Dynamics::init(){
         return -1;
     }
     uavDynamicsSim_->initStaticMotorTransform();
-    uavDynamicsSim_->setReferencePosition(latRef_, lonRef_, altRef_);
     geodeticConverter_.initialiseReference(latRef_, lonRef_, altRef_);
 
     Eigen::Vector3d initPosition(initPose.at(0), initPose.at(1), initPose.at(2));
@@ -236,14 +245,32 @@ void Uav_Dynamics::performDiagnostic(double periodSec){
         rosPubCounter_ = 0;
         actuatorsMsgCounter_ = 0;
         maxDelayUsec_ = 0;
-        ROS_INFO_STREAM("InnoDynamicsSim:" << diagnosticStream.str());
+        ROS_INFO_STREAM(dynamicsTypeName_.c_str() << ": " << diagnosticStream.str());
 
-        auto enuPosition = uavDynamicsSim_->getVehiclePosition();
-        ROS_INFO("InnoDynamicsSim: \033[1;29m mc \033[0m [%.2f, %.2f, %.2f, %.2f], \033[1;29m fw rpy \033[0m [%.2f, %.2f, %.2f] \033[1;29m throttle \033[0m [%.2f], \033[1;29m ned pose \033[0m [%.1f, %.1f, %.1f]",
-            actuators_[0], actuators_[1], actuators_[2], actuators_[3],
-            actuators_[4], actuators_[5], actuators_[6],
-            actuators_[7],
-            enuPosition[0], enuPosition[1], enuPosition[2]);
+        std::stringstream infoStream;
+        infoStream << std::setprecision(2) << std::fixed << dynamicsTypeName_ << ": "
+                   << "\033[1;29m mc \033[0m [" << actuators_[0] << ", "
+                                                << actuators_[1] << ", "
+                                                << actuators_[2] << ", "
+                                                << actuators_[3] << "]";
+
+        if(airframeType_ == STANDARD_VTOL){
+            infoStream << " \033[1;29m fw rpy \033[0m ["
+                       << actuators_[4] << ", "
+                       << actuators_[5] << ", "
+                       << actuators_[6] << "]"
+                       << "\033[1;29m throttle \033[0m ["
+                       << actuators_[7] << "]";
+        }
+
+        auto position = uavDynamicsSim_->getVehiclePosition();
+        infoStream << std::setprecision(1) << std::fixed
+                   << ", \033[1;29m ned pose \033[0m ["
+                   << position[0] << ", "
+                   << position[1] << ", "
+                   << position[2] << "]";
+        ROS_INFO_STREAM(infoStream.str());
+
         std::this_thread::sleep_until(crnt_time + sleed_period);
     }
 }
@@ -305,20 +332,9 @@ void Uav_Dynamics::publishStateToCommunicator(){
     auto linVelNed = Converter::enuToNed(linVelEnu);
 
     // Calculate temperature and pressure and density using ISA model
-    const float PRESSURE_MSL_HPA = 1013.250f;
-    const float TEMPERATURE_MSL_KELVIN = 288.0f;
-    const float RHO_MSL = 1.225f;
-
-    const float LAPSE_TEMPERATURE_RATE = 1 / 152.4; // 0.00656
-
-    float alt_msl = gpsPosition.z();
-
-    float temperatureLocalKelvin = TEMPERATURE_MSL_KELVIN - LAPSE_TEMPERATURE_RATE * alt_msl;
-    float pressureRatio = powf((TEMPERATURE_MSL_KELVIN/temperatureLocalKelvin), 5.256f);
-    const float densityRatio = powf((TEMPERATURE_MSL_KELVIN/temperatureLocalKelvin), 4.256f);
-    float rho = RHO_MSL / densityRatio;
-    float absPressure = PRESSURE_MSL_HPA / pressureRatio;
-    float diffPressure = 0.005f * rho * linVelNed.norm() * linVelNed.norm();
+    float temperatureKelvin, absPressure, diffPressure;
+    SensorModelISA::EstimateAtmosphere(gpsPosition, linVelNed,
+                                       temperatureKelvin, absPressure, diffPressure);
 
     // Publish state to communicator
     auto crntTimeSec = currentTime_.toSec();
@@ -351,7 +367,7 @@ void Uav_Dynamics::publishStateToCommunicator(){
         staticPressureLastPubTimeSec_ = crntTimeSec;
     }
     if(staticTemperatureLastPubTimeSec_ + STATIC_TEMPERATURE_PERIOD < crntTimeSec){
-        publishUavStaticTemperature(temperatureLocalKelvin);
+        publishUavStaticTemperature(temperatureKelvin);
         staticTemperatureLastPubTimeSec_ = crntTimeSec;
     }
 }
@@ -403,14 +419,14 @@ void Uav_Dynamics::calibrationCallback(std_msgs::UInt8 msg){
     if(calibrationType_ != msg.data){
         ROS_INFO_STREAM_THROTTLE(1, "calibration type: " << msg.data + 0);
     }
-    calibrationType_ = msg.data;
+    calibrationType_ = static_cast<UavDynamicsSimBase::CalibrationType_t>(msg.data);
 }
 
 void Uav_Dynamics::publishState(void){
     geometry_msgs::TransformStamped transform;
 
     transform.header.stamp = ros::Time::now();
-    transform.header.frame_id = "world";
+    transform.header.frame_id = GLOBAL_FRAME_ID;
 
     auto enuPosition = uavDynamicsSim_->getVehiclePosition();
     auto fluAttitude = uavDynamicsSim_->getVehicleAttitude();

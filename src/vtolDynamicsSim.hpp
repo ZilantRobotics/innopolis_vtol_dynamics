@@ -11,7 +11,6 @@
 #include <vector>
 #include <array>
 #include <random>
-#include <geographiclib_conversions/geodetic_conv.hpp>
 #include "uavDynamicsSimBase.hpp"
 
 
@@ -119,13 +118,12 @@ struct TablesWithCoeffs{
 class InnoVtolDynamicsSim : public UavDynamicsSimBase{
     public:
         InnoVtolDynamicsSim();
-        virtual int8_t init();
+        virtual int8_t init() override;
         virtual void initStaticMotorTransform() override;
-        virtual void setReferencePosition(double latRef, double lonRef, double altRef) override;
         virtual void setInitialPosition(const Eigen::Vector3d & position,
                                         const Eigen::Quaterniond& attitude) override;
         virtual void land() override;
-        virtual int8_t calibrate(uint8_t calibrationType) override;
+        virtual int8_t calibrate(CalibrationType_t calibrationType) override;
         virtual void process(double dt_secs,
                              const std::vector<double>& motorSpeedCommandIn,
                              bool isCmdPercent) override;
@@ -138,8 +136,6 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         virtual Eigen::Vector3d getVehicleVelocity() const override;
         virtual Eigen::Vector3d getVehicleAngularVelocity() const override;
         virtual void getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut) override;
-        virtual void enu2Geodetic(double east, double north, double up,
-                                  double *latitude, double *longitude, double *altitude) override;
 
         /**
          * @note These methods should be public for debug only (publish to ros topic)
@@ -235,7 +231,6 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
 
         std::default_random_engine generator_;
         std::normal_distribution<double> distribution_;
-        geodetic_converter::GeodeticConverter geodetic_converter_;
 };
 
 #endif  // VTOL_DYNAMICS_SIM_H

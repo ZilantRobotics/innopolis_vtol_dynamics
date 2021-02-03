@@ -1,7 +1,8 @@
 <launch>
     <!--
         Prerequirements for SITL:
-        DONT_RUN=1 make px4_sitl gazebo_standard_vtol
+        DONT_RUN=1 make px4_sitl gazebo_standard_vtol   // for InnoVTOL dynamics
+        DONT_RUN=1 make px4_sitl gazebo_iris            // for FlightGoggles dynamics
 
         Prerequirements for true HITL, for example for cuav v5:
         make px4_fmu-v5_default upload

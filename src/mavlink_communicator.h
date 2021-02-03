@@ -145,16 +145,11 @@ private:
     bool isArmed_;
     void publishArm();
 
-
     static const uint64_t SENS_ACCEL       = 0b111;
     static const uint64_t SENS_GYRO        = 0b111000;
     static const uint64_t SENS_MAG         = 0b111000000;
     static const uint64_t SENS_BARO        = 0b1101000000000;
     static const uint64_t SENS_DIFF_PRESS  = 0b10000000000;
-
-    const int PORT_BASE = 4560;
-
-    const float ALT_HOME;
 
     static constexpr uint64_t MAG_PERIOD_US = 1e6 / 100;
     static constexpr uint64_t BARO_PERIOD_US = 1e6 / 50;
@@ -166,6 +161,9 @@ private:
     uint64_t lastGpsTimeUsec_ = 0;
     uint64_t lastImuTimeUsec_ = 0;
 
+    const float ALT_HOME;
+
+    const int PORT_BASE = 4560;
     struct sockaddr_in px4MavlinkAddr_;
     struct sockaddr_in simulatorMavlinkAddr_;
     int listenMavlinkSock_;

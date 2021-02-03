@@ -51,24 +51,50 @@
 #include "mavlink_communicator.h"
 #include "cs_converter.hpp"
 
+const std::string NODE_NAME = "Mavlink PX4 Communicator";
 
 int main(int argc, char **argv){
-    // bool is_copter_airframe = (airframeType_ == STANDARD_VTOL) ? false : true;
-    ros::init(argc, argv, "mavlink_px4_communicator");
+    // 1. Init node
+    ros::init(argc, argv, NODE_NAME.c_str());
     if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
         ros::console::notifyLoggerLevelsChanged();
     }
-
     ros::NodeHandle nodeHandler;
 
-    // temp parameters
-    bool isCopterAirframe = false;
+    // 2. Define which mavlink actuators format should we use (
+    // - quad rotors with actuators cmd size = 4
+    // - or VTOL with actuators cmd size = 8)
+    std::string vehicle;
+    if(!nodeHandler.getParam("/inno_dynamics_sim/vehicle", vehicle)){
+        ROS_ERROR_STREAM(NODE_NAME << "There is no /inno_dynamics_sim/vehicle");
+        ros::shutdown();
+    }
+    bool isCopterAirframe;
+    const std::string VEHICLE_IRIS = "iris";
+    const std::string VEHICLE_STANDARD_VTOL = "standard_vtol";
+    if(vehicle == VEHICLE_STANDARD_VTOL){
+        isCopterAirframe = false;
+    }else if(vehicle == VEHICLE_IRIS){
+        isCopterAirframe = true;
+    }else{
+        ROS_ERROR_STREAM(NODE_NAME << "There is no at least one of required simulator parameters.");
+        ros::shutdown();
+    }
+
+    // 3. Get altitude reference position
     float altRef = 0;
+    const std::string SIM_PARAMS_PATH = "/uav/sim_params/";
+    if(!ros::param::get(SIM_PARAMS_PATH + "alt_ref", altRef)){
+        ROS_ERROR_STREAM(NODE_NAME << "There is no reference altitude parameter.");
+        ros::shutdown();
+    }
+    altRef = 0;
+
     int px4id = 0;
 
     MavlinkCommunicator communicator(nodeHandler, altRef);
     if(communicator.Init(px4id, isCopterAirframe) != 0) {
-        std::cerr << "Unable to Init PX4 Communication" << std::endl;
+        ROS_ERROR("Unable to Init PX4 Communication");
         ros::shutdown();
     }
 
@@ -99,7 +125,7 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
     simulatorMavlinkAddr_.sin_port = htons(PORT_BASE + portOffset);
 
     if ((listenMavlinkSock_ = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        std::cerr << "PX4 Communicator: Creating TCP socket failed: " << strerror(errno) << std::endl;
+        ROS_ERROR_STREAM(NODE_NAME << ": Creating TCP socket failed: " << strerror(errno));
         return -1;
     }
 
@@ -107,7 +133,7 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
     int yes = 1;
     int result = setsockopt(listenMavlinkSock_, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes));
     if (result != 0){
-        std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
+        ROS_ERROR_STREAM(NODE_NAME << ": setsockopt failed: " << strerror(errno));
     }
 
     // try to close as fast as posible
@@ -116,7 +142,7 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
     nolinger.l_linger = 0;
     result = setsockopt(listenMavlinkSock_, SOL_SOCKET, SO_LINGER, &nolinger, sizeof(nolinger));
     if (result != 0){
-        std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
+        ROS_ERROR_STREAM(NODE_NAME << ": setsockopt failed: " << strerror(errno));
     }
 
     // The socket reuse is necessary for reconnecting to the same address
@@ -125,36 +151,36 @@ int MavlinkCommunicator::Init(int portOffset, bool is_copter_airframe){
     int socket_reuse = 1;
     result = setsockopt(listenMavlinkSock_, SOL_SOCKET, SO_REUSEADDR, &socket_reuse, sizeof(socket_reuse));
     if (result != 0){
-         std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
+        ROS_ERROR_STREAM(NODE_NAME << ": setsockopt failed: " << strerror(errno));
     }
 
     // Same as above but for a given port
     result = setsockopt(listenMavlinkSock_, SOL_SOCKET, SO_REUSEPORT, &socket_reuse, sizeof(socket_reuse));
     if (result != 0){
-        std::cerr << "PX4 Communicator: setsockopt failed: " << strerror(errno) << std::endl;
+        ROS_ERROR_STREAM(NODE_NAME << ": setsockopt failed: " << strerror(errno));
     }
 
 
     if (bind(listenMavlinkSock_, (struct sockaddr *)&simulatorMavlinkAddr_, sizeof(simulatorMavlinkAddr_)) < 0){
-        std::cerr << "PX4 Communicator: bind failed:  " << strerror(errno) << std::endl;
+        ROS_ERROR_STREAM(NODE_NAME << ": bind failed: " << strerror(errno));
     }
 
     errno = 0;
     result = listen(listenMavlinkSock_, 5);
     if (result < 0){
-        std::cerr << "PX4 Communicator: listen failed: " << strerror(errno) << std::endl;
+        ROS_ERROR_STREAM(NODE_NAME << ": listen failed: " << strerror(errno));
     }
 
     unsigned int px4_addr_len = sizeof(px4MavlinkAddr_);
-    std::cout << "PX4 Communicator: waiting for connection from PX4..." << std::endl;
+    ROS_INFO_STREAM(NODE_NAME << ": waiting for connection from PX4...");
     while(true) {
         px4MavlinkSock_ = accept(listenMavlinkSock_,
                                 (struct sockaddr *)&px4MavlinkAddr_,
                                 &px4_addr_len);
         if (px4MavlinkSock_ < 0){
-            std::cerr << "PX4 Communicator: accept failed: " << strerror(errno) << std::endl;
+            ROS_ERROR_STREAM(NODE_NAME << ": accept failed: " << strerror(errno));
         }else{
-            std::cerr << "PX4 Communicator: PX4 Connected."<< std::endl;
+            ROS_INFO_STREAM(NODE_NAME << ": PX4 Connected.");
             break;
         }
     }
@@ -222,7 +248,7 @@ void MavlinkCommunicator::communicate(){
             lastGpsTimeUsec_ = gpsTimeUsec;
 
             if(SendHilGps(gpsTimeUsec, linearVelocityNed_, gpsPosition_) == -1){
-                ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: GPS failed." << strerror(errno));
+                ROS_ERROR_STREAM_THROTTLE(1, NODE_NAME << ": GPS failed." << strerror(errno));
             }
         }
         if (imuTimeUsec >= lastImuTimeUsec_ + IMU_PERIOD_US){
@@ -243,7 +269,7 @@ void MavlinkCommunicator::communicate(){
                                        gyroFrd_);
 
             if(status == -1){
-                ROS_ERROR_STREAM_THROTTLE(1, "PX4 Communicator: Imu failed." << strerror(errno));
+                ROS_ERROR_STREAM_THROTTLE(1, NODE_NAME << "Imu failed." << strerror(errno));
             }
         }
 
@@ -489,13 +515,13 @@ int MavlinkCommunicator::Receive(bool blocking, bool &armed, std::vector<double>
                     }
                     return 1;
                 }else if (msg.msgid == MAVLINK_MSG_ID_ESTIMATOR_STATUS){
-                    ROS_ERROR_STREAM_THROTTLE(2, "MAVLINK_MSG_ID_ESTIMATOR_STATUS");
+                    ROS_ERROR_STREAM_THROTTLE(2, NODE_NAME << ": MAVLINK_MSG_ID_ESTIMATOR_STATUS");
                 }else{
-                    ROS_WARN_STREAM("PX4 Communicator: unknown msg with msgid = " << msg.msgid);
+                    ROS_WARN_STREAM(NODE_NAME << ": unknown msg with msgid = " << msg.msgid);
                 }
             }
         }
-        ROS_WARN("PX4 Communicator: No cmd");
+        ROS_WARN_STREAM(NODE_NAME << ": No cmd");
         return 0;
     }
     return -1;

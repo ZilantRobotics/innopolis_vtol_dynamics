@@ -116,10 +116,6 @@ void FlightgogglesDynamics::setInitialPosition(const Eigen::Vector3d & position,
     multicopterSim_->setVehiclePosition(position, attitude);
 }
 
-void FlightgogglesDynamics::setReferencePosition(double latRef, double lonRef, double altRef){
-    multicopterSim_->geodetic_converter_.initialiseReference(latRef, lonRef, altRef);
-}
-
 void FlightgogglesDynamics::process(double dt_secs,
                                          const std::vector<double> & motorSpeedCommandIn,
                                          bool isCmdPercent){
@@ -141,10 +137,6 @@ Eigen::Vector3d FlightgogglesDynamics::getVehicleAngularVelocity(void) const{
 }
 void FlightgogglesDynamics::getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput){
     return multicopterSim_->getIMUMeasurement(accOutput, gyroOutput);
-}
-void FlightgogglesDynamics::enu2Geodetic(double east, double north, double up,
-                                              double *latitude, double *longitude, double *altitude){
-    multicopterSim_->geodetic_converter_.enu2Geodetic(east, north, up, latitude, longitude, altitude);
 }
 
 std::vector<double> FlightgogglesDynamics::mapCmdActuator(std::vector<double> initialCmd) const{
