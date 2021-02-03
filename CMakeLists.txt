@@ -27,6 +27,8 @@ find_package(catkin REQUIRED COMPONENTS
     message_generation
 )
 
+find_library(UAVCAN_LIB uavcan REQUIRED)
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++11")
 find_package(mavlink)
 
 ## System dependencies are found with CMake's conventions
@@ -120,10 +122,12 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+    INCLUDE_DIRS
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/libuavcan/libuavcan/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/platform_specific_components/linux/libuavcan/include
     LIBRARIES innopolis_vtol_dynamics
     CATKIN_DEPENDS roscpp std_msgs mav_msgs sensor_msgs geometry_msgs tf2 tf2_ros roslib message_runtime
-#  DEPENDS system_lib
+    #  DEPENDS system_lib
 )
 
 ###########
@@ -136,6 +140,8 @@ include_directories(
     include
     ${catkin_INCLUDE_DIRS}
     ${mavlink_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libuavcan/libuavcan/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/platform_specific_components/linux/libuavcan/include
 )
 
 
@@ -147,8 +153,9 @@ include_directories(
 add_library(${PROJECT_NAME} src/vtolDynamicsSim.cpp
                             src/flightgogglesDynamicsSim.cpp
                             src/uavDynamicsSimBase.cpp
+                            libs/multicopterDynamicsSim/inertialMeasurementSim.cpp
                             libs/multicopterDynamicsSim/multicopterDynamicsSim.cpp
-                            libs/multicopterDynamicsSim/inertialMeasurementSim.cpp)
+)
 
 
 
@@ -157,7 +164,7 @@ add_library(${PROJECT_NAME} src/vtolDynamicsSim.cpp
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-## Declare a C++ executable
+## 1. Declare a C++ innopolis_vtol_dynamics_node executable
 add_executable(${PROJECT_NAME}_node src/innopolis_vtol_dynamics_node.cpp)
 target_include_directories(${PROJECT_NAME}_node
                 BEFORE
@@ -169,6 +176,7 @@ target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
 )
 
+## 2. Declare a C++ mavlink_communicator executable
 add_executable(${PROJECT_NAME}_mavlink_communicator src/mavlink_communicator.cpp)
 target_include_directories(${PROJECT_NAME}_mavlink_communicator
                 BEFORE
@@ -181,6 +189,25 @@ target_link_libraries(${PROJECT_NAME}_mavlink_communicator
 )
 
 target_link_libraries(${PROJECT_NAME} yaml-cpp)
+
+
+
+# 3. Declare a C++ uavcan_communicator executable
+add_executable(${PROJECT_NAME}_uavcan_communicator src/uavcan_communicator/platform_linux.cpp src/uavcan_communicator/uavcan_node.cpp)
+target_include_directories(${PROJECT_NAME}_uavcan_communicator
+    BEFORE
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs/libuavcan/libuavcan/include/
+           ${CMAKE_CURRENT_SOURCE_DIR}/libs/platform_specific_components/linux/libuavcan/uavcan_linux
+)
+set_target_properties(${PROJECT_NAME}_uavcan_communicator PROPERTIES OUTPUT_NAME uavcan_communicator PREFIX "")
+add_dependencies(${PROJECT_NAME}_uavcan_communicator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_uavcan_communicator
+    ${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+    ${UAVCAN_LIB}
+    rt
+)
+# target_link_libraries(${PROJECT_NAME}_uavcan_communicator ${UAVCAN_LIB} rt)
 
 #############
 ## Install ##

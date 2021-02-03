@@ -1,0 +1,8 @@
+[submodule "libs/libuavcan"]
+	path = libs/libuavcan
+	url = https://github.com/UAVCAN/libuavcan/tree/legacy-v0
+	branch = legacy-v0
+[submodule "libs/platform_specific_components"]
+	path = libs/platform_specific_components
+	url = https://github.com/UAVCAN/platform_specific_components
+	branch = legacy-v0
