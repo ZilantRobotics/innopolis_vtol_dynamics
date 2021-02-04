@@ -23,6 +23,7 @@
 #include <geometry_msgs/QuaternionStamped.h>
 #include <innopolis_vtol_dynamics/StaticPressure.h>
 #include <innopolis_vtol_dynamics/StaticTemperature.h>
+#include <innopolis_vtol_dynamics/RawAirData.h>
 
 
 extern uavcan::ICanDriver& getCanDriver();
@@ -39,13 +40,18 @@ protected:
     ros::Publisher pub_;
 };
 
-struct Actuators: public UavcanToRosConverter{
+class Actuators: public UavcanToRosConverter{
     typedef sensor_msgs::Joy OUT_ROS_MSG;
     typedef uavcan::equipment::esc::RawCommand IN_UAVCAN_MSG;
     static constexpr const char* ROS_TOPIC = "/uav/actuators";
 
     uavcan::Subscriber<IN_UAVCAN_MSG> sub_;
     OUT_ROS_MSG ros_msg_;
+
+    // Additional - arming
+    ros::Publisher arm_pub_;
+    std_msgs::Bool arm_ros_msg_;
+
     void callback(const uavcan::ReceivedDataStructure<IN_UAVCAN_MSG>& uavcan_msg){
         ros_msg_.header.stamp = ros::Time::now();
 
@@ -65,6 +71,17 @@ struct Actuators: public UavcanToRosConverter{
         }
 
         pub_.publish(ros_msg_);
+
+        // Additional - arming
+        arm_ros_msg_.data = false;
+        if(uavcan_msg.cmd.size() == 8){
+            for(auto raw_cmd : uavcan_msg.cmd){
+                if(raw_cmd != -1){
+                    arm_ros_msg_.data = true;
+                }
+            }
+        }
+        arm_pub_.publish(arm_ros_msg_);
     }
 
 public:
@@ -74,11 +91,200 @@ public:
             ros_msg_.axes.push_back(0);
         }
         sub_.start(std::bind(&Actuators::callback, this, std::placeholders::_1));
+
+        // Additional - arming
+        arm_pub_ = ros_node.advertise<std_msgs::Bool>("/uav/arm", 1);
     }
 };
 
 
+class RosToUavcanConverter{
+protected:
+    ros::Subscriber sub_;
+};
 
+
+class BaroStaticPressure: public RosToUavcanConverter{
+    typedef uavcan::equipment::air_data::StaticPressure OUT_UAVCAN_MSG;
+    typedef innopolis_vtol_dynamics::StaticPressure IN_ROS_MSG;
+    static constexpr const char* ROS_TOPIC = "/uav/static_pressure";
+
+    uavcan::Publisher<OUT_UAVCAN_MSG> pub_;
+    OUT_UAVCAN_MSG out_uavcan_msg_;
+
+    void callback(IN_ROS_MSG::Ptr in_ros_msg){
+        auto pressure = in_ros_msg->static_pressure * 100 + std::rand() / float(RAND_MAX);
+        out_uavcan_msg_.static_pressure = pressure;
+        out_uavcan_msg_.static_pressure_variance = 1;
+        int pub_res = pub_.broadcast(out_uavcan_msg_);
+        if (pub_res < 0){
+            std::cerr << "BaroStaticPressure publication failure: " << pub_res << std::endl;
+        }
+    }
+public:
+    BaroStaticPressure(ros::NodeHandle& ros_node, UavcanNode& uavcan_node):
+        pub_(uavcan_node){
+        sub_ = ros_node.subscribe(ROS_TOPIC, 1, &BaroStaticPressure::callback, this);
+    }
+};
+
+
+class BaroStaticTemperature: public RosToUavcanConverter{
+    typedef uavcan::equipment::air_data::StaticTemperature OUT_UAVCAN_MSG;
+    typedef innopolis_vtol_dynamics::StaticTemperature IN_ROS_MSG;
+    static constexpr const char* ROS_TOPIC = "/uav/static_temperature";
+
+    uavcan::Publisher<OUT_UAVCAN_MSG> pub_;
+    OUT_UAVCAN_MSG out_uavcan_msg_;
+
+    void callback(IN_ROS_MSG::Ptr in_ros_msg){
+        auto temperature = in_ros_msg->static_temperature * 100 + std::rand() / float(RAND_MAX);
+        out_uavcan_msg_.static_temperature = temperature;
+        out_uavcan_msg_.static_temperature_variance = 1;
+        int pub_res = pub_.broadcast(out_uavcan_msg_);
+        if (pub_res < 0){
+            std::cerr << "BaroStaticTemperature publication failure: " << pub_res << std::endl;
+        }
+    }
+public:
+    BaroStaticTemperature(ros::NodeHandle& ros_node, UavcanNode& uavcan_node):
+        pub_(uavcan_node){
+        sub_ = ros_node.subscribe(ROS_TOPIC, 1, &BaroStaticTemperature::callback, this);
+    }
+};
+
+
+class DiffPressure: public RosToUavcanConverter{
+    typedef uavcan::equipment::air_data::RawAirData OUT_UAVCAN_MSG;
+    typedef innopolis_vtol_dynamics::RawAirData IN_ROS_MSG;
+    static constexpr const char* ROS_TOPIC = "/uav/raw_air_data";
+
+    uavcan::Publisher<OUT_UAVCAN_MSG> pub_;
+    OUT_UAVCAN_MSG out_uavcan_msg_;
+
+    void callback(IN_ROS_MSG::Ptr in_ros_msg){
+        double static_pressure = in_ros_msg->static_pressure * 100;
+        double static_pressure_noise = std::rand() / float(RAND_MAX);
+
+        double differential_pressure = in_ros_msg->differential_pressure * 100;
+        double differential_pressure_noise = std::rand() / float(RAND_MAX);
+
+        double temperature = 24; //self.temperature.static_temperature;
+        double temperature_noise = std::rand() / float(RAND_MAX);
+
+        out_uavcan_msg_.static_air_temperature = temperature + temperature_noise;
+        out_uavcan_msg_.static_pressure = static_pressure + static_pressure_noise;
+        out_uavcan_msg_.differential_pressure = differential_pressure + differential_pressure_noise;
+
+        int pub_res = pub_.broadcast(out_uavcan_msg_);
+        if (pub_res < 0){
+            std::cerr << "DiffPressure publication failure: " << pub_res << std::endl;
+        }
+    }
+public:
+    DiffPressure(ros::NodeHandle& ros_node, UavcanNode& uavcan_node):
+        pub_(uavcan_node){
+        sub_ = ros_node.subscribe(ROS_TOPIC, 1, &DiffPressure::callback, this);
+    }
+};
+
+
+class GPS: public RosToUavcanConverter{
+    typedef uavcan::equipment::gnss::Fix OUT_UAVCAN_MSG;
+    typedef sensor_msgs::NavSatFix IN_ROS_MSG;
+    static constexpr const char* ROS_TOPIC = "/uav/gps_position";
+
+    uavcan::Publisher<OUT_UAVCAN_MSG> pub_;
+    OUT_UAVCAN_MSG out_uavcan_msg_;
+
+    void callback(IN_ROS_MSG::Ptr in_ros_msg){
+        uint64_t latitude = in_ros_msg->latitude * 100000000;
+        uint64_t longitude = in_ros_msg->longitude * 100000000;
+        uint64_t altitude = in_ros_msg->altitude * 1000;
+        std::vector<float> ned_velocity(3);
+        // ned_velocity[0] = ;
+        // ned_velocity[1] = ;
+        // ned_velocity[2] = ;
+        // uint64_t ned_velocity = [self.velocity.linear.x,
+        //                 self.velocity.linear.y,
+        //                 self.velocity.linear.z]
+
+        out_uavcan_msg_.latitude_deg_1e8 = latitude;
+        out_uavcan_msg_.longitude_deg_1e8 = longitude;
+        out_uavcan_msg_.height_msl_mm = altitude;
+        out_uavcan_msg_.ned_velocity[0] = ned_velocity[0];
+        out_uavcan_msg_.ned_velocity[1] = ned_velocity[1];
+        out_uavcan_msg_.ned_velocity[2] = ned_velocity[2];
+        out_uavcan_msg_.sats_used = 10;
+        out_uavcan_msg_.status = 3;
+        out_uavcan_msg_.pdop = 99;
+        int pub_res = pub_.broadcast(out_uavcan_msg_);
+        if (pub_res < 0){
+            std::cerr << "GPS publication failure: " << pub_res << std::endl;
+        }
+    }
+public:
+    GPS(ros::NodeHandle& ros_node, UavcanNode& uavcan_node):
+        pub_(uavcan_node){
+        sub_ = ros_node.subscribe(ROS_TOPIC, 1, &GPS::callback, this);
+    }
+};
+
+
+class IMU: public RosToUavcanConverter{
+    typedef uavcan::equipment::ahrs::RawIMU OUT_UAVCAN_MSG;
+    typedef sensor_msgs::Imu IN_ROS_MSG;
+    static constexpr const char* ROS_TOPIC = "/uav/imu";
+
+    uavcan::Publisher<OUT_UAVCAN_MSG> pub_;
+    OUT_UAVCAN_MSG out_uavcan_msg_;
+
+    void callback(IN_ROS_MSG::Ptr in_ros_msg){
+        out_uavcan_msg_.rate_gyro_latest[0] = in_ros_msg->angular_velocity.x;
+        out_uavcan_msg_.rate_gyro_latest[1] = in_ros_msg->angular_velocity.y;
+        out_uavcan_msg_.rate_gyro_latest[2] = in_ros_msg->angular_velocity.z;
+
+        out_uavcan_msg_.accelerometer_latest[0] = in_ros_msg->linear_acceleration.x;
+        out_uavcan_msg_.accelerometer_latest[1] = in_ros_msg->linear_acceleration.y;
+        out_uavcan_msg_.accelerometer_latest[2] = in_ros_msg->linear_acceleration.z;
+
+        int pub_res = pub_.broadcast(out_uavcan_msg_);
+        if (pub_res < 0){
+            std::cerr << "IMU publication failure: " << pub_res << std::endl;
+        }
+    }
+public:
+    IMU(ros::NodeHandle& ros_node, UavcanNode& uavcan_node):
+        pub_(uavcan_node){
+        sub_ = ros_node.subscribe(ROS_TOPIC, 1, &IMU::callback, this);
+    }
+};
+
+
+class Magnetometer: public RosToUavcanConverter{
+    typedef uavcan::equipment::ahrs::MagneticFieldStrength OUT_UAVCAN_MSG;
+    typedef sensor_msgs::MagneticField IN_ROS_MSG;
+    static constexpr const char* ROS_TOPIC = "/uav/mag";
+
+    uavcan::Publisher<OUT_UAVCAN_MSG> pub_;
+    OUT_UAVCAN_MSG out_uavcan_msg_;
+
+    void callback(IN_ROS_MSG::Ptr in_ros_msg){
+        out_uavcan_msg_.magnetic_field_ga[0] = in_ros_msg->magnetic_field.x;
+        out_uavcan_msg_.magnetic_field_ga[1] = in_ros_msg->magnetic_field.y;
+        out_uavcan_msg_.magnetic_field_ga[2] = in_ros_msg->magnetic_field.z;
+
+        int pub_res = pub_.broadcast(out_uavcan_msg_);
+        if (pub_res < 0){
+            std::cerr << "IMU publication failure: " << pub_res << std::endl;
+        }
+    }
+public:
+    Magnetometer(ros::NodeHandle& ros_node, UavcanNode& uavcan_node):
+        pub_(uavcan_node){
+        sub_ = ros_node.subscribe(ROS_TOPIC, 1, &Magnetometer::callback, this);
+    }
+};
 
 
 int main(int argc, char** argv){
@@ -115,57 +321,23 @@ int main(int argc, char** argv){
     //         std::cout << msg << std::endl;
     //     });
 
-
-    // 1.1. Actuators converter
     Actuators actuators(ros_node, uavcan_node);
-
-
-    // 1.2. Baro converter
-    // boost::function<void(const innopolis_vtol_dynamics::StaticPressure&)> f =
-    //     [&](const innopolis_vtol_dynamics::StaticPressure& ros_msg){
-    //         std::cout << ros_msg << std::endl;
-    //     };
-    // auto static_pressure_baro_sub = ros_node.subscribe("/uav/static_pressure", 1, f);
-
-    // auto cb = [&](const innopolis_vtol_dynamics::StaticPressure& msg) {
-    //         std::cout << msg << std::endl;
-    //     };
-    // auto sub = ros_node.subscribe("scan", 1, cb);
-
-    // 1.3. Diff pressure converter
-    
-    
-    // 1.4. Gps converter
-    
-    
-    // 1.5. Imu converter
-    uavcan::Publisher<uavcan::equipment::ahrs::RawIMU> imu_pub(uavcan_node);
-    const int imu_pub_init_res = imu_pub.init();
-    if (imu_pub_init_res < 0){
-        throw std::runtime_error("Failed to start the publisher; error: " + std::to_string(imu_pub_init_res));
-    }
-
-
-    // 1.6. Mag converter
-
+    BaroStaticPressure baroStaticPressure(ros_node, uavcan_node);
+    BaroStaticTemperature baroStaticTemperature(ros_node, uavcan_node);
+    DiffPressure diffPressure(ros_node, uavcan_node);
+    GPS gps(ros_node, uavcan_node);
+    IMU imu(ros_node, uavcan_node);
+    Magnetometer mag(ros_node, uavcan_node);
 
     // 2. Spinner
     uavcan_node.setModeOperational();
     uavcan_node.setHealthOk();
     std::cout << "Hello world! " << uavcan_node.getNodeID().get() + 0 << std::endl;
     while (ros::ok()){
-        const int res = uavcan_node.spin(uavcan::MonotonicDuration::fromMSec(5));
+        const int res = uavcan_node.spin(uavcan::MonotonicDuration::fromMSec(2));
         ros::spinOnce();
         if (res < 0){
             std::cerr << "Transient failure: " << res << std::endl;
-        }
-
-
-        uavcan::equipment::ahrs::RawIMU imu_msg;  // Always zero initialized
-        imu_msg.rate_gyro_latest[0] = std::rand() / float(RAND_MAX);
-        int pub_res = imu_pub.broadcast(imu_msg);
-        if (pub_res < 0){
-            std::cerr << "IMU publication failure: " << pub_res << std::endl;
         }
     }
 }
