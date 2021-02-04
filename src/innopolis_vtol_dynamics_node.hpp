@@ -115,7 +115,7 @@ class Uav_Dynamics {
         ros::Publisher rawAirDataPub_;
         double rawAirDataLastPubTimeSec_ = 0;
         const double RAW_AIR_DATA_PERIOD = 0.05;
-        void publishUavAirData(float absPressure, float diffPressure);
+        void publishUavAirData(float absPressure, float diffPressure, float staticTemperature);
 
         ros::Publisher staticTemperaturePub_;
         double staticTemperatureLastPubTimeSec_ = 0;
@@ -157,6 +157,8 @@ class Uav_Dynamics {
 
         ros::Publisher totalMomentPub_;
         ros::Publisher aeroMomentPub_;
+        ros::Publisher controlSurfacesMomentPub_;
+        ros::Publisher aoaMomentPub_;
         ros::Publisher motorsMomentsPub_[5];
 
         ros::Publisher velocityPub_;

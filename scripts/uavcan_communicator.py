@@ -17,16 +17,16 @@ from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Joy
 from sensor_msgs.msg import MagneticField
 from std_msgs.msg import Bool
-from innopolis_vtol_dynamics.msg import RawAirData
-from innopolis_vtol_dynamics.msg import StaticTemperature
-from innopolis_vtol_dynamics.msg import StaticPressure
+from drone_communicators.msg import RawAirData
+from drone_communicators.msg import StaticTemperature
+from drone_communicators.msg import StaticPressure
 
 # For uavcan v0.1
 import uavcan
 import can
 
 
-DEV_PATH = "/dev/ttyACM0"
+DEV_PATH = "/dev/ttyACM1"
 CAN_DEVICE_TYPE = "serial"
 
 
@@ -74,16 +74,14 @@ class UavcanCommunicatorV0:
     def publish(self, data_type, priority=uavcan.TRANSFER_PRIORITY_LOWEST):
         try:
             self.node.broadcast(data_type, priority=priority)
-        except can.CanError as e:
-            self.tx_can_error_counter += 1
-            rospy.logerr("tx can.CanError {}, №{}".format(
-                         e, self.tx_can_error_counter))
         except uavcan.driver.common.TxQueueFullError as e:
             self.tx_full_buffer_error += 1
-            rospy.logerr("tx uavcan.driver.common.TxQueueFullError {}, №{}".format(
-                         e, self.tx_full_buffer_error))
+            rospy.logerr("UavcanCommunicatorV0 TxQueueFullError {}, №{}".format(
+                e, self.tx_full_buffer_error))
         except queue.Full as e:
-            rospy.logerr("tx queue.Full {}".format(e))
+            rospy.logerr("UavcanCommunicatorV0 queue.Full {}".format(e))
+        except uavcan.driver.common.DriverError as e:
+            rospy.logerr("UavcanCommunicatorV0 DriverError {}".format(e))
 
     def spin(self, period=0.00001):
         try:
@@ -95,10 +93,11 @@ class UavcanCommunicatorV0:
             self.spin_transfer_error_counter += 1
             rospy.logerr("spin uavcan.transport.TransferError {}, №{}".format(
                         e, self.spin_transfer_error_counter))
-        except can.CanError as e:
-            self.spin_can_error_counter += 1
-            rospy.logerr("spin can.CanError {}, №{}".format(
-                        e, self.spin_can_error_counter))
+        # AttributeError: module 'can' has no attribute 'CanError'
+        # except can.CanError as e:
+        #     self.spin_can_error_counter += 1
+        #     rospy.logerr("spin can.CanError {}, №{}".format(
+        #                 e, self.spin_can_error_counter))
         except queue.Full as e:
             rospy.logerr("spin queue.Full {}".format(e))
         except uavcan.driver.common.TxQueueFullError as e:
@@ -180,7 +179,7 @@ class Actuators(Converter):
             self.msg.axes[5] = raw_cmd_msg[5] / 4096 - 1
             self.msg.axes[6] = raw_cmd_msg[6] / 4096 - 1
 
-            self.msg.axes[7] = raw_cmd_msg[7] / 8191.0
+            self.msg.axes[7] = raw_cmd_msg[7] / 8191.0 / 0.75
         self.publisher.publish(self.msg)
 
         self.arm_msg.data = False

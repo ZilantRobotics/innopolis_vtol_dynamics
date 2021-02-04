@@ -18,9 +18,9 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
-#include <innopolis_vtol_dynamics/RawAirData.h>
-#include <innopolis_vtol_dynamics/StaticPressure.h>
-#include <innopolis_vtol_dynamics/StaticTemperature.h>
+#include <drone_communicators/RawAirData.h>
+#include <drone_communicators/StaticPressure.h>
+#include <drone_communicators/StaticTemperature.h>
 
 #include "innopolis_vtol_dynamics_node.hpp"
 #include "flightgogglesDynamicsSim.hpp"
@@ -140,9 +140,9 @@ int8_t Uav_Dynamics::init(){
     speedPub_ = node_.advertise<geometry_msgs::Twist>(VELOCITY_TOPIC_NAME, 1);
     magPub_ = node_.advertise<sensor_msgs::MagneticField>(MAG_TOPIC_NAME, 1);
 
-    rawAirDataPub_ = node_.advertise<innopolis_vtol_dynamics::RawAirData>(RAW_AIR_DATA_TOPIC_NAME, 1);
-    staticTemperaturePub_ = node_.advertise<innopolis_vtol_dynamics::StaticTemperature>(STATIC_TEMPERATURE_TOPIC_NAME, 1);
-    staticPressurePub_ = node_.advertise<innopolis_vtol_dynamics::StaticPressure>(STATIC_PRESSURE_TOPIC_NAME, 1);
+    rawAirDataPub_ = node_.advertise<drone_communicators::RawAirData>(RAW_AIR_DATA_TOPIC_NAME, 1);
+    staticTemperaturePub_ = node_.advertise<drone_communicators::StaticTemperature>(STATIC_TEMPERATURE_TOPIC_NAME, 1);
+    staticPressurePub_ = node_.advertise<drone_communicators::StaticPressure>(STATIC_PRESSURE_TOPIC_NAME, 1);
 
     // Calibration
     calibrationSub_ = node_.subscribe("/uav/calibration", 1, &Uav_Dynamics::calibrationCallback, this);
@@ -163,6 +163,8 @@ int8_t Uav_Dynamics::init(){
 
     totalMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Mtotal", 1);
     aeroMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Maero", 1);
+    controlSurfacesMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/McontrolSurfaces", 1);
+    aoaMomentPub_ = node_.advertise<visualization_msgs::Marker>("/uav/Maoa", 1);
     motorsMomentsPub_[0] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor0", 1);
     motorsMomentsPub_[1] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor1", 1);
     motorsMomentsPub_[2] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor2", 1);
@@ -359,7 +361,7 @@ void Uav_Dynamics::publishStateToCommunicator(){
         magLastPubTimeSec_ = crntTimeSec;
     }
     if(rawAirDataLastPubTimeSec_ + RAW_AIR_DATA_PERIOD < crntTimeSec){
-        publishUavAirData(absPressure, diffPressure);
+        publishUavAirData(absPressure, diffPressure, temperatureKelvin);
         rawAirDataLastPubTimeSec_ = crntTimeSec;
     }
     if(staticPressureLastPubTimeSec_ + STATIC_PRESSURE_PERIOD < crntTimeSec){
@@ -503,7 +505,7 @@ void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond
         magEnu.x(), magEnu.y(), magEnu.z());
 
     Eigen::Vector3d magflu = attitudeFluToEnu.inverse() * magEnu;
-    Eigen::Vector3d magFrd = Converter::fluToFrd(magflu);
+    Eigen::Vector3d magFrd = magflu;
 
     sensor_msgs::MagneticField mag;
     mag.header.stamp = ros::Time();
@@ -513,23 +515,26 @@ void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond
     magPub_.publish(mag);
 }
 
-void Uav_Dynamics::publishUavAirData(float absPressure, float diffPressure){
-    innopolis_vtol_dynamics::RawAirData msg;
+void Uav_Dynamics::publishUavAirData(float absPressure,
+                                     float diffPressure,
+                                     float staticTemperature){
+    drone_communicators::RawAirData msg;
     msg.header.stamp = ros::Time();
     msg.static_pressure = absPressure;
     msg.differential_pressure = diffPressure;
+    msg.static_air_temperature = staticTemperature;
     rawAirDataPub_.publish(msg);
 }
 
 void Uav_Dynamics::publishUavStaticTemperature(float staticTemperature){
-    innopolis_vtol_dynamics::StaticTemperature msg;
+    drone_communicators::StaticTemperature msg;
     msg.header.stamp = ros::Time();
     msg.static_temperature = staticTemperature;
     staticTemperaturePub_.publish(msg);
 }
 
 void Uav_Dynamics::publishUavStaticPressure(float staticPressure){
-    innopolis_vtol_dynamics::StaticPressure msg;
+    drone_communicators::StaticPressure msg;
     msg.header.stamp = ros::Time();
     msg.static_pressure = staticPressure;
     staticPressurePub_.publish(msg);
@@ -626,6 +631,14 @@ void Uav_Dynamics::publishForcesAndMomentsInfo(void){
         auto Mtotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal();
         fillArrow(arrow, Mtotal, Eigen::Vector3d(0.0, 0.5, 0.5));
         totalMomentPub_.publish(arrow);
+
+        auto Msteer = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMsteer();
+        fillArrow(arrow, Msteer, Eigen::Vector3d(0.0, 0.5, 0.5));
+        controlSurfacesMomentPub_.publish(arrow);
+
+        auto Mairspeed = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMairspeed();
+        fillArrow(arrow, Mairspeed, Eigen::Vector3d(0.0, 0.5, 0.5));
+        aoaMomentPub_.publish(arrow);
 
 
         // publish forces

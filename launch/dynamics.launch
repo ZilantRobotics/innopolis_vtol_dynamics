@@ -38,7 +38,7 @@
     - 1. run px4 uavcan communicator
     -->
     <group unless="$(arg sitl_instead_of_hitl)">
-        <node pkg="innopolis_vtol_dynamics" type="uavcan_communicator" name="px4_uavcan_communicator" output="screen">
+        <node pkg="drone_communicators" type="uavcan_communicator" name="px4_uavcan_communicator" output="screen">
         </node>
     </group>
 
