@@ -50,6 +50,8 @@
 
 #include "mavlink_communicator.h"
 #include "cs_converter.hpp"
+#include "sensors_isa_model.hpp"
+
 
 const std::string NODE_NAME = "Mavlink PX4 Communicator";
 
@@ -290,8 +292,7 @@ void MavlinkCommunicator::gpsCallback(drone_communicators::Fix::Ptr gpsPosition)
     gpsMsgCounter_++;
     gpsPosition_[0] = gpsPosition->latitude_deg_1e8 * 1e-8;
     gpsPosition_[1] = gpsPosition->longitude_deg_1e8 * 1e-8;
-    gpsPosition_[2] = gpsPosition->height_msl_mm * 1e-4;
-    std::cout << gpsPosition_.transpose() << std::endl;
+    gpsPosition_[2] = gpsPosition->height_msl_mm * 1e-3;
 }
 
 void MavlinkCommunicator::imuCallback(sensor_msgs::Imu::Ptr imu){
@@ -376,27 +377,16 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
 
     // 3. Fill Barometr and diff pressure
     if (time_usec - lastBaroTimeUsec_ > BARO_PERIOD_US){
-        // 3.1. ISA model for pressure, density, temperature
-        // (for the tropsphere - valid up to 11km above MSL)
-        const float PRESSURE_MSL_HPA = 1013.250f;
-        const float TEMPERATURE_MSL_KELVIN = 288.0f;
-        const float RHO_MSL = 1.225f;
-
-        const float LAPSE_TEMPERATURE_RATE = 1 / 152.4; // 0.00656
-
-        float alt_msl = gpsPosition.z();
-
-        float temperature_local = TEMPERATURE_MSL_KELVIN - LAPSE_TEMPERATURE_RATE * alt_msl;
-        float pressure_ratio = powf((TEMPERATURE_MSL_KELVIN/temperature_local), 5.256f);
-        const float density_ratio = powf((TEMPERATURE_MSL_KELVIN/temperature_local), 4.256f);
-        float rho = RHO_MSL / density_ratio;
+        float temperatureKelvin, absPressure, diffPressure;
+        SensorModelISA::EstimateAtmosphere(gpsPosition, linVelFrd,
+                                            temperatureKelvin, absPressure, diffPressure);
 
         // 3.2. temperature in Celsius
-        sensor_msg.temperature = temperature_local - 273.0f;
+        sensor_msg.temperature = temperatureKelvin - 273.0f;
         sensor_msg.temperature += tempNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.3. abs pressure
-        sensor_msg.abs_pressure = PRESSURE_MSL_HPA / pressure_ratio;
+        sensor_msg.abs_pressure = absPressure;
         sensor_msg.abs_pressure += absPressureNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.4. pressure altitude including effect of pressure noise
@@ -404,7 +394,7 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
         sensor_msg.pressure_alt += baroAltNoise_ * normalDistribution_(randomGenerator_);
 
         // 3.5. diff pressure in hPa (Note: ignoring tailsitter case here)
-        sensor_msg.diff_pressure = 0.005f * rho * linVelFrd.norm() * linVelFrd.norm();
+        sensor_msg.diff_pressure = diffPressure;//0.005f * rho * linVelFrd.norm() * linVelFrd.norm();
         sensor_msg.diff_pressure += diffPressureNoise_ * normalDistribution_(randomGenerator_);
 
         sensor_msg.fields_updated |= SENS_BARO | SENS_DIFF_PRESS;

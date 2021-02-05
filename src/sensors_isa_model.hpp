@@ -12,7 +12,7 @@ namespace SensorModelISA
 {
 
     void EstimateAtmosphere(const Eigen::Vector3d& gpsPosition, const Eigen::Vector3d& linVelNed,
-                            float& temperatureKelvin, float& absPressure, float& diffPressure){
+                        float& temperatureKelvin, float& absPressureHpa, float& diffPressureHpa){
         const float PRESSURE_MSL_HPA = 1013.250f;
         const float TEMPERATURE_MSL_KELVIN = 288.0f;
         const float RHO_MSL = 1.225f;
@@ -25,8 +25,8 @@ namespace SensorModelISA
         float pressureRatio = powf((TEMPERATURE_MSL_KELVIN/temperatureKelvin), 5.256f);
         const float densityRatio = powf((TEMPERATURE_MSL_KELVIN/temperatureKelvin), 4.256f);
         float rho = RHO_MSL / densityRatio;
-        absPressure = PRESSURE_MSL_HPA / pressureRatio;
-        diffPressure = 0.005f * rho * linVelNed.norm() * linVelNed.norm();
+        absPressureHpa = PRESSURE_MSL_HPA / pressureRatio;
+        diffPressureHpa = 0.005f * rho * linVelNed.norm() * linVelNed.norm();
     }
 
 }

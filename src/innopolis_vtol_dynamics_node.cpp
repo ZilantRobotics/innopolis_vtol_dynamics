@@ -35,7 +35,7 @@ static char UAV_FRAME_ID[] = "/uav/enu";
 static const double MAG_NOISE = 0.001;
 static const double STATIC_PRESSURE_NOISE = 0.001;
 static const double DIFF_PRESSURE_NOISE = 0.001;
-static const double TEMPERATURE_NOISE = 0.001;
+static const double TEMPERATURE_NOISE = 0.01;
 
 static constexpr char IMU_TOPIC_NAME[]                 = "/uav/imu";
 static constexpr char MAG_TOPIC_NAME[]                 = "/uav/mag";
@@ -358,9 +358,9 @@ void Uav_Dynamics::publishStateToCommunicator(){
                                     &gpsPosition[0], &gpsPosition[1], &gpsPosition[2]);
 
     // 3. Calculate temperature, abs pressure and diff pressure using ISA model
-    float temperatureKelvin, absPressure, diffPressure;
+    float temperatureKelvin, absPressureHpa, diffPressureHpa;
     SensorModelISA::EstimateAtmosphere(gpsPosition, linVelNed,
-                                       temperatureKelvin, absPressure, diffPressure);
+                                       temperatureKelvin, absPressureHpa, diffPressureHpa);
 
     // Publish state to communicator
     auto crntTimeSec = currentTime_.toSec();
@@ -385,11 +385,11 @@ void Uav_Dynamics::publishStateToCommunicator(){
         magLastPubTimeSec_ = crntTimeSec;
     }
     if(rawAirDataLastPubTimeSec_ + RAW_AIR_DATA_PERIOD < crntTimeSec){
-        publishUavAirData(absPressure, diffPressure, temperatureKelvin);
+        publishUavAirData(absPressureHpa, diffPressureHpa, temperatureKelvin);
         rawAirDataLastPubTimeSec_ = crntTimeSec;
     }
     if(staticPressureLastPubTimeSec_ + STATIC_PRESSURE_PERIOD < crntTimeSec){
-        publishUavStaticPressure(absPressure);
+        publishUavStaticPressure(absPressureHpa);
         staticPressureLastPubTimeSec_ = crntTimeSec;
     }
     if(staticTemperatureLastPubTimeSec_ + STATIC_TEMPERATURE_PERIOD < crntTimeSec){
@@ -503,7 +503,7 @@ void Uav_Dynamics::publishUavGpsPosition(Eigen::Vector3d geoPosition, Eigen::Vec
 
     gps_pose.latitude_deg_1e8 = geoPosition[0] * 1e+8;
     gps_pose.longitude_deg_1e8 = geoPosition[1] * 1e+8;
-    gps_pose.height_msl_mm = geoPosition[2] * 1e+4;
+    gps_pose.height_msl_mm = geoPosition[2] * 1e+3;
 
     gps_pose.ned_velocity.x = nedVelocity[0];
     gps_pose.ned_velocity.y = nedVelocity[1];
@@ -558,14 +558,14 @@ void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond
     magPub_.publish(mag);
 }
 
-void Uav_Dynamics::publishUavAirData(float absPressure,
+void Uav_Dynamics::publishUavAirData(float absPressureHpa,
                                      float diffPressure,
                                      float staticTemperature){
     drone_communicators::RawAirData msg;
     msg.header.stamp = ros::Time();
 
-    msg.static_pressure = absPressure;
-    msg.differential_pressure = diffPressure;
+    msg.static_pressure = absPressureHpa * 100;
+    msg.differential_pressure = diffPressure * 100;
     msg.static_air_temperature = staticTemperature;
 
     msg.static_pressure += STATIC_PRESSURE_NOISE * normalDistribution_(randomGenerator_);
@@ -578,15 +578,15 @@ void Uav_Dynamics::publishUavAirData(float absPressure,
 void Uav_Dynamics::publishUavStaticTemperature(float staticTemperature){
     drone_communicators::StaticTemperature msg;
     msg.header.stamp = ros::Time();
-    msg.static_temperature = staticTemperature;
+    msg.static_temperature = staticTemperature + 5;
     msg.static_temperature += TEMPERATURE_NOISE * normalDistribution_(randomGenerator_);
     staticTemperaturePub_.publish(msg);
 }
 
-void Uav_Dynamics::publishUavStaticPressure(float staticPressure){
+void Uav_Dynamics::publishUavStaticPressure(float staticPressureHpa){
     drone_communicators::StaticPressure msg;
     msg.header.stamp = ros::Time();
-    msg.static_pressure = staticPressure;
+    msg.static_pressure = staticPressureHpa * 100;
     msg.static_pressure += STATIC_PRESSURE_NOISE * normalDistribution_(randomGenerator_);
     staticPressurePub_.publish(msg);
 }
