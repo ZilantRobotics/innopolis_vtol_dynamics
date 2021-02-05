@@ -367,9 +367,9 @@ int MavlinkCommunicator::SendHilSensor(unsigned int time_usec,
 
     // 2. Fill Magnetc field with noise
     if (time_usec - lastMagTimeUsec_ > MAG_PERIOD_US){
-        sensor_msg.xmag = magFrd[0] + magNoise_ * normalDistribution_(randomGenerator_);
-        sensor_msg.ymag = magFrd[1] + magNoise_ * normalDistribution_(randomGenerator_);
-        sensor_msg.zmag = magFrd[2] + magNoise_ * normalDistribution_(randomGenerator_);
+        sensor_msg.xmag = magFrd[0];
+        sensor_msg.ymag = magFrd[1];
+        sensor_msg.zmag = magFrd[2];
         sensor_msg.fields_updated |= SENS_MAG;
         lastMagTimeUsec_ = time_usec;
     }

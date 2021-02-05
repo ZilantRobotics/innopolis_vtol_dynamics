@@ -32,6 +32,23 @@
 static char GLOBAL_FRAME_ID[] = "world";
 static char UAV_FRAME_ID[] = "/uav/enu";
 
+static const double MAG_NOISE = 0.001;
+static const double STATIC_PRESSURE_NOISE = 0.001;
+static const double DIFF_PRESSURE_NOISE = 0.001;
+static const double TEMPERATURE_NOISE = 0.001;
+
+static constexpr char IMU_TOPIC_NAME[]                 = "/uav/imu";
+static constexpr char MAG_TOPIC_NAME[]                 = "/uav/mag";
+static constexpr char GPS_POSE_TOPIC_NAME[]            = "/uav/gps_position";
+static constexpr char ATTITUDE_TOPIC_NAME[]            = "/uav/attitude";
+static constexpr char VELOCITY_TOPIC_NAME[]            = "/uav/velocity";
+static constexpr char ACTUATOR_TOPIC_NAME[]            = "/uav/actuators";
+static constexpr char ARM_TOPIC_NAME[]                 = "/uav/arm";
+
+static constexpr char RAW_AIR_DATA_TOPIC_NAME[]        = "/uav/raw_air_data";
+static constexpr char STATIC_TEMPERATURE_TOPIC_NAME[]  = "/uav/static_temperature";
+static constexpr char STATIC_PRESSURE_TOPIC_NAME[]     = "/uav/static_pressure";
+
 
 int main(int argc, char **argv){
     ros::init(argc, argv, "innopolis_vtol_dynamics_node");
@@ -116,19 +133,6 @@ int8_t Uav_Dynamics::init(){
     initAttitude.normalize();
     uavDynamicsSim_->setInitialPosition(initPosition, initAttitude);
 
-    // Topics name:
-    constexpr char IMU_TOPIC_NAME[]                 = "/uav/imu";
-    constexpr char MAG_TOPIC_NAME[]                 = "/uav/mag";
-    constexpr char GPS_POSE_TOPIC_NAME[]            = "/uav/gps_position";
-    constexpr char ATTITUDE_TOPIC_NAME[]            = "/uav/attitude";
-    constexpr char VELOCITY_TOPIC_NAME[]            = "/uav/velocity";
-    constexpr char ACTUATOR_TOPIC_NAME[]            = "/uav/actuators";
-    constexpr char ARM_TOPIC_NAME[]                 = "/uav/arm";
-
-    constexpr char RAW_AIR_DATA_TOPIC_NAME[]        = "/uav/raw_air_data";
-    constexpr char STATIC_TEMPERATURE_TOPIC_NAME[]  = "/uav/static_temperature";
-    constexpr char STATIC_PRESSURE_TOPIC_NAME[]     = "/uav/static_pressure";
-
     // Init subscribers and publishers for communicator
     // Imu should has up to 100ms sim time buffer (see issue #63)
     actuatorsSub_ = node_.subscribe(ACTUATOR_TOPIC_NAME, 1, &Uav_Dynamics::actuatorsCallback, this);
@@ -180,6 +184,8 @@ int8_t Uav_Dynamics::init(){
         // Get the current time if we are using wall time. Otherwise, use 0 as initial clock.
         currentTime_ = ros::Time::now();
     }
+
+    normalDistribution_ = std::normal_distribution<double>(0.0, 1.0);
 
     simulationLoopTimer_ = node_.createWallTimer(ros::WallDuration(dt_secs_/clockScale_),
                                                  &Uav_Dynamics::simulationLoopTimerCallback,
@@ -492,13 +498,21 @@ void Uav_Dynamics::publishUavAttitude(Eigen::Quaterniond attitudeFrdToNed){
 
 void Uav_Dynamics::publishUavGpsPosition(Eigen::Vector3d geoPosition, Eigen::Vector3d nedVelocity){
     drone_communicators::Fix gps_pose;
+
+    gps_pose.header.stamp = currentTime_;
+
     gps_pose.latitude_deg_1e8 = geoPosition[0] * 1e+8;
     gps_pose.longitude_deg_1e8 = geoPosition[1] * 1e+8;
     gps_pose.height_msl_mm = geoPosition[2] * 1e+4;
+
     gps_pose.ned_velocity.x = nedVelocity[0];
     gps_pose.ned_velocity.y = nedVelocity[1];
     gps_pose.ned_velocity.z = nedVelocity[2];
-    gps_pose.header.stamp = currentTime_;
+
+    gps_pose.sats_used = 10;
+    gps_pose.status = 3;
+    gps_pose.pdop = 99;
+
     gpsPositionPub_.publish(gps_pose);
 }
 
@@ -528,20 +542,19 @@ void Uav_Dynamics::publishUavVelocity(Eigen::Vector3d linVelNed, Eigen::Vector3d
     speedPub_.publish(speed);
 }
 
-void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFluToEnu){
+void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond attitudeFrdToNed){
     Eigen::Vector3d magEnu;
     geographiclib_conversions::MagneticField(
         geoPosition.x(), geoPosition.y(), geoPosition.z(),
         magEnu.x(), magEnu.y(), magEnu.z());
 
-    Eigen::Vector3d magflu = attitudeFluToEnu.inverse() * Converter::enuToNed(magEnu);
-    Eigen::Vector3d magFrd = magflu;
+    Eigen::Vector3d magFrd = attitudeFrdToNed.inverse() * Converter::enuToNed(magEnu);
 
     sensor_msgs::MagneticField mag;
     mag.header.stamp = ros::Time();
-    mag.magnetic_field.x = magFrd[0];
-    mag.magnetic_field.y = magFrd[1];
-    mag.magnetic_field.z = magFrd[2];
+    mag.magnetic_field.x = magFrd[0] + MAG_NOISE * normalDistribution_(randomGenerator_);
+    mag.magnetic_field.y = magFrd[1] + MAG_NOISE * normalDistribution_(randomGenerator_);
+    mag.magnetic_field.z = magFrd[2] + MAG_NOISE * normalDistribution_(randomGenerator_);
     magPub_.publish(mag);
 }
 
@@ -550,9 +563,15 @@ void Uav_Dynamics::publishUavAirData(float absPressure,
                                      float staticTemperature){
     drone_communicators::RawAirData msg;
     msg.header.stamp = ros::Time();
+
     msg.static_pressure = absPressure;
     msg.differential_pressure = diffPressure;
     msg.static_air_temperature = staticTemperature;
+
+    msg.static_pressure += STATIC_PRESSURE_NOISE * normalDistribution_(randomGenerator_);
+    msg.differential_pressure += DIFF_PRESSURE_NOISE * normalDistribution_(randomGenerator_);
+    msg.static_air_temperature += TEMPERATURE_NOISE * normalDistribution_(randomGenerator_);
+
     rawAirDataPub_.publish(msg);
 }
 
@@ -560,6 +579,7 @@ void Uav_Dynamics::publishUavStaticTemperature(float staticTemperature){
     drone_communicators::StaticTemperature msg;
     msg.header.stamp = ros::Time();
     msg.static_temperature = staticTemperature;
+    msg.static_temperature += TEMPERATURE_NOISE * normalDistribution_(randomGenerator_);
     staticTemperaturePub_.publish(msg);
 }
 
@@ -567,6 +587,7 @@ void Uav_Dynamics::publishUavStaticPressure(float staticPressure){
     drone_communicators::StaticPressure msg;
     msg.header.stamp = ros::Time();
     msg.static_pressure = staticPressure;
+    msg.static_pressure += STATIC_PRESSURE_NOISE * normalDistribution_(randomGenerator_);
     staticPressurePub_.publish(msg);
 }
 

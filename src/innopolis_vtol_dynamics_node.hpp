@@ -195,6 +195,9 @@ class Uav_Dynamics {
             ROS_ENU_FLU = 1,
         };
         DynamicsNotation_t dynamicsNotation_;
+
+        std::default_random_engine randomGenerator_;
+        std::normal_distribution<double> normalDistribution_;
 };
 
 #endif
