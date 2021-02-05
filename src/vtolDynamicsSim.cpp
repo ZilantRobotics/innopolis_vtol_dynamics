@@ -400,7 +400,7 @@ Eigen::Matrix3d InnoVtolDynamicsSim::calculateRotationMatrix() const{
 
 Eigen::Vector3d InnoVtolDynamicsSim::calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,
                                                    const Eigen::Vector3d& velocity,
-                                                   const Eigen::Vector3d& windSpeed){
+                                                   const Eigen::Vector3d& windSpeed) const{
     Eigen::Vector3d airspeed = rotationMatrix * (velocity - windSpeed);
     /**
      * @todo limit airspeed, because table values are limited
@@ -666,15 +666,20 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
                                                 << state_.Mmotors[3].transpose() << ", " << state_.Mmotors[4].transpose() << std::endl;
     std::cout << "- MtotalInBodyCS: "           << MtotalInBodyCS.transpose() << std::endl;
 
-    std::cout << "- new rotationMatrix: "       << rotationMatrix(0,0) << ", " << rotationMatrix(0,1) << ", " << rotationMatrix(0,2) << ";" << std::endl <<
-                                                   rotationMatrix(1,0) << ", " << rotationMatrix(1,1) << ", " << rotationMatrix(1,2) << ";" << std::endl <<
-                                                   rotationMatrix(2,0) << ", " << rotationMatrix(2,1) << ", " << rotationMatrix(2,2) << ";" << std::endl;
+    std::cout << "- new rotationMatrix: "       << rotationMatrix(0, 0) << ", " << rotationMatrix(0, 1) << ", " << rotationMatrix(0, 2) << ";" << std::endl <<
+                                                   rotationMatrix(1, 0) << ", " << rotationMatrix(1, 1) << ", " << rotationMatrix(1, 2) << ";" << std::endl <<
+                                                   rotationMatrix(2, 0) << ", " << rotationMatrix(2, 1) << ", " << rotationMatrix(2, 2) << ";" << std::endl;
 
-    std::cout << "- FmotorInBodyCS: "           << FmotorInBodyCS[0].transpose() << ", " << FmotorInBodyCS[1].transpose() << ", " << FmotorInBodyCS[2].transpose() << ", "
-                                                << FmotorInBodyCS[3].transpose() << ", " << FmotorInBodyCS[4].transpose() << ", " << std::endl;
+    std::cout << "- FmotorInBodyCS: "           << FmotorInBodyCS[0].transpose() << ", "
+                                                << FmotorInBodyCS[1].transpose() << ", "
+                                                << FmotorInBodyCS[2].transpose() << ", "
+                                                << FmotorInBodyCS[3].transpose() << ", "
+                                                << FmotorInBodyCS[4].transpose() << ", "
+                                                << std::endl;
     std::cout << "- Fspecific="                 << Fspecific.transpose() << std::endl;
 
-    std::cout << "- Ftotal="                    << Ftotal.transpose() << ", dt=" << dt_sec << ", " << ", mass=" << params_.mass << std::endl;
+    std::cout << "- Ftotal="                    << Ftotal.transpose() << ", dt=" << dt_sec << ", "
+              << ", mass="                      << params_.mass << std::endl;
     std::cout << "- out: state_.linearAccel="   << state_.linearAccel.transpose() << std::endl;
     std::cout << "- out: state_.angularAccel: " << state_.angularAccel.transpose() << std::endl;
     std::cout << "- out: state_.linearVel: "   << state_.linearVel.transpose() << std::endl;
@@ -684,22 +689,28 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     #endif
 }
 
-void InnoVtolDynamicsSim::calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
+void InnoVtolDynamicsSim::calculateCLPolynomial(double airSpeedMod,
+                                                Eigen::VectorXd& polynomialCoeffs) const{
     calculatePolynomialUsingTable(tables_.CLPolynomial, airSpeedMod, polynomialCoeffs);
 }
-void InnoVtolDynamicsSim::calculateCSPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
+void InnoVtolDynamicsSim::calculateCSPolynomial(double airSpeedMod,
+                                                Eigen::VectorXd& polynomialCoeffs) const{
     calculatePolynomialUsingTable(tables_.CSPolynomial, airSpeedMod, polynomialCoeffs);
 }
-void InnoVtolDynamicsSim::calculateCDPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
+void InnoVtolDynamicsSim::calculateCDPolynomial(double airSpeedMod,
+                                                Eigen::VectorXd& polynomialCoeffs) const{
     calculatePolynomialUsingTable(tables_.CDPolynomial, airSpeedMod, polynomialCoeffs);
 }
-void InnoVtolDynamicsSim::calculateCmxPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
+void InnoVtolDynamicsSim::calculateCmxPolynomial(double airSpeedMod,
+                                                 Eigen::VectorXd& polynomialCoeffs) const{
     calculatePolynomialUsingTable(tables_.CmxPolynomial, airSpeedMod, polynomialCoeffs);
 }
-void InnoVtolDynamicsSim::calculateCmyPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
+void InnoVtolDynamicsSim::calculateCmyPolynomial(double airSpeedMod,
+                                                 Eigen::VectorXd& polynomialCoeffs) const{
     calculatePolynomialUsingTable(tables_.CmyPolynomial, airSpeedMod, polynomialCoeffs);
 }
-void InnoVtolDynamicsSim::calculateCmzPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs){
+void InnoVtolDynamicsSim::calculateCmzPolynomial(double airSpeedMod,
+                                                 Eigen::VectorXd& polynomialCoeffs) const{
     calculatePolynomialUsingTable(tables_.CmzPolynomial, airSpeedMod, polynomialCoeffs);
 }
 double InnoVtolDynamicsSim::calculateCSRudder(double rudder_pos, double airspeed) const{
@@ -719,8 +730,8 @@ double InnoVtolDynamicsSim::calculateCmzRudder(double rudder_pos, double airspee
 }
 
 void InnoVtolDynamicsSim::calculatePolynomialUsingTable(const Eigen::MatrixXd& table,
-                                                    double airSpeedMod,
-                                                    Eigen::VectorXd& polynomialCoeffs){
+                                                        double airSpeedMod,
+                                                        Eigen::VectorXd& polynomialCoeffs) const{
     size_t prevRowIdx = findRow(table, airSpeedMod);
     if(prevRowIdx + 2 <= table.rows()){
         size_t nextRowIdx = prevRowIdx + 1;
@@ -778,19 +789,19 @@ double InnoVtolDynamicsSim::lerp(double a, double b, double f) const{
 double InnoVtolDynamicsSim::griddata(const Eigen::MatrixXd& x,
                                  const Eigen::MatrixXd& y,
                                  const Eigen::MatrixXd& z,
-                                 double x_value,
-                                 double y_value) const{
-    size_t x1_idx = search(x, x_value);
-    size_t y1_idx = search(y, y_value);
+                                 double x_val,
+                                 double y_val) const{
+    size_t x1_idx = search(x, x_val);
+    size_t y1_idx = search(y, y_val);
     size_t x2_idx = x1_idx + 1;
     size_t y2_idx = y1_idx + 1;
     double Q11 = z(y1_idx, x1_idx);
     double Q12 = z(y2_idx, x1_idx);
     double Q21 = z(y1_idx, x2_idx);
     double Q22 = z(y2_idx, x2_idx);
-    double R1 = ((x(x2_idx) - x_value) * Q11 + (x_value - x(x1_idx)) * Q21) / (x(x2_idx) - x(x1_idx));
-    double R2 = ((x(x2_idx) - x_value) * Q12 + (x_value - x(x1_idx)) * Q22) / (x(x2_idx) - x(x1_idx));
-    double f =  ((y(y2_idx) - y_value) * R1  + (y_value - y(y1_idx)) * R2)  / (y(y2_idx) - y(y1_idx));
+    double R1 = ((x(x2_idx) - x_val) * Q11 + (x_val - x(x1_idx)) * Q21) / (x(x2_idx) - x(x1_idx));
+    double R2 = ((x(x2_idx) - x_val) * Q12 + (x_val - x(x1_idx)) * Q22) / (x(x2_idx) - x(x1_idx));
+    double f =  ((y(y2_idx) - y_val) * R1  + (y_val - y(y1_idx)) * R2)  / (y(y2_idx) - y(y1_idx));
     return f;
 }
 
@@ -803,22 +814,20 @@ double InnoVtolDynamicsSim::polyval(const Eigen::VectorXd& poly, double val) con
 }
 
 /**
- * @note These methods should return in ENU format
+ * @note These methods should return in NED format
  */
 Eigen::Vector3d InnoVtolDynamicsSim::getVehiclePosition() const{
-    return Converter::nedToEnu(state_.position);
+    return state_.position;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getVehicleVelocity() const{
-    return Converter::nedToEnu(state_.linearVel);
+    return state_.linearVel;
 }
 
 /**
- * @note These methods should return in FLU format
+ * @note These methods should return in FRD format
  */
 Eigen::Quaterniond InnoVtolDynamicsSim::getVehicleAttitude() const{
-    auto q_frd_to_ned = state_.attitude;
-    auto q_flu_to_enu = Converter::frdNedTofluEnu(q_frd_to_ned);
-    return q_flu_to_enu;
+    return state_.attitude;
 }
 Eigen::Vector3d InnoVtolDynamicsSim::getVehicleAngularVelocity() const{
     return state_.angularVel;
@@ -827,7 +836,8 @@ Eigen::Vector3d InnoVtolDynamicsSim::getVehicleAngularVelocity() const{
  * @note We consider that z=0 means ground, so if position <=0, Normal force is appeared,
  * it means that in any way specific force will be equal to Gravity force.
  */
-void InnoVtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOutFlu, Eigen::Vector3d& gyroOutFlu){
+void InnoVtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOutFrd,
+                                            Eigen::Vector3d& gyroOutFrd){
     Eigen::Vector3d specificForce(state_.Fspecific), angularVelocity(state_.angularVel);
     Eigen::Vector3d accNoise(sqrt(params_.accVariance) * distribution_(generator_),
                              sqrt(params_.accVariance) * distribution_(generator_),
@@ -836,10 +846,8 @@ void InnoVtolDynamicsSim::getIMUMeasurement(Eigen::Vector3d& accOutFlu, Eigen::V
                              sqrt(params_.gyroVariance) * distribution_(generator_),
                              sqrt(params_.gyroVariance) * distribution_(generator_));
     Eigen::Quaterniond imuOrient(1, 0, 0, 0);
-    angularVelocity = Converter::frdToFlu(angularVelocity);
-    specificForce = Converter::frdToFlu(specificForce);
-    accOutFlu = imuOrient.inverse() * specificForce + state_.accelBias + accNoise;
-    gyroOutFlu = imuOrient.inverse() * angularVelocity + state_.gyroBias + gyroNoise;
+    accOutFrd = imuOrient.inverse() * specificForce + state_.accelBias + accNoise;
+    gyroOutFrd = imuOrient.inverse() * angularVelocity + state_.gyroBias + gyroNoise;
 }
 
 /**

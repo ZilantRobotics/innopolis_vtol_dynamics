@@ -52,11 +52,11 @@
 
 #include <std_msgs/Bool.h>
 #include <sensor_msgs/Joy.h>
-#include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/QuaternionStamped.h>
+#include <drone_communicators/Fix.h>
 
 
 #include "uavDynamicsSimBase.hpp"
@@ -123,10 +123,10 @@ private:
     void imuCallback(sensor_msgs::Imu::Ptr imu);
 
     ros::Subscriber gpsSub_;
-    sensor_msgs::NavSatFix gpsPositionMsg_;
+    drone_communicators::Fix gpsPositionMsg_;
     Eigen::Vector3d gpsPosition_;
     uint64_t gpsMsgCounter_ = 0;
-    void gpsCallback(sensor_msgs::NavSatFix::Ptr gpsPosition);
+    void gpsCallback(drone_communicators::Fix::Ptr gpsPosition);
 
     ros::Subscriber attitudeSub_;
     geometry_msgs::QuaternionStamped attitudeMsg_;

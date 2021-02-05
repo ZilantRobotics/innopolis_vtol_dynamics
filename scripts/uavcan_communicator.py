@@ -12,7 +12,6 @@ import queue
 # ROS
 import rospy
 from geometry_msgs.msg import Twist
-from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Joy
 from sensor_msgs.msg import MagneticField
@@ -20,6 +19,8 @@ from std_msgs.msg import Bool
 from drone_communicators.msg import RawAirData
 from drone_communicators.msg import StaticTemperature
 from drone_communicators.msg import StaticPressure
+from drone_communicators.msg import Fix
+
 
 # For uavcan v0.1
 import uavcan
@@ -216,15 +217,15 @@ class GPS(Converter):
         super().__init__(direction="ros->uavcan",
                          communicator=communicator,
                          ros_topic="/uav/gps_position",
-                         ros_data_type=NavSatFix,
+                         ros_data_type=Fix,
                          uavcan_data_type=uavcan.equipment.gnss.Fix)
         rospy.Subscriber("/uav/velocity", Twist, self._save_velocity_msg)
         self.velocity = Twist()
 
     def _convert(self, in_ros_msg):
-        geodetioc_pose = [int(in_ros_msg.latitude * 100000000),
-                          int(in_ros_msg.longitude * 100000000),
-                          int(in_ros_msg.altitude * 1000)]
+        geodetioc_pose = [int(in_ros_msg.latitude_deg_1e8),
+                          int(in_ros_msg.longitude_deg_1e8),
+                          int(in_ros_msg.height_msl_mm)]
         ned_velocity = [self.velocity.linear.x,
                         self.velocity.linear.y,
                         self.velocity.linear.z]

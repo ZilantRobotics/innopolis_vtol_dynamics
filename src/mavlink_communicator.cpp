@@ -285,12 +285,13 @@ void MavlinkCommunicator::attitudeCallback(geometry_msgs::QuaternionStamped::Ptr
     attitudeFrdToNed_.w() = attitude->quaternion.w;
 }
 
-void MavlinkCommunicator::gpsCallback(sensor_msgs::NavSatFix::Ptr gpsPosition){
+void MavlinkCommunicator::gpsCallback(drone_communicators::Fix::Ptr gpsPosition){
     gpsPositionMsg_ = *gpsPosition;
     gpsMsgCounter_++;
-    gpsPosition_[0] = gpsPosition->latitude;
-    gpsPosition_[1] = gpsPosition->longitude;
-    gpsPosition_[2] = gpsPosition->altitude;
+    gpsPosition_[0] = gpsPosition->latitude_deg_1e8 * 1e-8;
+    gpsPosition_[1] = gpsPosition->longitude_deg_1e8 * 1e-8;
+    gpsPosition_[2] = gpsPosition->height_msl_mm * 1e-4;
+    std::cout << gpsPosition_.transpose() << std::endl;
 }
 
 void MavlinkCommunicator::imuCallback(sensor_msgs::Imu::Ptr imu){

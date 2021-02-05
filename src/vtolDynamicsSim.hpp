@@ -35,8 +35,8 @@ struct VtolParameters{
     /**
      * @note not ready yet
      */
-    double massUncertainty;                         // mass multiplier
-    double inertiaUncertainty;                      // mass multiplier
+    double massUncertainty;                         // multiplier
+    double inertiaUncertainty;                      // multiplier
 };
 
 struct State{
@@ -129,7 +129,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
                              bool isCmdPercent) override;
 
         /**
-         * @note These methods should return in enu format
+         * @note These methods should return in ned format
          */
         virtual Eigen::Vector3d getVehiclePosition() const override;
         virtual Eigen::Quaterniond getVehicleAttitude() const override;
@@ -181,15 +181,15 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
                                    Eigen::Vector3d& Faero,
                                    Eigen::Vector3d& Maero);
 
-        void calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
-        void calculateCSPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
-        void calculateCDPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
-        void calculateCmxPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
-        void calculateCmyPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
-        void calculateCmzPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs);
+        void calculateCLPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs) const;
+        void calculateCSPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs) const;
+        void calculateCDPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs) const;
+        void calculateCmxPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs) const;
+        void calculateCmyPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs) const;
+        void calculateCmzPolynomial(double airSpeedMod, Eigen::VectorXd& polynomialCoeffs) const;
         void calculatePolynomialUsingTable(const Eigen::MatrixXd& table,
                                            double airSpeedMod,
-                                           Eigen::VectorXd& polynomialCoeffs);
+                                           Eigen::VectorXd& polynomialCoeffs) const;
 
         double calculateCSRudder(double rudder_pos, double airspeed) const;
         double calculateCSBeta(double AoS_deg, double airspeed) const;
@@ -223,7 +223,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         std::vector<double> mapCmdToActuatorInnoVTOL(const std::vector<double>& cmd) const;
         Eigen::Vector3d calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,
                                     const Eigen::Vector3d& estimatedVelocity,
-                                    const Eigen::Vector3d& windSpeed);
+                                    const Eigen::Vector3d& windSpeed) const;
 
         VtolParameters params_;
         State state_;

@@ -15,12 +15,12 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/QuaternionStamped.h>
 #include <std_msgs/Float64MultiArray.h>
-#include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <drone_communicators/RawAirData.h>
 #include <drone_communicators/StaticPressure.h>
 #include <drone_communicators/StaticTemperature.h>
+#include <drone_communicators/Fix.h>
 
 #include "innopolis_vtol_dynamics_node.hpp"
 #include "flightgogglesDynamicsSim.hpp"
@@ -89,7 +89,7 @@ int8_t Uav_Dynamics::init(){
     }else if(dynamicsTypeName_ == DYNAMICS_TYPE_INNO_VTOL){
         uavDynamicsSim_ = new InnoVtolDynamicsSim;
         dynamicsType_ = INNO_VTOL;
-        dynamicsNotation_ = ROS_ENU_FLU;
+        dynamicsNotation_ = PX4_NED_FRD;
     }else{
         ROS_ERROR("Dynamics type with name \"%s\" is not exist.", dynamicsTypeName_.c_str());
         return -1;
@@ -135,7 +135,7 @@ int8_t Uav_Dynamics::init(){
     armSub_ = node_.subscribe(ARM_TOPIC_NAME, 1, &Uav_Dynamics::armCallback, this);
 
     imuPub_ = node_.advertise<sensor_msgs::Imu>(IMU_TOPIC_NAME, 96);
-    gpsPositionPub_ = node_.advertise<sensor_msgs::NavSatFix>(GPS_POSE_TOPIC_NAME, 1);
+    gpsPositionPub_ = node_.advertise<drone_communicators::Fix>(GPS_POSE_TOPIC_NAME, 1);
     attitudePub_ = node_.advertise<geometry_msgs::QuaternionStamped>(ATTITUDE_TOPIC_NAME, 1);
     speedPub_ = node_.advertise<geometry_msgs::Twist>(VELOCITY_TOPIC_NAME, 1);
     magPub_ = node_.advertise<sensor_msgs::MagneticField>(MAG_TOPIC_NAME, 1);
@@ -265,12 +265,13 @@ void Uav_Dynamics::performDiagnostic(double periodSec){
                        << actuators_[7] << "]";
         }
 
-        auto position = uavDynamicsSim_->getVehiclePosition();
+        auto pose = uavDynamicsSim_->getVehiclePosition();
+        auto enuPosition = (dynamicsNotation_ == PX4_NED_FRD) ? Converter::nedToEnu(pose) : pose;
         infoStream << std::setprecision(1) << std::fixed
-                   << ", \033[1;29m ned pose \033[0m ["
-                   << position[0] << ", "
-                   << position[1] << ", "
-                   << position[2] << "]";
+                   << ", \033[1;29m enu pose \033[0m ["
+                   << enuPosition[0] << ", "
+                   << enuPosition[1] << ", "
+                   << enuPosition[2] << "]";
         ROS_INFO_STREAM(infoStream.str());
 
         std::this_thread::sleep_until(crnt_time + sleed_period);
@@ -314,26 +315,43 @@ void Uav_Dynamics::proceedQuadcopterDynamics(double period){
     }
 }
 
+/**
+ * @note Different simulators return data in different notation (PX4 or ROS)
+ * But we must publish only in PX4 notation
+ */
 void Uav_Dynamics::publishStateToCommunicator(){
-    // Get state in ROS notation
-    auto enuPosition = uavDynamicsSim_->getVehiclePosition();
-    auto attitudeFluToEnu = uavDynamicsSim_->getVehicleAttitude();
-    Eigen::Vector3d accFlu(0, 0, -9.8), gyroFlu(0, 0, 0);
-    uavDynamicsSim_->getIMUMeasurement(accFlu, gyroFlu);
-    auto linVelEnu = uavDynamicsSim_->getVehicleVelocity();
-    auto angVelFlu = uavDynamicsSim_->getVehicleAngularVelocity();
 
-    // Convert state from ROS notation into PX4
-    Eigen::Vector3d gpsPosition;
+    // 1. Get data from simulator
+    Eigen::Vector3d position, linVel, acc, gyro, angVel;
+    Eigen::Quaterniond attitude;
+    position = uavDynamicsSim_->getVehiclePosition();
+    linVel = uavDynamicsSim_->getVehicleVelocity();
+    uavDynamicsSim_->getIMUMeasurement(acc, gyro);
+    angVel = uavDynamicsSim_->getVehicleAngularVelocity();
+    attitude = uavDynamicsSim_->getVehicleAttitude();
+
+    // 2. Convert them to appropriate CS
+    Eigen::Vector3d gpsPosition, enuPosition, linVelNed, accFrd, gyroFrd, angVelFrd;
+    Eigen::Quaterniond attitudeFrdToNed;
+    if(dynamicsNotation_ == PX4_NED_FRD){
+        enuPosition = Converter::nedToEnu(position);
+        linVelNed = linVel;
+        accFrd = acc;
+        gyroFrd = gyro;
+        angVelFrd = angVel;
+        attitudeFrdToNed = attitude; // ????
+    }else{
+        enuPosition = position;
+        linVelNed =  Converter::enuToNed(linVel);
+        accFrd = Converter::fluToFrd(acc);
+        gyroFrd = Converter::fluToFrd(gyro);
+        angVelFrd = Converter::fluToFrd(angVel);
+        attitudeFrdToNed = attitude;
+    }
     geodeticConverter_.enu2Geodetic(enuPosition[0], enuPosition[1], enuPosition[2],
                                     &gpsPosition[0], &gpsPosition[1], &gpsPosition[2]);
 
-    auto accFrd = Converter::fluToFrd(accFlu);
-    auto gyroFrd = Converter::fluToFrd(gyroFlu);
-
-    auto linVelNed = Converter::enuToNed(linVelEnu);
-
-    // Calculate temperature and pressure and density using ISA model
+    // 3. Calculate temperature, abs pressure and diff pressure using ISA model
     float temperatureKelvin, absPressure, diffPressure;
     SensorModelISA::EstimateAtmosphere(gpsPosition, linVelNed,
                                        temperatureKelvin, absPressure, diffPressure);
@@ -341,15 +359,15 @@ void Uav_Dynamics::publishStateToCommunicator(){
     // Publish state to communicator
     auto crntTimeSec = currentTime_.toSec();
     if(gpsLastPubTimeSec_ + GPS_POSITION_PERIOD < crntTimeSec){
-        publishUavGpsPosition(gpsPosition);
+        publishUavGpsPosition(gpsPosition, linVelNed);
         gpsLastPubTimeSec_ = crntTimeSec;
     }
     if(attitudeLastPubTimeSec_ + ATTITUDE_PERIOD < crntTimeSec){
-        publishUavAttitude(attitudeFluToEnu);
+        publishUavAttitude(attitudeFrdToNed);
         attitudeLastPubTimeSec_ = crntTimeSec;
     }
     if(velocityLastPubTimeSec_ + VELOCITY_PERIOD < crntTimeSec){
-        publishUavVelocity(linVelNed, angVelFlu);
+        publishUavVelocity(linVelNed, angVelFrd);
         velocityLastPubTimeSec_ = crntTimeSec;
     }
     if(imuLastPubTimeSec_ + IMU_PERIOD < crntTimeSec){
@@ -357,7 +375,7 @@ void Uav_Dynamics::publishStateToCommunicator(){
         imuLastPubTimeSec_ = crntTimeSec;
     }
     if(magLastPubTimeSec_ + MAG_PERIOD < crntTimeSec){
-        publishUavMag(gpsPosition, attitudeFluToEnu);
+        publishUavMag(gpsPosition, attitudeFrdToNed);
         magLastPubTimeSec_ = crntTimeSec;
     }
     if(rawAirDataLastPubTimeSec_ + RAW_AIR_DATA_PERIOD < crntTimeSec){
@@ -430,16 +448,25 @@ void Uav_Dynamics::publishState(void){
     transform.header.stamp = ros::Time::now();
     transform.header.frame_id = GLOBAL_FRAME_ID;
 
-    auto enuPosition = uavDynamicsSim_->getVehiclePosition();
-    auto fluAttitude = uavDynamicsSim_->getVehicleAttitude();
+    auto position = uavDynamicsSim_->getVehiclePosition();
+    auto attitude = uavDynamicsSim_->getVehicleAttitude();
+    Eigen::Vector3d nedPosition;
+    Eigen::Quaterniond frdAttitude;
+    if(dynamicsNotation_ == PX4_NED_FRD){
+        nedPosition = Converter::nedToEnu(position);
+        frdAttitude = attitude;
+    }else{
+        nedPosition = position;
+        frdAttitude = attitude; // ?
+    }
 
-    transform.transform.translation.x = enuPosition(0);
-    transform.transform.translation.y = enuPosition(1);
-    transform.transform.translation.z = enuPosition(2);
-    transform.transform.rotation.x = fluAttitude.x();
-    transform.transform.rotation.y = fluAttitude.y();
-    transform.transform.rotation.z = fluAttitude.z();
-    transform.transform.rotation.w = fluAttitude.w();
+    transform.transform.translation.x = nedPosition[0];
+    transform.transform.translation.y = nedPosition[1];
+    transform.transform.translation.z = nedPosition[2];
+    transform.transform.rotation.x = frdAttitude.x();
+    transform.transform.rotation.y = frdAttitude.y();
+    transform.transform.rotation.z = frdAttitude.z();
+    transform.transform.rotation.w = frdAttitude.w();
     transform.child_frame_id = UAV_FRAME_ID;
 
     tfPub_.sendTransform(transform);
@@ -463,11 +490,14 @@ void Uav_Dynamics::publishUavAttitude(Eigen::Quaterniond attitudeFrdToNed){
     attitudePub_.publish(msg);
 }
 
-void Uav_Dynamics::publishUavGpsPosition(Eigen::Vector3d geoPosition){
-    sensor_msgs::NavSatFix gps_pose;
-    gps_pose.latitude = geoPosition[0];
-    gps_pose.longitude = geoPosition[1];
-    gps_pose.altitude = geoPosition[2];
+void Uav_Dynamics::publishUavGpsPosition(Eigen::Vector3d geoPosition, Eigen::Vector3d nedVelocity){
+    drone_communicators::Fix gps_pose;
+    gps_pose.latitude_deg_1e8 = geoPosition[0] * 1e+8;
+    gps_pose.longitude_deg_1e8 = geoPosition[1] * 1e+8;
+    gps_pose.height_msl_mm = geoPosition[2] * 1e+4;
+    gps_pose.ned_velocity.x = nedVelocity[0];
+    gps_pose.ned_velocity.y = nedVelocity[1];
+    gps_pose.ned_velocity.z = nedVelocity[2];
     gps_pose.header.stamp = currentTime_;
     gpsPositionPub_.publish(gps_pose);
 }
@@ -504,7 +534,7 @@ void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond
         geoPosition.x(), geoPosition.y(), geoPosition.z(),
         magEnu.x(), magEnu.y(), magEnu.z());
 
-    Eigen::Vector3d magflu = attitudeFluToEnu.inverse() * magEnu;
+    Eigen::Vector3d magflu = attitudeFluToEnu.inverse() * Converter::enuToNed(magEnu);
     Eigen::Vector3d magFrd = magflu;
 
     sensor_msgs::MagneticField mag;

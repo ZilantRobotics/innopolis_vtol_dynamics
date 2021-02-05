@@ -12,6 +12,7 @@
 #define UAV_DYNAMICS_HPP
 
 #include <thread>
+#include <random>
 #include <geographiclib_conversions/geodetic_conv.hpp>
 
 #include <ros/ros.h>
@@ -100,7 +101,7 @@ class Uav_Dynamics {
         ros::Publisher gpsPositionPub_;
         double gpsLastPubTimeSec_ = 0;
         const double GPS_POSITION_PERIOD = 0.1;
-        void publishUavGpsPosition(Eigen::Vector3d geoPosition);
+        void publishUavGpsPosition(Eigen::Vector3d geoPosition, Eigen::Vector3d nedVelocity);
 
         ros::Publisher speedPub_;
         double velocityLastPubTimeSec_ = 0;
