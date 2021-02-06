@@ -35,7 +35,7 @@ static char UAV_FRAME_ID[] = "/uav/enu";
 static const double MAG_NOISE = 0.001;
 static const double STATIC_PRESSURE_NOISE = 0.001;
 static const double DIFF_PRESSURE_NOISE = 0.001;
-static const double TEMPERATURE_NOISE = 0.01;
+static const double TEMPERATURE_NOISE = 0.1;
 
 static constexpr char IMU_TOPIC_NAME[]                 = "/uav/imu";
 static constexpr char MAG_TOPIC_NAME[]                 = "/uav/mag";

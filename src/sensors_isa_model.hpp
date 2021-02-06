@@ -16,7 +16,6 @@ namespace SensorModelISA
         const float PRESSURE_MSL_HPA = 1013.250f;
         const float TEMPERATURE_MSL_KELVIN = 288.0f;
         const float RHO_MSL = 1.225f;
-
         const float LAPSE_TEMPERATURE_RATE = 1 / 152.4;
 
         float alt_msl = gpsPosition.z();

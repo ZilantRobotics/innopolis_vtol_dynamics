@@ -35,60 +35,32 @@ int8_t InnoVtolDynamicsSim::init(){
     return 0;
 }
 
+template<int ROWS, int COLS, int ORDER>
+Eigen::MatrixXd getTable(const YAML::Node& config, const char* name){
+    std::vector<double> vectorTable = config[name].as< std::vector<double> >();
+    return Eigen::Matrix<double, ROWS, COLS, ORDER>(vectorTable.data());
+}
+
 void InnoVtolDynamicsSim::loadTables(const std::string& path){
     YAML::Node config = YAML::LoadFile(path);
     std::vector<double> vectorTable;
 
-    vectorTable = config["CS_rudder_table"].as< std::vector<double> >();
-    tables_.CS_rudder = Eigen::Map<Eigen::Matrix<double, 8, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 20);
-
-    vectorTable = config["CS_beta"].as< std::vector<double> >();
-    tables_.CS_beta = Eigen::Map<Eigen::Matrix<double, 8, 90, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 90);
-
-    vectorTable = config["AoA"].as< std::vector<double> >();
-    tables_.AoA = Eigen::Map<Eigen::Matrix<double, 1, 47, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 47);
-
-    vectorTable = config["AoS"].as< std::vector<double> >();
-    tables_.AoS = Eigen::Map<Eigen::Matrix<double, 1, 90, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 90);
-    tables_.AoS = tables_.AoS.transpose();
-
-    vectorTable = config["actuator_table"].as< std::vector<double> >();
-    tables_.actuator = Eigen::Map<Eigen::Matrix<double, 1, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 20);
-    tables_.actuator = tables_.actuator.transpose();
-
-    vectorTable = config["airspeed_table"].as< std::vector<double> >();
-    tables_.airspeed = Eigen::Map<Eigen::Matrix<double, 1, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 1, 8);
-    tables_.airspeed = tables_.airspeed.transpose();
-
-    vectorTable = config["CLPolynomial"].as< std::vector<double> >();
-    tables_.CLPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
-
-    vectorTable = config["CSPolynomial"].as< std::vector<double> >();
-    tables_.CSPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
-
-    vectorTable = config["CDPolynomial"].as< std::vector<double> >();
-    tables_.CDPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 6, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 6);
-
-    vectorTable = config["CmxPolynomial"].as< std::vector<double> >();
-    tables_.CmxPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
-
-    vectorTable = config["CmyPolynomial"].as< std::vector<double> >();
-    tables_.CmyPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
-
-    vectorTable = config["CmzPolynomial"].as< std::vector<double> >();
-    tables_.CmzPolynomial = Eigen::Map<Eigen::Matrix<double, 8, 8, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 8);
-
-    vectorTable = config["CmxAileron"].as< std::vector<double> >();
-    tables_.CmxAileron = Eigen::Map<Eigen::Matrix<double, 8, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 20);
-
-    vectorTable = config["CmyElevator"].as< std::vector<double> >();
-    tables_.CmyElevator = Eigen::Map<Eigen::Matrix<double, 8, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 20);
-
-    vectorTable = config["CmzRudder"].as< std::vector<double> >();
-    tables_.CmzRudder = Eigen::Map<Eigen::Matrix<double, 8, 20, Eigen::RowMajor>>((double*)&vectorTable[0], 8, 20);
-
-    vectorTable = config["prop"].as< std::vector<double> >();
-    tables_.prop = Eigen::Map<Eigen::Matrix<double, 40, 4, Eigen::RowMajor>>((double*)&vectorTable[0], 40, 4);
+    tables_.CS_rudder = getTable<8, 20, Eigen::RowMajor>(config, "CS_rudder_table");
+    tables_.CS_beta = getTable<8, 90, Eigen::RowMajor>(config, "CS_beta");
+    tables_.AoA = getTable<1, 47, Eigen::RowMajor>(config, "AoA");
+    tables_.AoS = getTable<90, 1, Eigen::ColMajor>(config, "AoS");
+    tables_.actuator = getTable<20, 1, Eigen::ColMajor>(config, "actuator_table");
+    tables_.airspeed = getTable<8, 1, Eigen::ColMajor>(config, "airspeed_table");
+    tables_.CLPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CLPolynomial");
+    tables_.CSPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CSPolynomial");
+    tables_.CDPolynomial = getTable<8, 6, Eigen::RowMajor>(config, "CDPolynomial");
+    tables_.CmxPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CmxPolynomial");
+    tables_.CmyPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CmyPolynomial");
+    tables_.CmzPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CmzPolynomial");
+    tables_.CmxAileron = getTable<8, 20, Eigen::RowMajor>(config, "CmxAileron");
+    tables_.CmyElevator = getTable<8, 20, Eigen::RowMajor>(config, "CmyElevator");
+    tables_.CmzRudder = getTable<8, 20, Eigen::RowMajor>(config, "CmzRudder");
+    tables_.prop = getTable<40, 4, Eigen::RowMajor>(config, "prop");
 }
 
 void InnoVtolDynamicsSim::loadParams(const std::string& path){
@@ -119,10 +91,7 @@ void InnoVtolDynamicsSim::loadParams(const std::string& path){
                                                     0,
                                                     0);
 
-    std::vector<double> vectorTable;
-    vectorTable = config["inertia"].as< std::vector<double> >();
-    params_.inertia = Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor>>((double*)&vectorTable[0], 3, 3);
-
+    params_.inertia = getTable<3, 3, Eigen::RowMajor>(config, "inertia");
     params_.actuatorMin = config["actuatorMin"].as< std::vector<double> >();
     params_.actuatorMax = config["actuatorMax"].as< std::vector<double> >();
     params_.accVariance = config["accVariance"].as<double>();
@@ -189,7 +158,6 @@ int8_t InnoVtolDynamicsSim::calibrate(CalibrationType_t calType){
         state_.angularVel << MAG_ROTATION_SPEED, 0.000, 0.000;
     }else if(calType == MAG_4_HEAD_UP){
         if(prevCalibrationType != calType){
-            // state_.attitude = Eigen::Quaterniond(0.707, -0.707, 0, 0);
             state_.attitude = Eigen::Quaterniond(0.707, 0, -0.707, 0);
         }
         state_.Fspecific << params_.gravity, 0, 0;
@@ -594,8 +562,8 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     state_.attitude.normalize();
 
     Eigen::Matrix3d rotationMatrix = calculateRotationMatrix();
-    Eigen::Vector3d Fspecific = std::accumulate(&state_.Fmotors[0], &state_.Fmotors[5], Faero);
-    Eigen::Vector3d Ftotal = Fspecific + rotationMatrix * Eigen::Vector3d(0, 0, params_.mass * params_.gravity);
+    Eigen::Vector3d Fspecific = std::accumulate(&state_.Fmotors[0], &state_.Fmotors[5], Faero) / params_.mass;
+    Eigen::Vector3d Ftotal = (Fspecific + rotationMatrix * Eigen::Vector3d(0, 0, params_.gravity)) * params_.mass;
 
     state_.Ftotal = Ftotal;
     state_.Mtotal = MtotalInBodyCS;
@@ -640,7 +608,7 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     if(state_.position[2] >= 0){
         land();
     }else{
-        state_.Fspecific = Fspecific / params_.mass;
+        state_.Fspecific = Fspecific;
     }
 
     #if STORE_SIM_PARAMETERS == true
