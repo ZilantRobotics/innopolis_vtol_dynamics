@@ -38,6 +38,7 @@ At first, it's assumed that you are using Ubuntu 18.04 with installed ROS and cr
 The whole system required several packages.
 
 **1. Inno Dynamics**
+
 Clone `this package`, [timed_roslaunch](https://github.com/MoriKen254/timed_roslaunch.git) that allows to run nodes with delay from launch file and `geographiclib_conversions` package:
 
 ```
@@ -55,6 +56,7 @@ pip install -r requirements
 And download `wmm2020` from [here](https://geographiclib.sourceforge.io/html/magnetic.html).
 
 **2. PX4 Autopilot**
+
 Use official instruction and [this version of PX4 Autopilot](https://github.com/InnopolisAero/Inno_PX4_Firmware/tree/inno_dynamics).
 
 To build either in SITL or in TRUE HITL mode run:
@@ -95,6 +97,7 @@ Use instruction from `drone_communicators repo`. It's preaty simple.
 
 
 **4. InnoSimulator**
+
 InnoSimulator is a photorealistic simulator.
 
 To use it you should install [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) and [InnoSimulator](https://github.com/inno-robolab/InnoSimulator).
