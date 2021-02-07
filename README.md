@@ -1,23 +1,63 @@
-# Innopolis VTOL dynamics simulator
+# Innopolis VTOL dynamics
 
-The goal is to create a ROS node to simualate full Innopolis VTOL dynamics. It includes quadcopter and plane dynamics with aerodynamics coefficients, minimum sensors set. Simulation node can contact with PX4 in 2 modes:
+Innopolis VTOL dynamics is a ROS node that simulates full Innopolis VTOL dynamics. It includes quadcopter and plane dynamics with aerodynamics coefficients, minimum sensors set.
+
+![scheme](https://github.com/InnopolisAero/innopolis_vtol_dynamics/blob/master/img/scheme.png)
+
+On the one hand it can contact with PX4 flight stack in 2 modes using [drone_communicators](https://github.com/PonomarevDA/drone_communicators):
 - SITL mode simulatuion via [MAVLink HIL_* messages](https://mavlink.io/en/messages/common.html#HIL_CONTROLS)
-- true HITL mode simulation via uavcan (not ready yet)
+- `true HITL` mode simulation via uavcan
 
-It could be used in pair with InnoSimulator as physics engine.
+It uses following topics:
 
-Repos used as references:
+| № | Type         | topic                      | msg                                   |
+| - | ------------ | -------------------------- | ------------------------------------- |
+| 1 | subscribtion | /uav/actuators             | sensor_msgs/Joy                       |
+| 2 | publication  | /uav/static_temperature    | drone_communicators/StaticTemperature |
+| 3 | publication  | /uav/static_pressure       | drone_communicators/StaticPressure    |
+| 4 | publication  | /uav/raw_air_data          | drone_communicators/RawAirData        |
+| 5 | publication  | /uav/gps_position          | drone_communicators/Fix               |
+| 6 | publication  | /uav/imu                   | sensor_msgs/Imu                       |
+| 7 | publication  | /uav/mag                   | sensor_msgs/MagneticField             |
 
-1. [flightgoggles_uav_dynamics (multicopter)](https://github.com/mit-fast/FlightGoggles/blob/master/flightgoggles_uav_dynamics/) - read their [paper](https://arxiv.org/pdf/1905.11377.pdf)
-2. [PX4 mavlink communicator](https://github.com/ThunderFly-aerospace/PX4-FlightGear-Bridge)
-3. [sitl_gazebo](https://github.com/PX4/sitl_gazebo)
-4. [innopolis_vtol_indi](https://github.com/InnopolisAero/innopolis_vtol_indi) - dynamics written in Octave
-5. [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) - photorealistic simulator
-6. [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) - bridge between dynamics and photorealistic simulator
+On the other hand it could be used in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) as physics engine.
 
-# Preparation:
+For this goal you can use [InnoSimInterface ros bridge package](https://github.com/InnopolisAero/inno_sim_interface) that subscribes on topics below and convert them to the InnoSimulator topics.
 
-1. Build [this version of PX4](https://github.com/InnopolisAero/Inno_PX4_Firmware/tree/inno_dynamics) either in SITL or in TRUE HITL mode
+| № | topic             | msg                             |
+| - | ----------------- | ------------------------------- |
+| 1 | /uav/actuators    | sensor_msgs/Joy                 |
+| 5 | /uav/gps_position | drone_communicators/Fix         |
+| 2 | /uav/attitude     | geometry_msgs/QuaternionStamped |
+
+
+# Installation and building:
+
+At first, it's assumed that you are using Ubuntu 18.04 with installed ROS and created catkin_ws. 
+
+The whole system required several packages.
+
+**1. Inno Dynamics**
+Clone `this package`, [timed_roslaunch](https://github.com/MoriKen254/timed_roslaunch.git) that allows to run nodes with delay from launch file and `geographiclib_conversions` package:
+
+```
+git clone https://github.com/InnopolisAero/innopolis_vtol_dynamics.git
+git clone https://github.com/MoriKen254/timed_roslaunch.git
+# there is no geographiclib_conversions package yet
+```
+
+Then install python packages:
+
+```
+pip install -r requirements
+```
+
+And download `wmm2020` from [here](https://geographiclib.sourceforge.io/html/magnetic.html).
+
+**2. PX4 Autopilot**
+Use official instruction and [this version of PX4 Autopilot](https://github.com/InnopolisAero/Inno_PX4_Firmware/tree/inno_dynamics).
+
+To build either in SITL or in TRUE HITL mode run:
 
 ```
 cd Firmware
@@ -26,22 +66,19 @@ make clean
 make distclean
 ```
 
-SITL mode:
+Then for SITL mode:
 
 ```
 DONT_RUN=1 make px4_sitl gazebo_standard_vtol
 ```
 
-True HITL mode. You should build PX4 Autopilot in a way corresponded to your hardware and uload it, an example for cuav V5+:
+And for HITL mode for Cuav V5+ type line below. If you use another hardware, read the [PX4 doc](https://dev.px4.io/master/en/setup/building_px4.html) for details.
 
 ```
 make px4_fmu-v5_default upload
 ```
 
-Read the [PX4 doc](https://dev.px4.io/master/en/setup/building_px4.html) for details.
-
-
-2. Add these lines to your `.bashrc` file, don't forget to change `~/Firmware` to your actual Firmware path
+Don't forget to add these lines to your `.bashrc` file, don't forget to change `~/Firmware` to your actual Firmware path
 
 ```
 source ~/catkin_ws/devel/setup.bash    # (optional)
@@ -50,18 +87,25 @@ export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/Firmware
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/Firmware/Tools/sitl_gazebo
 ```
 
-3. Install `geographiclib_conversions` package
-4. Download `wmm2020` from [here](https://geographiclib.sourceforge.io/html/magnetic.html)
-5. (opional) To use `scripts/run.sh` you should set up correct Firmare path and install tmux
-6. Install [timed_roslaunch](https://github.com/MoriKen254/timed_roslaunch.git). This package allows to run nodes with delay from launch file.
-7. (optional) Install [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) with [InnoSimulator](https://github.com/inno-robolab/InnoSimulator)
-8. Install python packages
-`pip install -r requirements`
-9.  Build InnoDynamics by typing `./catkin_build`
+**3. Drone communicator**
 
-# How to use InnopolisDynamic simulator in both SITL and True HITL modes:
+This package establishes communication between flight stack and dynamics, it also required `mavlink` and `mavros` packages which could be installed while PX4 Autopilot installation.
 
-1. Run dymamics and px4:
+Use instruction from `drone_communicators repo`. It's preaty simple. 
+
+
+**4. InnoSimulator**
+InnoSimulator is a photorealistic simulator.
+
+To use it you should install [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) and [InnoSimulator](https://github.com/inno-robolab/InnoSimulator).
+
+**Building**
+Build all by typing `./catkin_build.sh` from `InnoDynamics` package.
+
+
+# Usage
+
+1. Running dymamics, PX4 flight stack and communicator between them:
 ```roslaunch innopolis_vtol_dynamics dynamics.launch```
 
 There are 3 optional usefull parameters:
@@ -69,24 +113,30 @@ There are 3 optional usefull parameters:
 - run_rviz:=false - it allows to run rviz to visualize orientation, forces and moments (it is turned off by default)
 - sitl_instead_of_hitl:=false - choose SITL or True HITL mode
 
-2. To control and monitor flight using QGroundControl
+2. Controlling and monitoring flight using QGroundControl
+
 ```~/software/qgroundcontrol/QGroundControl.AppImage```
 
-3. To visualize using InnoSimulator
-- at first, you need to run simulator:
+3. Visualization using InnoSimulator
+
 ```
 roscd inno_sim_interface/cfg
 ~/software/InnoSimulator-Linux64-2020.1.2/InnoSimulator.x86_64 --config config.yaml
+
+roslaunch innopolis_vtol_dynamics visualization_using_inno_sim.launch
 ```
-- and then bridge data between dynamics and InnoSimulator:
-```roslaunch innopolis_vtol_dynamics visualization_using_inno_sim.launch```
 
-# (optional) How to use Gazebo simulator instead of InnoDynamics:
+# Repos used as references:
 
-- Instead of `innopolis_vtol_dynamics dynamics.launch` use `roslaunch innopolis_vtol_dynamics gazebo.launch`
+1. [flightgoggles_uav_dynamics (multicopter)](https://github.com/mit-fast/FlightGoggles/blob/master/flightgoggles_uav_dynamics/) - read their [paper](https://arxiv.org/pdf/1905.11377.pdf)
+2. [PX4 mavlink communicator](https://github.com/ThunderFly-aerospace/PX4-FlightGear-Bridge)
+3. [sitl_gazebo](https://github.com/PX4/sitl_gazebo)
+4. [innopolis_vtol_indi](https://github.com/InnopolisAero/innopolis_vtol_indi) - dynamics written in Octave
+5. [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) - photorealistic simulator
+6. [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) - bridge between dynamics and photorealistic simulator
 
 # Tests
-We use [GoogleTest](https://github.com/google/googletest/tree/master/googletest)
+We use [GoogleTest](https://github.com/google/googletest/tree/master/googletest).
 To install this you should follow official instruction or this sequence:
 
 ```
@@ -105,7 +155,3 @@ To run test, type (and read [here](http://wiki.ros.org/gtest) and [here](https:/
 roscd innopolis_vtol_dynamics
 ./catkin_test
 ```
-
-# How it works?
-
-not rdy yet
