@@ -2,13 +2,23 @@
 
 Innopolis VTOL dynamics is a ROS node that simulates full Innopolis VTOL dynamics. It includes quadcopter and plane dynamics with aerodynamics coefficients, minimum sensors set.
 
-![scheme](https://github.com/InnopolisAero/innopolis_vtol_dynamics/blob/master/img/scheme.png)
+![dynamics](img/dynamics.png?raw=true "dynamics")
 
-On the one hand it can contact with PX4 flight stack in 2 modes using [drone_communicators](https://github.com/PonomarevDA/drone_communicators):
-- SITL mode simulatuion via [MAVLink HIL_* messages](https://mavlink.io/en/messages/common.html#HIL_CONTROLS)
-- `true HITL` mode simulation via uavcan
+Typical PX4 simulations ways are [SITL and HITL](https://docs.px4.io/master/en/simulation/). While SITL allows you to run simulation and flight stack fully on your computer, HITL allows to run flight stack in real device in special `HITL mode`.
 
-It uses following topics:
+The key feature of this simulation is to run it in such way that the hardware knows nothing about simulation. This could be possible using uavcan. For users, expecialy those using the uavcan network for uav, it can be very usefull, because it covers more PX4 modules than standard SITL and HITL.
+
+So, Inno VTOL dynamics simulation allows to run simulation in both SITL and `uavcan HITL` mode. It also allows to run InnopolisSimulator (left part of the first figure) and visualize forces and moments in RVIZ (right part of the first figure).
+
+# Design
+
+The design of simulator shown below.
+
+![scheme](img/scheme.png?raw=true "scheme")
+
+As you can see, InnoDynamics is a separate ROS node that perform communication via topics and it doesn't matter which type of communication with flight stack you are using.
+
+To communicate with flight stack via [px4 drone communicator]() it publishes and subscribes on following topics:
 
 | № | Type         | topic                      | msg                                   |
 | - | ------------ | -------------------------- | ------------------------------------- |
@@ -20,9 +30,7 @@ It uses following topics:
 | 6 | publication  | /uav/imu                   | sensor_msgs/Imu                       |
 | 7 | publication  | /uav/mag                   | sensor_msgs/MagneticField             |
 
-On the other hand it could be used in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) as physics engine.
-
-For this goal you can use [InnoSimInterface ros bridge package](https://github.com/InnopolisAero/inno_sim_interface) that subscribes on topics below and convert them to the InnoSimulator topics.
+To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) as physics engine via [InnoSimInterface ros bridge package](https://github.com/InnopolisAero/inno_sim_interface) it publishes and subscribes on following topics.
 
 | № | topic             | msg                             |
 | - | ----------------- | ------------------------------- |

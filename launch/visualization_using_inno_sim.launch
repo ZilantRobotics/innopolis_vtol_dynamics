@@ -1,8 +1,6 @@
 <launch>
-    <node pkg="inno_sim_interface" type="innosim_relay_node.py" name="innosim_relay_node"/>
+    <node pkg="inno_sim_interface" type="innosim_uavcan_bridge.py" name="innosim_relay_node"/>
     <node pkg="inno_sim_interface" type="gimbal_control_node.py" name="gimbal_control_node"/>
-
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find inno_sim_interface)/cfg/rviz.rviz" />
 
     <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher1" args="0 0 0 0 0 0 gimbal velodyne 10" />
     <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher_camera" args="0 0 0.05 1.5707963 3.14159 1.5707963 velodyne camera 100"/>
