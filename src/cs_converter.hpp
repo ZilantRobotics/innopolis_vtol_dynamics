@@ -79,11 +79,11 @@ Eigen::Vector3d nedToFrd(const Eigen::Vector3d& vel_ned, const Eigen::Quaternion
  * @note getVehicleAttitude (vtolDynamics)
  */
 Eigen::Quaterniond frdNedTofluEnu(Eigen::Quaterniond q_frd_to_ned){
-    return Q_ENU_TO_NED.inverse() * Q_FRD_FLU * q_frd_to_ned;
+    return Q_ENU_TO_NED * q_frd_to_ned * Q_FRD_FLU;
 }
 
 Eigen::Quaterniond fluEnuToFrdNed(Eigen::Quaterniond q_flu_to_enu){
-    return Q_ENU_TO_NED * Q_FRD_FLU * q_flu_to_enu;
+    return Q_ENU_TO_NED.inverse() * q_flu_to_enu * Q_FRD_FLU;
 }
 
 }

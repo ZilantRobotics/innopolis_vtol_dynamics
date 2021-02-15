@@ -149,6 +149,8 @@ class Uav_Dynamics {
         //@{
         tf2_ros::TransformBroadcaster tfPub_;
 
+        visualization_msgs::Marker arrowMarkers_;
+
         ros::Publisher totalForcePub_;
         ros::Publisher aeroForcePub_;
         ros::Publisher motorsForcesPub_[5];
@@ -164,10 +166,12 @@ class Uav_Dynamics {
 
         ros::Publisher velocityPub_;
 
-        ros::Publisher forcesPub_;
-
+        void initMarkers();
+        visualization_msgs::Marker& makeArrow(const Eigen::Vector3d& vector3D,
+                                              const Eigen::Vector3d& rgbColor,
+                                              const char* frameId);
+        void publishMarkers();
         void publishState();
-        void publishForcesAndMomentsInfo();
         void publishStaticMotorTransform(const ros::Time & timeStamp,
                                          const char * frame_id,
                                          const char * child_frame_id,

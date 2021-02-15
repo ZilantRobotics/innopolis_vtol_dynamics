@@ -43,7 +43,7 @@
     </group>
 
 
-    <!-- 2. Run dynamic simulation -->
+    <!-- 2. Run dynamics simulation -->
     <rosparam file="$(find innopolis_vtol_dynamics)/config/multicopter_params.yaml" command="load" ns="uav/multicopter_params" />
     <rosparam file="$(find innopolis_vtol_dynamics)/config/sim_params.yaml" command="load" ns="uav/sim_params" />
 
@@ -53,13 +53,6 @@
 
     <!-- 3. (optional) Run rviz -->
     <group if="$(arg run_rviz)">
-        <node pkg="rviz" type="rviz" name="rviz" args="-d $(find innopolis_vtol_dynamics)/config/rviz.rviz" />
-
-        <node pkg="tf" type="static_transform_publisher" name="ned_to_base_footprint"
-                args="0.0 0.0 0.0 0.0 0.0 0.0 /uav/enu /base_footprint 40" />
-
-        <param name="robot_description" command="$(find xacro)/xacro '$(find innopolis_vtol_dynamics)/urdf/vtol.urdf.xacro'" />
-
-        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" />
+        <include file="$(find innopolis_vtol_dynamics)/launch/rviz.launch"/>
     </group>
 </launch>
