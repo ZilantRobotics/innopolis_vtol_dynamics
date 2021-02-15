@@ -35,49 +35,31 @@ const auto Q_ENU_TO_NED = Eigen::Quaterniond(0, 0.70711, 0.70711, 0);
 const auto Q_FRD_FLU = Eigen::Quaterniond(0, 1, 0, 0);
 
 
-/**
- * @note getVehiclePosition and getVehicleVelocity
- */
+
 Eigen::Vector3d nedToEnu(Eigen::Vector3d ned){
     return Q_ENU_TO_NED.inverse() * ned;
 }
-
-/**
- * @note getVehicleVelocity
- */
 Eigen::Vector3d enuToNed(Eigen::Vector3d enu){
     return Q_ENU_TO_NED * enu;
 }
 
-
-/**
- * @note angularVelocity and specificForce (vtolDynamics)
- */
 Eigen::Vector3d frdToFlu(Eigen::Vector3d frd){
     return Q_FRD_FLU * frd;
 }
-
-/**
- * @note angularVelocity and specificForce (sendHilSensor)
- */
 Eigen::Vector3d fluToFrd(Eigen::Vector3d flu){
     return Q_FRD_FLU * flu;
 }
 
-/**
- * @note linearVelocity
- */
-Eigen::Vector3d enuToFrd(const Eigen::Vector3d& vel_enu, const Eigen::Quaterniond& q_flu_to_enu){
-    return Q_FRD_FLU * q_flu_to_enu.inverse() * vel_enu;
-}
 
-Eigen::Vector3d nedToFrd(const Eigen::Vector3d& vel_ned, const Eigen::Quaterniond& q_flu_to_enu){
-    return Q_FRD_FLU * q_flu_to_enu.inverse() * (Q_ENU_TO_NED.inverse() * vel_ned);
-}
+// Eigen::Vector3d enuToFrd(const Eigen::Vector3d& vel_enu, const Eigen::Quaterniond& q_flu_to_enu){
+//     return Q_FRD_FLU * q_flu_to_enu.inverse() * vel_enu;
+// }
 
-/**
- * @note getVehicleAttitude (vtolDynamics)
- */
+// Eigen::Vector3d nedToFrd(const Eigen::Vector3d& vel_ned, const Eigen::Quaterniond& q_flu_to_enu){
+//     return Q_FRD_FLU * q_flu_to_enu.inverse() * (Q_ENU_TO_NED.inverse() * vel_ned);
+// }
+
+
 Eigen::Quaterniond frdNedTofluEnu(Eigen::Quaterniond q_frd_to_ned){
     return Q_ENU_TO_NED * q_frd_to_ned * Q_FRD_FLU;
 }

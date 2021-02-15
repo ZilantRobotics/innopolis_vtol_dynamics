@@ -232,17 +232,6 @@ int8_t InnoVtolDynamicsSim::calibrate(CalibrationType_t calType){
     return 1;
 }
 
-void InnoVtolDynamicsSim::initStaticMotorTransform(){
-    Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
-    auto time = ros::Time::now();
-    constexpr std::array<const char*, 5> motorNames = {
-        "uav/motor0", "uav/motor1", "uav/motor2", "uav/motor3", "uav/motor4"};
-    for(size_t idx = 0; idx < 5; idx++){
-        motorFrame.translation() = params_.propellersLocation[idx];
-        publishStaticMotorTransform(time, "uav/enu", motorNames[idx], motorFrame);
-    }
-}
-
 void InnoVtolDynamicsSim::process(double dt_secs,
                               const std::vector<double>& motorCmd,
                               bool isCmdPercent){

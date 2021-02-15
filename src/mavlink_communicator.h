@@ -44,7 +44,6 @@
 #ifndef PX4_COMMUNICATOR_H
 #define PX4_COMMUNICATOR_H
 
-#include <thread>
 #include <netinet/in.h>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -57,14 +56,16 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/QuaternionStamped.h>
 #include <drone_communicators/Fix.h>
+#include <drone_communicators/StaticPressure.h>
+#include <drone_communicators/StaticTemperature.h>
+#include <drone_communicators/RawAirData.h>
 
 
 #include "uavDynamicsSimBase.hpp"
 
-class MavlinkCommunicator
-{
+class MavlinkCommunicator{
 public:
-    explicit MavlinkCommunicator(ros::NodeHandle nodeHandler, float lat_home);
+    MavlinkCommunicator() {};
 
     /**
      * @brief Init connection with PX4 using TCP
@@ -87,11 +88,13 @@ public:
      * @brief Send hil_sensor (#107) and hil_gps (#113) to PX4 via mavlink
      */
     int SendHilSensor(unsigned int time_usec,
-                      Eigen::Vector3d pose_geodetic,
+                      float gpsAltitude,
                       Eigen::Vector3d mag_frd,
-                      Eigen::Vector3d vel_frd,
                       Eigen::Vector3d acc_frd,
-                      Eigen::Vector3d gyro_frd);
+                      Eigen::Vector3d gyro_frd,
+                      float staticTemperature,
+                      float staticPressure,
+                      float diffPressure);
     int SendHilGps(unsigned int time_usec,
                    Eigen::Vector3d vel_ned,
                    Eigen::Vector3d pose_geodetic);
@@ -105,45 +108,8 @@ public:
      */
     int Receive(bool blocking, bool &armed, std::vector<double>& command);
 
-    void communicate();
-
 private:
-    ros::NodeHandle nodeHandler_;
-    std::thread mainTask_;
-
-    ros::Subscriber magSub_;
-    sensor_msgs::MagneticField magMsg_;
-    Eigen::Vector3d magFrd_;
-    void magCallback(sensor_msgs::MagneticField::Ptr mag);
-
-    ros::Subscriber imuSub_;
-    sensor_msgs::Imu imuMsg_;
-    Eigen::Vector3d accFrd_;
-    Eigen::Vector3d gyroFrd_;
-    void imuCallback(sensor_msgs::Imu::Ptr imu);
-
-    ros::Subscriber gpsSub_;
-    drone_communicators::Fix gpsPositionMsg_;
-    Eigen::Vector3d gpsPosition_;
-    uint64_t gpsMsgCounter_ = 0;
-    void gpsCallback(drone_communicators::Fix::Ptr gpsPosition);
-
-    ros::Subscriber attitudeSub_;
-    geometry_msgs::QuaternionStamped attitudeMsg_;
-    Eigen::Quaterniond attitudeFrdToNed_;
-    void attitudeCallback(geometry_msgs::QuaternionStamped::Ptr attitude);
-
-    ros::Subscriber velocitySub_;
-    geometry_msgs::Twist velocityMsg_;
-    Eigen::Vector3d linearVelocityNed_;
-    void velocityCallback(geometry_msgs::Twist::Ptr velocity);
-
-    ros::Publisher actuatorsPub_;
-    void publishActuators(const std::vector<double>& actuators) const;
-
-    ros::Publisher armPub_;
-    bool isArmed_;
-    void publishArm();
+    bool isCopterAirframe_;
 
     static const uint64_t SENS_ACCEL       = 0b111;
     static const uint64_t SENS_GYRO        = 0b111000;
@@ -151,17 +117,12 @@ private:
     static const uint64_t SENS_BARO        = 0b1101000000000;
     static const uint64_t SENS_DIFF_PRESS  = 0b10000000000;
 
+    // const float ALT_HOME;
+
     static constexpr uint64_t MAG_PERIOD_US = 1e6 / 100;
     static constexpr uint64_t BARO_PERIOD_US = 1e6 / 50;
-    static constexpr uint64_t GPS_PERIOD_US = 1e6 / 10;
-    static constexpr uint64_t IMU_PERIOD_US = 1e6 / 500;
-
     uint64_t lastMagTimeUsec_ = 0;
     uint64_t lastBaroTimeUsec_ = 0;
-    uint64_t lastGpsTimeUsec_ = 0;
-    uint64_t lastImuTimeUsec_ = 0;
-
-    const float ALT_HOME;
 
     const int PORT_BASE = 4560;
     struct sockaddr_in px4MavlinkAddr_;
@@ -176,8 +137,63 @@ private:
     double tempNoise_;
     double absPressureNoise_;
     double diffPressureNoise_;
+};
 
-    bool isCopterAirframe_;
+
+class MavlinkCommunicatorROS
+{
+public:
+    explicit MavlinkCommunicatorROS(ros::NodeHandle nodeHandler, float lat_home);
+    int Init(int portOffset, bool is_copter_airframe);
+    void communicate();
+
+private:
+    MavlinkCommunicator mavlinkCommunicator_;
+    ros::NodeHandle nodeHandler_;
+
+    ros::Publisher actuatorsPub_;
+    void publishActuators(const std::vector<double>& actuators) const;
+    ros::Publisher armPub_;
+    bool isArmed_;
+    void publishArm();
+
+    ros::Subscriber staticTemperatureSub_;
+    drone_communicators::StaticTemperature staticTemperatureMsg_;
+    float staticTemperature_;
+    void staticTemperatureCallback(drone_communicators::StaticTemperature::Ptr staticTemperature);
+
+    ros::Subscriber staticPressureSub_;
+    drone_communicators::StaticPressure staticPressureMsg_;
+    float staticPressure_;
+    void staticPressureCallback(drone_communicators::StaticPressure::Ptr staticPressure);
+
+    ros::Subscriber rawAirDataSub_;
+    drone_communicators::RawAirData rawAirDataMsg_;
+    float diffPressure_;
+    void rawAirDataCallback(drone_communicators::RawAirData::Ptr rawAirData);
+
+    ros::Subscriber gpsSub_;
+    drone_communicators::Fix gpsPositionMsg_;
+    Eigen::Vector3d gpsPosition_;
+    Eigen::Vector3d linearVelocityNed_;
+    uint64_t gpsMsgCounter_ = 0;
+    void gpsCallback(drone_communicators::Fix::Ptr gpsPosition);
+
+    ros::Subscriber imuSub_;
+    sensor_msgs::Imu imuMsg_;
+    Eigen::Vector3d accFrd_;
+    Eigen::Vector3d gyroFrd_;
+    void imuCallback(sensor_msgs::Imu::Ptr imu);
+
+    ros::Subscriber magSub_;
+    sensor_msgs::MagneticField magMsg_;
+    Eigen::Vector3d magFrd_;
+    void magCallback(sensor_msgs::MagneticField::Ptr mag);
+
+    static constexpr uint64_t GPS_PERIOD_US = 1e6 / 10;
+    static constexpr uint64_t IMU_PERIOD_US = 1e6 / 500;
+    uint64_t lastGpsTimeUsec_ = 0;
+    uint64_t lastImuTimeUsec_ = 0;
 };
 
 

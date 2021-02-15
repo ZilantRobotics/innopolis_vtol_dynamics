@@ -89,7 +89,7 @@ struct State{
 };
 
 struct TablesWithCoeffs{
-    Eigen::MatrixXd CS_rudder;
+    Eigen::Matrix<double, 8, 20, Eigen::RowMajor> CS_rudder;
     Eigen::MatrixXd CS_beta;
 
     Eigen::MatrixXd AoA;
@@ -119,7 +119,6 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
     public:
         InnoVtolDynamicsSim();
         virtual int8_t init() override;
-        virtual void initStaticMotorTransform() override;
         virtual void setInitialPosition(const Eigen::Vector3d & position,
                                         const Eigen::Quaterniond& attitude) override;
         virtual void land() override;

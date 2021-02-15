@@ -14,8 +14,6 @@ public:
     FlightgogglesDynamics();
 
     virtual int8_t init() override;
-    virtual void initStaticMotorTransform() override;
-
     virtual void setInitialPosition(const Eigen::Vector3d & position,
                                     const Eigen::Quaterniond& attitude) override;
 

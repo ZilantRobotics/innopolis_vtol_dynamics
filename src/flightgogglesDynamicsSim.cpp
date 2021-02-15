@@ -89,36 +89,14 @@ int8_t FlightgogglesDynamics::init(){
     return 0;
 }
 
-void FlightgogglesDynamics::initStaticMotorTransform(){
-    Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();
-    double momentArm;
-    getParameter("moment_arm",                momentArm,                  0.08,     "m");
-
-    motorFrame.translation() = Eigen::Vector3d(momentArm, momentArm, 0.);
-    multicopterSim_->setMotorFrame(motorFrame, 1, 0);
-    publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor0", motorFrame);
-
-    motorFrame.translation() = Eigen::Vector3d(-momentArm, momentArm, 0.);
-    multicopterSim_->setMotorFrame(motorFrame, -1, 1);
-    publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor1", motorFrame);
-
-    motorFrame.translation() = Eigen::Vector3d(-momentArm, -momentArm, 0.);
-    multicopterSim_->setMotorFrame(motorFrame, 1, 2);
-    publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor2", motorFrame);
-
-    motorFrame.translation() = Eigen::Vector3d(momentArm, -momentArm, 0.);
-    multicopterSim_->setMotorFrame(motorFrame, -1, 3);
-    publishStaticMotorTransform(ros::Time::now(), "uav/imu", "uav/motor3", motorFrame);
-}
-
 void FlightgogglesDynamics::setInitialPosition(const Eigen::Vector3d & position,
-                                                    const Eigen::Quaterniond& attitude){
+                                               const Eigen::Quaterniond& attitude){
     multicopterSim_->setVehiclePosition(position, attitude);
 }
 
 void FlightgogglesDynamics::process(double dt_secs,
-                                         const std::vector<double> & motorSpeedCommandIn,
-                                         bool isCmdPercent){
+                                    const std::vector<double> & motorSpeedCommandIn,
+                                    bool isCmdPercent){
     auto actuators = mapCmdActuator(motorSpeedCommandIn);
     multicopterSim_->proceedState_ExplicitEuler(dt_secs, actuators, isCmdPercent);
 }

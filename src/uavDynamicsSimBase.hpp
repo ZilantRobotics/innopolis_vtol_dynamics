@@ -23,11 +23,10 @@ public:
      * @return -1 if error occures and simulation can't start
      */
     virtual int8_t init() = 0;
-    virtual void initStaticMotorTransform() = 0;
     virtual void setInitialPosition(const Eigen::Vector3d & position,
                                     const Eigen::Quaterniond& attitude) = 0;
 
-    virtual void land();
+    virtual void land() {};
     virtual void process(double dt_secs,
                          const std::vector<double> & motorSpeedCommandIn,
                          bool isCmdPercent) = 0;
@@ -55,20 +54,6 @@ public:
         ACC_6_TURNED_RIGHT,         // ROLL NEGATIVE pi/2
     };
     virtual int8_t calibrate(CalibrationType_t calibrationType) {}
-
-protected:
-    /**
-     * @brief Publish static transform from UAV centroid to motor
-     * @param timeStamp Tf timestamp
-     * @param frame_id Parent (UAV) frame ID
-     * @param child_frame_id Child (motor) frame ID
-     * @param motorFrame Transformation
-     */
-    void publishStaticMotorTransform(const ros::Time & timeStamp,
-                                     const char * frame_id,
-                                     const char * child_frame_id,
-                                     const Eigen::Isometry3d & motorFrame);
-    tf2_ros::StaticTransformBroadcaster* staticMotorTfPub_;
 };
 
 

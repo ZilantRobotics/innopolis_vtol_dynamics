@@ -172,10 +172,6 @@ class Uav_Dynamics {
                                               const char* frameId);
         void publishMarkers();
         void publishState();
-        void publishStaticMotorTransform(const ros::Time & timeStamp,
-                                         const char * frame_id,
-                                         const char * child_frame_id,
-                                         const Eigen::Isometry3d & motorFrame);
         //@}
 
 

@@ -50,6 +50,11 @@ static constexpr char RAW_AIR_DATA_TOPIC_NAME[]        = "/uav/raw_air_data";
 static constexpr char STATIC_TEMPERATURE_TOPIC_NAME[]  = "/uav/static_temperature";
 static constexpr char STATIC_PRESSURE_TOPIC_NAME[]     = "/uav/static_pressure";
 
+const std::string MOTOR_NAMES[5] = {"motor0",
+                                    "motor1",
+                                    "motor2",
+                                    "motor3",
+                                    "ICE"};
 
 int main(int argc, char **argv){
     ros::init(argc, argv, "innopolis_vtol_dynamics_node");
@@ -126,7 +131,6 @@ int8_t Uav_Dynamics::init(){
         ROS_ERROR("Can't init uav dynamics sim. Shutdown.");
         return -1;
     }
-    uavDynamicsSim_->initStaticMotorTransform();
     geodeticConverter_.initialiseReference(latRef_, lonRef_, altRef_);
 
     Eigen::Vector3d initPosition(initPose.at(0), initPose.at(1), initPose.at(2));
@@ -173,7 +177,7 @@ int8_t Uav_Dynamics::init(){
     motorsMomentsPub_[1] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor1", 1);
     motorsMomentsPub_[2] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor2", 1);
     motorsMomentsPub_[3] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor3", 1);
-    motorsMomentsPub_[4] = node_.advertise<visualization_msgs::Marker>("/uavM/motor4", 1);
+    motorsMomentsPub_[4] = node_.advertise<visualization_msgs::Marker>("/uav/Mmotor4", 1);
 
     velocityPub_ = node_.advertise<visualization_msgs::Marker>("/uav/linearVelocity", 1);
 
@@ -634,11 +638,6 @@ void Uav_Dynamics::initMarkers(){
 void Uav_Dynamics::publishMarkers(void){
     if(dynamicsType_ == INNO_VTOL){
         arrowMarkers_.header.stamp = ros::Time();
-        std::string motorNames[5] = {"uav/motor0",
-                                     "uav/motor1",
-                                     "uav/motor2",
-                                     "uav/motor3",
-                                     "uav/motor4"};
         Eigen::Vector3d MOMENT_COLOR(0.5, 0.5, 0.0),
                         MOTORS_FORCES_COLOR(0.0, 0.5, 0.5),
                         SPEED_COLOR(0.7, 0.5, 1.3),
@@ -654,7 +653,7 @@ void Uav_Dynamics::publishMarkers(void){
         for(size_t motorIdx = 0; motorIdx < 5; motorIdx++){
             motorsMomentsPub_[motorIdx].publish(makeArrow(Mmotors[motorIdx],
                                                           MOMENT_COLOR,
-                                                          motorNames[motorIdx].c_str()));
+                                                          MOTOR_NAMES[motorIdx].c_str()));
         }
 
         auto Mtotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getMtotal();
@@ -672,12 +671,11 @@ void Uav_Dynamics::publishMarkers(void){
         aeroForcePub_.publish(makeArrow(Faero / 10, MOTORS_FORCES_COLOR));
 
         auto Fmotors = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFmotors();
-        for(size_t motorIdx = 0; motorIdx < 4; motorIdx++){
+        for(size_t motorIdx = 0; motorIdx < 5; motorIdx++){
             motorsForcesPub_[motorIdx].publish(makeArrow(Fmotors[motorIdx] / 10,
                                                          MOTORS_FORCES_COLOR,
-                                                         motorNames[motorIdx].c_str()));
+                                                         MOTOR_NAMES[motorIdx].c_str()));
         }
-        motorsForcesPub_[4].publish(makeArrow(Fmotors[4] / 10, MOTORS_FORCES_COLOR, "ICE"));
 
         auto Ftotal = static_cast<InnoVtolDynamicsSim*>(uavDynamicsSim_)->getFtotal();
         totalForcePub_.publish(makeArrow(Ftotal, Eigen::Vector3d(0.0, 1.0, 1.0)));
