@@ -122,7 +122,7 @@ Build all by typing `./catkin_build.sh` from `InnoDynamics` package.
 There are 3 optional usefull parameters:
 - vehicle:=standard_vtol - it allows to choose one of 2 vehicles: standard_vtol (by default, it means Innopolis VTOL) and iris
 - run_rviz:=false - it allows to run rviz to visualize orientation, forces and moments (it is turned off by default)
-- sitl_instead_of_hitl:=false - choose SITL or True HITL mode
+- run_sitl_flight_stack:=false - choose SITL or True HITL mode
 
 2. Controlling and monitoring flight using QGroundControl
 
@@ -134,7 +134,7 @@ There are 3 optional usefull parameters:
 roscd inno_sim_interface/cfg
 ~/software/InnoSimulator-Linux64-2020.1.2/InnoSimulator.x86_64 --config config.yaml
 
-roslaunch innopolis_vtol_dynamics visualization_using_inno_sim.launch
+roslaunch innopolis_vtol_dynamics inno_sim.launch
 ```
 
 # Repos used as references:

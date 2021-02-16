@@ -10,18 +10,12 @@
     <arg name="vehicle"                 default="standard_vtol"                 doc="[standard_vtol, iris]"/>
     <arg name="fcu_url"                 default="udp://:14540@127.0.0.1:14557"  doc="[udp://:14560@127.0.0.1:14558]"/>
     <arg name="run_rviz"                default="false"                         doc="[true, false]"/>
-    <arg name="sitl_instead_of_hitl"    default="true"                          doc="[true means sitl, false means true hitl]"/>
+    <arg name="run_sitl_flight_stack"   default="true"                          doc="[true means sitl, false means true hitl]"/>
+    <arg name="run_inno_sim_bridge"     default="true"                          doc="[true, false]"/>
 
 
-    <!-- 1.1. SITL:
-    - 1. launch the simulation and connect ROS to it via MAVROS - is it just publish px4 state to ROS topics?
-    - 2. launch px4 SITL
-    - 3. run px4 mavlink communicator
-    -->
-    <group if="$(arg sitl_instead_of_hitl)">
-        <include file="$(find mavros)/launch/px4.launch">
-            <arg name="fcu_url" value="$(arg fcu_url)"/>
-        </include>
+    <!-- 1. Run SITL flight stack -->
+    <group if="$(arg run_sitl_flight_stack)">
         <include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">
             <arg name="time" value="3" />
             <arg name="pkg" value="px4" />
@@ -30,20 +24,18 @@
             <arg name="file" value="px4.launch" />
             <arg name="value" value="vehicle:=$(arg vehicle)" />
         </include>
-        <node pkg="innopolis_vtol_dynamics" type="mavlink_communicator" name="px4_mavlink_communicatormavlink_communicator" output="screen">
-        </node>
     </group>
 
-    <!-- 1.2. True HITL:
-    - 1. run px4 uavcan communicator
-    -->
-    <group unless="$(arg sitl_instead_of_hitl)">
-        <node pkg="drone_communicators" type="uavcan_communicator" name="px4_uavcan_communicator" output="screen">
-        </node>
+    <!-- 2. Run mavlink or uavcan communicator depending on simulation mode -->
+    <group if="$(arg run_sitl_flight_stack)">
+        <node pkg="innopolis_vtol_dynamics" type="mavlink_communicator" name="px4_mavlink_communicatormavlink_communicator" output="screen"/>
+    </group>
+    <group unless="$(arg run_sitl_flight_stack)">
+        <node pkg="drone_communicators" type="uavcan_communicator" name="px4_uavcan_communicator" output="screen"/>
     </group>
 
 
-    <!-- 2. Run dynamics simulation -->
+    <!-- 3. Run dynamics simulation -->
     <rosparam file="$(find innopolis_vtol_dynamics)/config/multicopter_params.yaml" command="load" ns="uav/multicopter_params" />
     <rosparam file="$(find innopolis_vtol_dynamics)/config/sim_params.yaml" command="load" ns="uav/sim_params" />
 
@@ -51,8 +43,13 @@
         <param name="vehicle" value="$(arg vehicle)" />/>
     </node>
 
-    <!-- 3. (optional) Run rviz -->
+    <!-- 4. (optional) Run rviz -->
     <group if="$(arg run_rviz)">
         <include file="$(find innopolis_vtol_dynamics)/launch/rviz.launch"/>
+    </group>
+
+    <!-- 5. (optional) Inno sim bridge -->
+    <group if="$(arg run_inno_sim_bridge)">
+        <include file="$(find innopolis_vtol_dynamics)/launch/inno_sim.launch"/>
     </group>
 </launch>
