@@ -28,6 +28,8 @@ public:
 private:
     MulticopterDynamicsSim * multicopterSim_;
 
+    void initStaticMotorTransform();
+
     /**
      * @brief Convert actuator indexes from PX4 notation to internal Flightgoggles notation
      * @param cmd with indexes: 0 - front right, 1 - tail left, 2 - front left, 3 - tail right

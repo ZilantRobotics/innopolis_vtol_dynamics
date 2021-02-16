@@ -86,7 +86,27 @@ int8_t FlightgogglesDynamics::init(){
                                   accBiasProcessNoiseAutoCorrelation, gyroBiasProcessNoiseAutoCorrelation);
     multicopterSim_->imu_.setNoiseVariance(accMeasNoiseVariance, gyroMeasNoiseVariance);
 
+    initStaticMotorTransform();
+
     return 0;
+}
+
+void FlightgogglesDynamics::initStaticMotorTransform(){	
+    Eigen::Isometry3d motorFrame = Eigen::Isometry3d::Identity();	
+    double momentArm;	
+    getParameter("moment_arm",                momentArm,                  0.08,     "m");	
+
+    motorFrame.translation() = Eigen::Vector3d(momentArm, momentArm, 0.);	
+    multicopterSim_->setMotorFrame(motorFrame, 1, 0);	
+
+    motorFrame.translation() = Eigen::Vector3d(-momentArm, momentArm, 0.);	
+    multicopterSim_->setMotorFrame(motorFrame, -1, 1);	
+
+    motorFrame.translation() = Eigen::Vector3d(-momentArm, -momentArm, 0.);	
+    multicopterSim_->setMotorFrame(motorFrame, 1, 2);	
+
+    motorFrame.translation() = Eigen::Vector3d(momentArm, -momentArm, 0.);	
+    multicopterSim_->setMotorFrame(motorFrame, -1, 3);	
 }
 
 void FlightgogglesDynamics::setInitialPosition(const Eigen::Vector3d & position,
