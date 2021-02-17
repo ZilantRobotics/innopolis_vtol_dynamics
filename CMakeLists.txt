@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
     mav_msgs
     sensor_msgs
     geometry_msgs
+    drone_communicators
     tf2
     tf2_ros
     geographiclib_conversions
@@ -198,4 +199,7 @@ catkin_add_gtest(${PROJECT_NAME}-test src/tests/test_vtol_dynamics.cpp)
 
 if(TARGET ${PROJECT_NAME}-test)
   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+  target_include_directories(${PROJECT_NAME}-test
+                BEFORE
+                PUBLIC ${MAVLINK_INCLUDE_DIRS})
 endif()
