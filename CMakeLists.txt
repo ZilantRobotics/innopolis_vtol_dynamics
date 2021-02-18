@@ -154,9 +154,6 @@ target_link_libraries(${PROJECT_NAME}_mavlink_communicator
     ${catkin_LIBRARIES}
 )
 
-target_link_libraries(${PROJECT_NAME} yaml-cpp)
-
-
 #############
 ## Install ##
 #############

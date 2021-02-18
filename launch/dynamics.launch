@@ -36,8 +36,7 @@
 
 
     <!-- 3. Run dynamics simulation -->
-    <rosparam file="$(find innopolis_vtol_dynamics)/config/multicopter_params.yaml" command="load" ns="uav/multicopter_params" />
-    <rosparam file="$(find innopolis_vtol_dynamics)/config/sim_params.yaml" command="load" ns="uav/sim_params" />
+    <include file="$(find innopolis_vtol_dynamics)/launch/load_parameters.launch"/>
 
     <node pkg="innopolis_vtol_dynamics" type="node" name="inno_dynamics_sim" output="screen">
         <param name="vehicle" value="$(arg vehicle)" />/>

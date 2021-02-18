@@ -2,6 +2,8 @@
 #include <iostream>
 #include <Eigen/Geometry>
 #include <random>
+#include <geographiclib_conversions/geodetic_conv.hpp>
+#include "../sensors_isa_model.hpp"
 #include "../vtolDynamicsSim.hpp"
 
 TEST(InnoVtolDynamicsSim, calculateWind){
@@ -128,6 +130,48 @@ TEST(InnoVtolDynamicsSim, calculateCLPolynomial){
     ASSERT_TRUE(std::for_each(&diff[0], &diff[6], isZeroComparator));
 }
 
+TEST(InnoVtolDynamicsSim, DISABLED_calculateLiftForce){
+    InnoVtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    auto isZeroComparator = [](double a) { return abs(a) < 0.00001;};
+
+    Eigen::VectorXd polynomialCoeffs(7);
+    Eigen::Vector3d FL, airspeed;
+    double CL, dynamicPressure, AoA_deg, airspeedNorm, AoA_rad;
+
+    airspeedNorm = 10;
+    for(AoA_deg = -45; AoA_deg <= 45; AoA_deg += 5){
+        AoA_rad = AoA_deg / 180 * 3.1415;
+        airspeed << airspeedNorm * cos(AoA_rad), 0, airspeedNorm * sin(AoA_rad);
+        dynamicPressure = vtolDynamicsSim.calculateDynamicPressure(airspeed.norm());
+        vtolDynamicsSim.calculateCLPolynomial(airspeedNorm, polynomialCoeffs);
+        CL = vtolDynamicsSim.polyval(polynomialCoeffs, AoA_deg);
+        FL = 0.5 * dynamicPressure * (Eigen::Vector3d(0, 1, 0).cross(airspeed.normalized())) * CL;
+        std::cout << AoA_deg << " FL = " << FL.transpose() << ", " << airspeed.norm() << std::endl;
+    }
+}
+
+TEST(InnoVtolDynamicsSim, DISABLED_estimate_atmosphere){
+    InnoVtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+
+    Eigen::Vector3d gpsPosition, linVelNed, enuPosition;
+    float temperatureKelvin, absPressureHpa, diffPressureHpa;
+
+    geodetic_converter::GeodeticConverter geodeticConverter;
+    geodeticConverter.initialiseReference(55.7544426, 48.742684, 0);
+
+    for(double pose = 0; pose <= 100; pose += 10){
+        enuPosition << 0, 0, pose;
+        gpsPosition << 55.7544426, 48.742684, 0;
+        linVelNed << 0, 0, 0;
+        geodeticConverter.enu2Geodetic(enuPosition[0], enuPosition[1], enuPosition[2],
+                                       &gpsPosition[0], &gpsPosition[1], &gpsPosition[2]);
+        SensorModelISA::EstimateAtmosphere(gpsPosition, linVelNed,
+                                           temperatureKelvin, absPressureHpa, diffPressureHpa);
+        std::cout << pose << ": " << temperatureKelvin << ", " << gpsPosition[2] << ", " << absPressureHpa << ", " << diffPressureHpa << std::endl;
+    }
+}
 
 TEST(InnoVtolDynamicsSim, polyval){
     InnoVtolDynamicsSim vtolDynamicsSim;
@@ -216,6 +260,21 @@ TEST(InnoVtolDynamicsSim, calculateCSBeta){
     for(auto test_case : data_set){
         result = vtolDynamicsSim.calculateCSBeta(test_case.aos_degree, test_case.airspeed);
         ASSERT_TRUE(std::abs(result - test_case.expected) < 0.0000001);
+    }
+}
+
+TEST(InnoVtolDynamicsSim, DISABLED_calculateCmxAileron){
+    InnoVtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double Cmx_aileron, airspeedNorm, aileron_pos, dynamicPressure;
+    double characteristicLength = 1.5;
+
+    airspeedNorm = 20;
+    dynamicPressure = vtolDynamicsSim.calculateDynamicPressure(airspeedNorm);
+    for(aileron_pos = -2e1; aileron_pos <= 2e1; aileron_pos += 4){
+        Cmx_aileron = vtolDynamicsSim.calculateCmyElevator(aileron_pos, airspeedNorm);
+        Cmx_aileron *= 0.5 * dynamicPressure * characteristicLength;
+        std::cout << aileron_pos << " Cmx_aileron = " << Cmx_aileron << std::endl;
     }
 }
 
@@ -619,5 +678,6 @@ TEST(InnoVtolDynamicsSim, calculateNewStateEightComplexFull){
 
 int main(int argc, char *argv[]){
     testing::InitGoogleTest(&argc, argv);
+    ros::init(argc, argv, "tester");
     return RUN_ALL_TESTS();
 }

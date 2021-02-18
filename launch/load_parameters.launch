@@ -1,0 +1,6 @@
+<launch>
+    <rosparam file="$(find innopolis_vtol_dynamics)/config/multicopter_params.yaml" command="load" ns="uav/multicopter_params" />
+    <rosparam file="$(find innopolis_vtol_dynamics)/config/sim_params.yaml" command="load" ns="uav/sim_params" />
+    <rosparam file="$(find innopolis_vtol_dynamics)/config/vtol_params.yaml" command="load" ns="uav/vtol_params" />
+    <rosparam file="$(find innopolis_vtol_dynamics)/config/aerodynamics_coeffs.yaml" command="load" ns="uav/aerodynamics_coeffs" />
+</launch>

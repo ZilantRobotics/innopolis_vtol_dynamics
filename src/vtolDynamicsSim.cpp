@@ -7,7 +7,6 @@
 #include <cmath>
 #include <boost/algorithm/clamp.hpp>
 #include <algorithm>
-#include "yaml-cpp/yaml.h"
 #include "vtolDynamicsSim.hpp"
 #include <ros/package.h>
 #include <array>
@@ -29,73 +28,64 @@ InnoVtolDynamicsSim::InnoVtolDynamicsSim(): distribution_(0.0, 1.0){
 }
 
 int8_t InnoVtolDynamicsSim::init(){
-    std::string configPath = ros::package::getPath("innopolis_vtol_dynamics") + "/config/";
-    loadTables(configPath + "aerodynamics_coeffs.yaml");
-    loadParams(configPath + "vtol_params.yaml");
+    loadTables("/uav/aerodynamics_coeffs/");
+    loadParams("/uav/vtol_params/");
     return 0;
 }
 
 template<int ROWS, int COLS, int ORDER>
-Eigen::MatrixXd getTable(const YAML::Node& config, const char* name){
-    std::vector<double> vectorTable = config[name].as< std::vector<double> >();
-    return Eigen::Matrix<double, ROWS, COLS, ORDER>(vectorTable.data());
+Eigen::MatrixXd getTableNew(const std::string& path, const char* name){
+    std::vector<double> data;
+
+    if(ros::param::get(path + name, data) == false){
+        throw std::runtime_error(std::string("Wrong parameter name: ") + name);
+    }
+
+    return Eigen::Matrix<double, ROWS, COLS, ORDER>(data.data());
 }
 
-void InnoVtolDynamicsSim::loadTables(const std::string& path){
-    YAML::Node config = YAML::LoadFile(path);
-    std::vector<double> vectorTable;
 
-    tables_.CS_rudder = getTable<8, 20, Eigen::RowMajor>(config, "CS_rudder_table");
-    tables_.CS_beta = getTable<8, 90, Eigen::RowMajor>(config, "CS_beta");
-    tables_.AoA = getTable<1, 47, Eigen::RowMajor>(config, "AoA");
-    tables_.AoS = getTable<90, 1, Eigen::ColMajor>(config, "AoS");
-    tables_.actuator = getTable<20, 1, Eigen::ColMajor>(config, "actuator_table");
-    tables_.airspeed = getTable<8, 1, Eigen::ColMajor>(config, "airspeed_table");
-    tables_.CLPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CLPolynomial");
-    tables_.CSPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CSPolynomial");
-    tables_.CDPolynomial = getTable<8, 6, Eigen::RowMajor>(config, "CDPolynomial");
-    tables_.CmxPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CmxPolynomial");
-    tables_.CmyPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CmyPolynomial");
-    tables_.CmzPolynomial = getTable<8, 8, Eigen::RowMajor>(config, "CmzPolynomial");
-    tables_.CmxAileron = getTable<8, 20, Eigen::RowMajor>(config, "CmxAileron");
-    tables_.CmyElevator = getTable<8, 20, Eigen::RowMajor>(config, "CmyElevator");
-    tables_.CmzRudder = getTable<8, 20, Eigen::RowMajor>(config, "CmzRudder");
-    tables_.prop = getTable<40, 4, Eigen::RowMajor>(config, "prop");
+void InnoVtolDynamicsSim::loadTables(const std::string& path){
+    tables_.CS_rudder = getTableNew<8, 20, Eigen::RowMajor>(path, "CS_rudder_table");
+    tables_.CS_beta = getTableNew<8, 90, Eigen::RowMajor>(path, "CS_beta");
+    tables_.AoA = getTableNew<1, 47, Eigen::RowMajor>(path, "AoA");
+    tables_.AoS = getTableNew<90, 1, Eigen::ColMajor>(path, "AoS");
+    tables_.actuator = getTableNew<20, 1, Eigen::ColMajor>(path, "actuator_table");
+    tables_.airspeed = getTableNew<8, 1, Eigen::ColMajor>(path, "airspeed_table");
+    tables_.CLPolynomial = getTableNew<8, 8, Eigen::RowMajor>(path, "CLPolynomial");
+    tables_.CSPolynomial = getTableNew<8, 8, Eigen::RowMajor>(path, "CSPolynomial");
+    tables_.CDPolynomial = getTableNew<8, 6, Eigen::RowMajor>(path, "CDPolynomial");
+    tables_.CmxPolynomial = getTableNew<8, 8, Eigen::RowMajor>(path, "CmxPolynomial");
+    tables_.CmyPolynomial = getTableNew<8, 8, Eigen::RowMajor>(path, "CmyPolynomial");
+    tables_.CmzPolynomial = getTableNew<8, 8, Eigen::RowMajor>(path, "CmzPolynomial");
+    tables_.CmxAileron = getTableNew<8, 20, Eigen::RowMajor>(path, "CmxAileron");
+    tables_.CmyElevator = getTableNew<8, 20, Eigen::RowMajor>(path, "CmyElevator");
+    tables_.CmzRudder = getTableNew<8, 20, Eigen::RowMajor>(path, "CmzRudder");
+    tables_.prop = getTableNew<40, 4, Eigen::RowMajor>(path, "prop");
 }
 
 void InnoVtolDynamicsSim::loadParams(const std::string& path){
-    YAML::Node config = YAML::LoadFile(path);
-    params_.mass = config["mass"].as<double>();
-    params_.gravity = config["gravity"].as<double>();
-    params_.atmoRho = config["atmoRho"].as<double>();
-    params_.wingArea = config["wingArea"].as<double>();
-    params_.characteristicLength = config["characteristicLength"].as<double>();
-
     double propLocX, propLocY, propLocZ;
-    propLocX = config["propellersLocationX"].as<double>();
-    propLocY = config["propellersLocationY"].as<double>();
-    propLocZ = config["propellersLocationZ"].as<double>();
-    params_.propellersLocation[0] = Eigen::Vector3d(propLocX * sin(3.1415/4),
-                                                    propLocY * sin(3.1415/4),
-                                                    propLocZ);
-    params_.propellersLocation[1] = Eigen::Vector3d(-propLocX * sin(3.1415/4),
-                                                    -propLocY * sin(3.1415/4),
-                                                    propLocZ);
-    params_.propellersLocation[2] = Eigen::Vector3d(propLocX * sin(3.1415/4),
-                                                    -propLocY * sin(3.1415/4),
-                                                    propLocZ);
-    params_.propellersLocation[3] = Eigen::Vector3d(-propLocX * sin(3.1415/4),
-                                                    propLocY * sin(3.1415/4),
-                                                    propLocZ);
-    params_.propellersLocation[4] = Eigen::Vector3d(propLocX,
-                                                    0,
-                                                    0);
 
-    params_.inertia = getTable<3, 3, Eigen::RowMajor>(config, "inertia");
-    params_.actuatorMin = config["actuatorMin"].as< std::vector<double> >();
-    params_.actuatorMax = config["actuatorMax"].as< std::vector<double> >();
-    params_.accVariance = config["accVariance"].as<double>();
-    params_.gyroVariance = config["gyroVariance"].as<double>();
+    if(!ros::param::get(path + "mass", params_.mass) ||
+        !ros::param::get(path + "gravity", params_.gravity) ||
+        !ros::param::get(path + "atmoRho", params_.atmoRho) ||
+        !ros::param::get(path + "wingArea", params_.wingArea) ||
+        !ros::param::get(path + "characteristicLength", params_.characteristicLength) ||
+        !ros::param::get(path + "propellersLocationX", propLocX) ||
+        !ros::param::get(path + "propellersLocationY", propLocY) ||
+        !ros::param::get(path + "propellersLocationZ", propLocZ) ||
+        !ros::param::get(path + "actuatorMin", params_.actuatorMin) ||
+        !ros::param::get(path + "actuatorMax", params_.actuatorMax) ||
+        !ros::param::get(path + "accVariance", params_.accVariance) ||
+        !ros::param::get(path + "gyroVariance", params_.gyroVariance));
+
+    params_.propellersLocation[0] << propLocX * sin(3.1415/4),  propLocY * sin(3.1415/4), propLocZ;
+    params_.propellersLocation[1] <<-propLocX * sin(3.1415/4), -propLocY * sin(3.1415/4), propLocZ;
+    params_.propellersLocation[2] << propLocX * sin(3.1415/4), -propLocY * sin(3.1415/4), propLocZ;
+    params_.propellersLocation[3] <<-propLocX * sin(3.1415/4),  propLocY * sin(3.1415/4), propLocZ;
+    params_.propellersLocation[4] << propLocX, 0, 0;
+    params_.inertia = getTableNew<3, 3, Eigen::RowMajor>(path, "inertia");
 }
 
 void InnoVtolDynamicsSim::setInitialPosition(const Eigen::Vector3d & position,

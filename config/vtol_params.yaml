@@ -15,8 +15,8 @@ propellersLocationZ:    -0.031      # m
 # double massUncertainty;                         // mass multiplier
 # double inertiaUncertainty;                      // mass multiplier
 
-actuatorMin:            [0,     0,    0,    0,    0,    -2e1, -2e1, -2e1]
-actuatorMax:            [10e2,  10e2, 10e2, 10e2, 10e2, 2e1,  2e1,  2e1]
+actuatorMin:            [0,     0,    0,    0,    0,    -20, -20, -20]
+actuatorMax:            [1000,  1000, 1000, 1000, 1000, 20,  20,  20]
 
 accVariance:            0.005
 gyroVariance:           0.005

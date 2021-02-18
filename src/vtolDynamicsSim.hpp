@@ -20,7 +20,7 @@ struct VtolParameters{
     double atmoRho;                                 // air density (kg/m^3)
     double wingArea;                                // m^2
     double characteristicLength;                    // m
-    Eigen::Matrix3d inertia;                        // kg*m^2
+    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> inertia;   // kg*m^2
 
     std::array<Eigen::Vector3d, 5> propellersLocation;
 
@@ -90,26 +90,26 @@ struct State{
 
 struct TablesWithCoeffs{
     Eigen::Matrix<double, 8, 20, Eigen::RowMajor> CS_rudder;
-    Eigen::MatrixXd CS_beta;
+    Eigen::Matrix<double, 8, 90, Eigen::RowMajor> CS_beta;
 
-    Eigen::MatrixXd AoA;
-    Eigen::MatrixXd AoS;
+    Eigen::Matrix<double, 1, 47, Eigen::RowMajor> AoA;
+    Eigen::Matrix<double, 90, 1, Eigen::ColMajor> AoS;
 
-    Eigen::MatrixXd actuator;
-    Eigen::MatrixXd airspeed;
+    Eigen::Matrix<double, 20, 1, Eigen::ColMajor> actuator;
+    Eigen::Matrix<double, 8, 1, Eigen::ColMajor> airspeed;
 
-    Eigen::MatrixXd CLPolynomial;
-    Eigen::MatrixXd CSPolynomial;
-    Eigen::MatrixXd CDPolynomial;
-    Eigen::MatrixXd CmxPolynomial;
-    Eigen::MatrixXd CmyPolynomial;
-    Eigen::MatrixXd CmzPolynomial;
+    Eigen::Matrix<double, 8, 8, Eigen::RowMajor> CLPolynomial;
+    Eigen::Matrix<double, 8, 8, Eigen::RowMajor> CSPolynomial;
+    Eigen::Matrix<double, 8, 6, Eigen::RowMajor> CDPolynomial;
+    Eigen::Matrix<double, 8, 8, Eigen::RowMajor> CmxPolynomial;
+    Eigen::Matrix<double, 8, 8, Eigen::RowMajor> CmyPolynomial;
+    Eigen::Matrix<double, 8, 8, Eigen::RowMajor> CmzPolynomial;
 
-    Eigen::MatrixXd CmxAileron;
-    Eigen::MatrixXd CmyElevator;
-    Eigen::MatrixXd CmzRudder;
+    Eigen::Matrix<double, 8, 20, Eigen::RowMajor> CmxAileron;
+    Eigen::Matrix<double, 8, 20, Eigen::RowMajor> CmyElevator;
+    Eigen::Matrix<double, 8, 20, Eigen::RowMajor> CmzRudder;
 
-    Eigen::MatrixXd prop;
+    Eigen::Matrix<double, 40, 4, Eigen::RowMajor> prop;
 };
 
 /**
