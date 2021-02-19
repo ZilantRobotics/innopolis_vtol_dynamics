@@ -47,25 +47,29 @@ The whole system required several packages.
 
 **1. Inno Dynamics**
 
-Clone `this package`, [timed_roslaunch](https://github.com/MoriKen254/timed_roslaunch.git) that allows to run nodes with delay from launch file and `geographiclib_conversions` package:
+Clone [this package](https://github.com/InnopolisAero/innopolis_vtol_dynamics), [timed_roslaunch](https://github.com/MoriKen254/timed_roslaunch.git) that allows to run nodes with delay from launch file and [geographiclib_conversions](https://github.com/PonomarevDA/geographiclib_conversions) package:
 
 ```
 git clone https://github.com/InnopolisAero/innopolis_vtol_dynamics.git
 git clone https://github.com/MoriKen254/timed_roslaunch.git
-# there is no geographiclib_conversions package yet
+git clone https://github.com/PonomarevDA/geographiclib_conversions.git
 ```
 
 Then install python packages:
 
 ```
+cd innopolis_vtol_dynamics
 pip install -r requirements
 ```
 
-And download `wmm2020` from [here](https://geographiclib.sourceforge.io/html/magnetic.html).
+And download `wmm2020` from [here](https://geographiclib.sourceforge.io/html/magnetic.html) and put them into corresponding folder.
 
-**2. PX4 Autopilot**
+**2. (optional) PX4 Autopilot**
 
-Use official instruction and [this version of PX4 Autopilot](https://github.com/InnopolisAero/Inno_PX4_Firmware/tree/inno_dynamics).
+You need it only if you want to work in SITL mode or if you want to manually build PX4 Firmware and upload it on your hardware.
+If you need only SITL and your autopilot is ready, you can avoid this step.
+
+For installation use official instruction and [this version of PX4 Autopilot](https://github.com/InnopolisAero/Inno_PX4_Firmware/tree/inno_dynamics).
 
 To build either in SITL or in TRUE HITL mode run:
 
@@ -99,7 +103,7 @@ export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/Firmware/Tools/sitl_gazebo
 
 **3. Drone communicator**
 
-This package establishes communication between flight stack and dynamics, it also required `mavlink` and `mavros` packages which could be installed while PX4 Autopilot installation.
+This package establishes communication between flight stack and dynamics, it also required `mavlink` and `mavros` packages which could be installed while PX4 Autopilot installation. As alternative way you can install them using `apt`.
 
 Use instruction from `drone_communicators repo`. It's preaty simple. 
 
@@ -110,6 +114,8 @@ InnoSimulator is a photorealistic simulator.
 
 To use it you should install [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) and [InnoSimulator](https://github.com/inno-robolab/InnoSimulator).
 
+Use branch `uavcan` in `inno_sim_interface` repository.
+
 **Building**
 Build all by typing `./catkin_build.sh` from `InnoDynamics` package.
 
@@ -117,9 +123,19 @@ Build all by typing `./catkin_build.sh` from `InnoDynamics` package.
 # Usage
 
 1. Running dymamics, PX4 flight stack and communicator between them:
+
+If you are going to use uavcan, you need to create virtual can port. Type:
+
+```bash
+cd drone_communicators
+./scripts/create_slcan.sh
+```
+
+Then type with desired parameters:
+
 ```roslaunch innopolis_vtol_dynamics dynamics.launch```
 
-There are 3 optional usefull parameters:
+There are 3 optional usefull parameters here:
 - vehicle:=standard_vtol - it allows to choose one of 2 vehicles: standard_vtol (by default, it means Innopolis VTOL) and iris
 - run_rviz:=false - it allows to run rviz to visualize orientation, forces and moments (it is turned off by default)
 - run_sitl_flight_stack:=false - choose SITL or True HITL mode
