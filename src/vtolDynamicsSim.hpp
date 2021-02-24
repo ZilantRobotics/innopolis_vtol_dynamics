@@ -160,6 +160,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
          * @note The methods below are should be public for test only
          * think about making test as friend
          */
+        Eigen::Vector3d calculateNormalForceWithoutMass();
         Eigen::Vector3d calculateWind();
         Eigen::Matrix3d calculateRotationMatrix() const;
         double calculateDynamicPressure(double airSpeedMod);

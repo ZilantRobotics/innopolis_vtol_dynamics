@@ -125,83 +125,70 @@ int8_t InnoVtolDynamicsSim::calibrate(CalibrationType_t calType){
     state_.position[2] = 0.00;
 
     if(calType == WORK_MODE){
-        state_.Fspecific << 0, 0, -params_.gravity;
         state_.attitude = Eigen::Quaterniond(1, 0, 0, 0);
         state_.angularVel.setZero();
     }else if(calType == MAG_1_NORMAL){
         if(prevCalibrationType != calType){
             state_.attitude = Eigen::Quaterniond(1, 0, 0, 0);
         }
-        state_.Fspecific << 0, 0, -params_.gravity;
-        state_.angularVel << 0.000, 0.000, MAG_ROTATION_SPEED;
+        state_.angularVel << 0.000, 0.000, -MAG_ROTATION_SPEED;
     }else if(calType == MAG_2_OVERTURNED){
         if(prevCalibrationType != calType){
             state_.attitude = Eigen::Quaterniond(0, 1, 0, 0);
         }
-        state_.Fspecific << 0, 0, params_.gravity;
-        state_.angularVel << 0.000, 0.000, -MAG_ROTATION_SPEED;
+        state_.angularVel << 0.000, 0.000, MAG_ROTATION_SPEED;
     }else if(calType == MAG_3_HEAD_DOWN){
-        if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0, 0.707, 0);
-        }
-        state_.Fspecific << -params_.gravity, 0, 0;
-        state_.angularVel << MAG_ROTATION_SPEED, 0.000, 0.000;
-    }else if(calType == MAG_4_HEAD_UP){
         if(prevCalibrationType != calType){
             state_.attitude = Eigen::Quaterniond(0.707, 0, -0.707, 0);
         }
-        state_.Fspecific << params_.gravity, 0, 0;
         state_.angularVel << -MAG_ROTATION_SPEED, 0.000, 0.000;
-    }else if(calType == MAG_5_TURNED_LEFT){
+    }else if(calType == MAG_4_HEAD_UP){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0.707, 0, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0, 0.707, 0);
         }
-        state_.Fspecific << 0, params_.gravity, 0;
-        state_.angularVel << 0.000, +MAG_ROTATION_SPEED, 0.000;
-    }else if(calType == MAG_6_TURNED_RIGHT){
+        state_.angularVel << MAG_ROTATION_SPEED, 0.000, 0.000;
+    }else if(calType == MAG_5_TURNED_LEFT){
         if(prevCalibrationType != calType){
             state_.attitude = Eigen::Quaterniond(0.707, -0.707, 0, 0);
         }
-        state_.Fspecific << 0, -params_.gravity, 0;
+        state_.angularVel << 0.000, MAG_ROTATION_SPEED, 0.000;
+    }else if(calType == MAG_6_TURNED_RIGHT){
+        if(prevCalibrationType != calType){
+            state_.attitude = Eigen::Quaterniond(0.707, 0.707, 0, 0);
+        }
         state_.angularVel << 0.000, -MAG_ROTATION_SPEED, 0.000;
     }else if(calType == ACC_1_NORMAL){
         if(prevCalibrationType != calType){
             state_.attitude = Eigen::Quaterniond(1, 0, 0, 0);
         }
-        state_.Fspecific << 0, 0, -params_.gravity;
         state_.angularVel.setZero();
     }else if(calType == ACC_2_OVERTURNED){
         if(prevCalibrationType != calType){
             state_.attitude = Eigen::Quaterniond(0, 1, 0, 0);
         }
-        state_.Fspecific << 0, 0, params_.gravity;
         state_.angularVel.setZero();
     }else if(calType == ACC_3_HEAD_DOWN){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0, 0.707, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0, -0.707, 0);
         }
-        state_.Fspecific << -params_.gravity, 0, 0;
         state_.angularVel.setZero();
     }else if(calType == ACC_4_HEAD_UP){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0, -0.707, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0, 0.707, 0);
         }
-        state_.Fspecific << params_.gravity, 0, 0;
         state_.angularVel.setZero();
     }else if(calType == ACC_5_TURNED_LEFT){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, 0.707, 0, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, -0.707, 0, 0);
         }
-        state_.Fspecific << 0, params_.gravity, 0;
         state_.angularVel.setZero();
     }else if(calType == ACC_6_TURNED_RIGHT){
         if(prevCalibrationType != calType){
-            state_.attitude = Eigen::Quaterniond(0.707, -0.707, 0, 0);
+            state_.attitude = Eigen::Quaterniond(0.707, 0.707, 0, 0);
         }
-        state_.Fspecific << 0, -params_.gravity, 0;
         state_.angularVel.setZero();
     }else if(calType == 21){ // airspeed
-        state_.Fspecific << 0, 0, -params_.gravity;
+        state_.attitude = Eigen::Quaterniond(1, 0, 0, 0);
         state_.angularVel.setZero();
         state_.linearVel[0] = 10.0;
         state_.linearVel[1] = 10.0;
@@ -216,6 +203,7 @@ int8_t InnoVtolDynamicsSim::calibrate(CalibrationType_t calType){
 
     constexpr float DELTA_TIME = 0.001;
 
+    state_.Fspecific = calculateNormalForceWithoutMass();
     Eigen::Quaterniond attitudeDelta = state_.attitude * Eigen::Quaterniond(0, state_.angularVel(0), state_.angularVel(1), state_.angularVel(2));
     state_.attitude.coeffs() += attitudeDelta.coeffs() * 0.5 * DELTA_TIME;
     state_.attitude.normalize();
@@ -634,6 +622,11 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
     std::cout << "- out: state_.position = "    << state_.position.transpose() << std::endl;
     std::cout << "- out: state_.attitude = "    << state_.attitude.coeffs().transpose() << std::endl;
     #endif
+}
+
+Eigen::Vector3d InnoVtolDynamicsSim::calculateNormalForceWithoutMass(){
+    Eigen::Matrix3d rotationMatrix = calculateRotationMatrix();
+    return rotationMatrix * Eigen::Vector3d(0, 0, -params_.gravity);
 }
 
 void InnoVtolDynamicsSim::calculateCLPolynomial(double airSpeedMod,
