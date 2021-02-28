@@ -25,6 +25,10 @@ InnoVtolDynamicsSim::InnoVtolDynamicsSim(): distribution_(0.0, 1.0){
     state_.accelBias.setZero();
     state_.gyroBias.setZero();
     state_.Fspecific << 0, 0, -params_.gravity;
+    for(size_t idx = 0; idx < 8; idx++){
+        state_.prevActuators.push_back(0);
+        state_.crntActuators.push_back(0);
+    }
 }
 
 int8_t InnoVtolDynamicsSim::init(){
@@ -62,6 +66,9 @@ void InnoVtolDynamicsSim::loadTables(const std::string& path){
     tables_.CmyElevator = getTableNew<8, 20, Eigen::RowMajor>(path, "CmyElevator");
     tables_.CmzRudder = getTableNew<8, 20, Eigen::RowMajor>(path, "CmzRudder");
     tables_.prop = getTableNew<40, 4, Eigen::RowMajor>(path, "prop");
+    if(ros::param::get(path + "actuatorTimeConstants", tables_.actuatorTimeConstants) == false){
+        throw std::runtime_error(std::string("Wrong parameter name: ") + "actuatorTimeConstants");
+    }
 }
 
 void InnoVtolDynamicsSim::loadParams(const std::string& path){
@@ -210,7 +217,7 @@ int8_t InnoVtolDynamicsSim::calibrate(CalibrationType_t calType){
     return 1;
 }
 
-void InnoVtolDynamicsSim::process(double dt_secs,
+void InnoVtolDynamicsSim::process(double dtSecs,
                               const std::vector<double>& motorCmd,
                               bool isCmdPercent){
     Eigen::Vector3d vel_w = calculateWind();
@@ -219,9 +226,10 @@ void InnoVtolDynamicsSim::process(double dt_secs,
     double AoA = calculateAnglesOfAtack(airSpeed);
     double AoS = calculateAnglesOfSideslip(airSpeed);
     auto actuators = isCmdPercent ? mapCmdToActuatorInnoVTOL(motorCmd) : motorCmd;
+    updateActuators(actuators, dtSecs);
     calculateAerodynamics(airSpeed, AoA, AoS, actuators[5], actuators[6], actuators[7],
                           state_.Faero, state_.Maero);
-    calculateNewState(state_.Maero, state_.Faero, actuators, dt_secs);
+    calculateNewState(state_.Maero, state_.Faero, actuators, dtSecs);
 }
 
 
@@ -311,6 +319,14 @@ std::vector<double> InnoVtolDynamicsSim::mapCmdToActuatorInnoVTOL(const std::vec
     }
 
     return actuators;
+}
+
+void InnoVtolDynamicsSim::updateActuators(std::vector<double>& cmd, double dtSecs){
+    state_.prevActuators = state_.crntActuators;
+    for(size_t idx = 0; idx < 8; idx++){
+        state_.crntActuators[idx] = cmd[idx] + (state_.prevActuators[idx] - cmd[idx]) * (1 - pow(2.71, -dtSecs/tables_.actuatorTimeConstants[idx]));
+        cmd[idx] = state_.crntActuators[idx];
+    }
 }
 
 Eigen::Vector3d InnoVtolDynamicsSim::calculateWind(){

@@ -110,6 +110,8 @@ struct TablesWithCoeffs{
     Eigen::Matrix<double, 8, 20, Eigen::RowMajor> CmzRudder;
 
     Eigen::Matrix<double, 40, 4, Eigen::RowMajor> prop;
+
+    std::vector<double> actuatorTimeConstants;
 };
 
 /**
@@ -221,6 +223,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         void loadParams(const std::string& path);
         std::vector<double> mapCmdToActuatorStandardVTOL(const std::vector<double>& cmd) const;
         std::vector<double> mapCmdToActuatorInnoVTOL(const std::vector<double>& cmd) const;
+        void updateActuators(std::vector<double>& cmd, double dtSecs);
         Eigen::Vector3d calculateAirSpeed(const Eigen::Matrix3d& rotationMatrix,
                                     const Eigen::Vector3d& estimatedVelocity,
                                     const Eigen::Vector3d& windSpeed) const;
