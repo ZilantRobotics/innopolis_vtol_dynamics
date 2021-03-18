@@ -124,33 +124,30 @@ Build all by typing `./catkin_build.sh` from `InnoDynamics` package.
 
 1. Running dymamics, PX4 flight stack and communicator between them:
 
-If you are going to use uavcan, you need to create virtual can port. Type:
+If you are going to use uavcan, you need to setup slcan module. Type:
 
 ```bash
 cd drone_communicators
 ./scripts/create_slcan.sh
 ```
 
-Then type with desired parameters:
+This script requires sudo.
 
-```roslaunch innopolis_vtol_dynamics dynamics.launch```
-
-There are 3 optional usefull parameters here:
+Then launch `hitl.launch` or `sitl.launch` with desired parameters:
 - vehicle:=standard_vtol - it allows to choose one of 2 vehicles: standard_vtol (by default, it means Innopolis VTOL) and iris
 - run_rviz:=false - it allows to run rviz to visualize orientation, forces and moments (it is turned off by default)
-- run_sitl_flight_stack:=false - choose SITL or True HITL mode
-
+- run_inno_sim_bridge:=true - run bridge between dynamics and InnoSimulator
 2. Controlling and monitoring flight using QGroundControl
 
 ```~/software/qgroundcontrol/QGroundControl.AppImage```
 
 3. Visualization using InnoSimulator
 
+If you set parameter `run_inno_sim_bridge:=true` or leave it by default, you will only need to type following:
+
 ```
 roscd inno_sim_interface/cfg
 ~/software/InnoSimulator-Linux64-2020.1.2/InnoSimulator.x86_64 --config config.yaml
-
-roslaunch innopolis_vtol_dynamics inno_sim.launch
 ```
 
 # Repos used as references:
