@@ -184,7 +184,9 @@ int8_t Uav_Dynamics::init(){
 
     if(useSimTime_){
         clockPub_ = node_.advertise<rosgraph_msgs::Clock>("/clock", 1);
-        clockPub_.publish(currentTime_);
+        rosgraph_msgs::Clock clock_time;
+        clock_time.clock = currentTime_;
+        clockPub_.publish(clock_time);
     }else{
         // Get the current time if we are using wall time. Otherwise, use 0 as initial clock.
         currentTime_ = ros::Time::now();
@@ -218,7 +220,9 @@ int8_t Uav_Dynamics::init(){
 void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event){
     if (useSimTime_){
         currentTime_ += ros::Duration(dt_secs_);
-        clockPub_.publish(currentTime_);
+        rosgraph_msgs::Clock clock_time;
+        clock_time.clock = currentTime_;
+        clockPub_.publish(clock_time);
     } else {
         ros::Time loopStartTime = ros::Time::now();
         dt_secs_ = (loopStartTime - currentTime_).toSec();
