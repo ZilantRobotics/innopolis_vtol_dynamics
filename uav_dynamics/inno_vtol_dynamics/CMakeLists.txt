@@ -21,7 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
     mav_msgs
     sensor_msgs
     geometry_msgs
-    drone_communicators
+    uavcan_msgs
+    uavcan_communicator
     tf2
     tf2_ros
     geographiclib_conversions

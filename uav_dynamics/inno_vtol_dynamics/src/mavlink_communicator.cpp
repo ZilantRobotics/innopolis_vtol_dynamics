@@ -218,22 +218,22 @@ void MavlinkCommunicatorROS::publishActuators(const std::vector<double>& actuato
     actuatorsPub_.publish(actuatorsMsg);
 }
 
-void MavlinkCommunicatorROS::staticTemperatureCallback(drone_communicators::StaticTemperature::Ptr msg){
+void MavlinkCommunicatorROS::staticTemperatureCallback(uavcan_msgs::StaticTemperature::Ptr msg){
     staticTemperatureMsg_ = *msg;
     staticTemperature_ = msg->static_temperature - 273.15;
 }
 
-void MavlinkCommunicatorROS::staticPressureCallback(drone_communicators::StaticPressure::Ptr msg){
+void MavlinkCommunicatorROS::staticPressureCallback(uavcan_msgs::StaticPressure::Ptr msg){
     staticPressureMsg_ = *msg;
     staticPressure_ = msg->static_pressure / 100;
 }
 
-void MavlinkCommunicatorROS::rawAirDataCallback(drone_communicators::RawAirData::Ptr msg){
+void MavlinkCommunicatorROS::rawAirDataCallback(uavcan_msgs::RawAirData::Ptr msg){
     rawAirDataMsg_ = *msg;
     diffPressure_ = msg->differential_pressure / 100;
 }
 
-void MavlinkCommunicatorROS::gpsCallback(drone_communicators::Fix::Ptr msg){
+void MavlinkCommunicatorROS::gpsCallback(uavcan_msgs::Fix::Ptr msg){
     gpsPositionMsg_ = *msg;
     gpsMsgCounter_++;
     gpsPosition_[0] = msg->latitude_deg_1e8 * 1e-8;

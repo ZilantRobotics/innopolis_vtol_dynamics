@@ -30,10 +30,10 @@ To communicate with flight stack via [px4 drone communicator]() it publishes and
 | № | Type         | topic                      | msg                                   |
 | - | ------------ | -------------------------- | ------------------------------------- |
 | 1 | subscribtion | /uav/actuators             | sensor_msgs/Joy                       |
-| 2 | publication  | /uav/static_temperature    | drone_communicators/StaticTemperature |
-| 3 | publication  | /uav/static_pressure       | drone_communicators/StaticPressure    |
-| 4 | publication  | /uav/raw_air_data          | drone_communicators/RawAirData        |
-| 5 | publication  | /uav/gps_position          | drone_communicators/Fix               |
+| 2 | publication  | /uav/static_temperature    | uavcan_msgs/StaticTemperature         |
+| 3 | publication  | /uav/static_pressure       | uavcan_msgs/StaticPressure            |
+| 4 | publication  | /uav/raw_air_data          | uavcan_msgs/RawAirData                |
+| 5 | publication  | /uav/gps_position          | uavcan_msgs/Fix                       |
 | 6 | publication  | /uav/imu                   | sensor_msgs/Imu                       |
 | 7 | publication  | /uav/mag                   | sensor_msgs/MagneticField             |
 
@@ -42,7 +42,7 @@ To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulat
 | № | topic             | msg                             |
 | - | ----------------- | ------------------------------- |
 | 1 | /uav/actuators    | sensor_msgs/Joy                 |
-| 5 | /uav/gps_position | drone_communicators/Fix         |
+| 5 | /uav/gps_position | uavcan_msgs/Fix                 |
 | 2 | /uav/attitude     | geometry_msgs/QuaternionStamped |
 
 
