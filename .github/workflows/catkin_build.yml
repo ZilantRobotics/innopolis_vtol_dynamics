@@ -47,7 +47,7 @@ jobs:
           cp magnetic/wmm2020.wmm.cof /usr/local/share/GeographicLib/magnetic/wmm2020.wmm.cof
       - name: Install uavcan_communicator requirements
         run: |
-          cd catkin_ws/src/innopolis_vtol_dynamics/drone_communicators                              &&  \
+          cd catkin_ws/src/innopolis_vtol_dynamics/communicators/drone_communicators                &&  \
           ./scripts/install_requirements.sh                                                         &&  \
           ./scripts/install_libuavcan.sh
       - name: Install inno-sim-interface requirements
