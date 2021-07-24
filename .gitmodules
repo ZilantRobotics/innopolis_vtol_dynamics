@@ -13,3 +13,6 @@
 [submodule "uav_dynamics/geographiclib_conversions"]
 	path = uav_dynamics/geographiclib_conversions
 	url = git@github.com:InnopolisAero/geographiclib_conversions.git
+[submodule "scripts/uavcan_tools"]
+	path = scripts/uavcan_tools
+	url = git@github.com:Innopolis-UAV-Team/uavcan_tools.git
