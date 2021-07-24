@@ -36,13 +36,14 @@ catkin_package(
 ###########
 include_directories(
     include
+    include/dynamics
     ${catkin_INCLUDE_DIRS}
     ${mavlink_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME} src/vtolDynamicsSim.cpp
-                            src/flightgogglesDynamicsSim.cpp
-                            src/uavDynamicsSimBase.cpp
+add_library(${PROJECT_NAME} src/dynamics/vtolDynamicsSim.cpp
+                            src/dynamics/flightgogglesDynamicsSim.cpp
+                            src/dynamics/uavDynamicsSimBase.cpp
                             libs/multicopterDynamicsSim/inertialMeasurementSim.cpp
                             libs/multicopterDynamicsSim/multicopterDynamicsSim.cpp
 )
