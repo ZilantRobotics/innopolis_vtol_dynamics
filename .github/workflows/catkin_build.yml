@@ -1,0 +1,63 @@
+name: catkin_build
+
+on: [push]
+
+defaults:
+  run:
+    shell: bash
+jobs:
+  catkin_build:
+    runs-on: ubuntu-18.04
+    container:
+      image: ros:melodic
+    steps:
+      # 1. Install basic requirements
+      - name: Force Install GIT latest since actions/checkout@v2 has some problems on ubuntu-18.04
+        run: |
+          apt-get update                                                                            &&  \
+          apt-get upgrade -y                                                                        &&  \
+          apt-get install -y software-properties-common                                             &&  \
+          add-apt-repository -y ppa:git-core/ppa                                                    &&  \
+          apt-get update                                                                            &&  \
+          apt-get install -y git
+      - run: apt-get install -y python-catkin-tools python-pip python3-pip
+      - run: apt-get install -y python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential python-catkin-tools
+
+      # 2. Checkout repo with submodules
+      - uses: actions/checkout@v2
+        with:
+          path: catkin_ws/src/innopolis_vtol_dynamics
+          token: ${{ secrets.ACCESS_TOKEN }}
+          submodules: recursive
+
+      # 3. Install requirements
+      - name: Install innopolis_vtol_dynamics requirements
+        run: |
+          sudo apt-get install -y ros-melodic-mav-msgs                                                  \
+                                  ros-melodic-tf                                                        \
+                                  ros-melodic-tf2                                                       \
+                                  ros-melodic-tf2-ros                                                   \
+                                  ros-melodic-mavlink                                                   \
+                                  ros-melodic-mavros
+      - name: Install geographiclib_conversions requirements
+        run: |
+          mkdir -p /usr/local/share/GeographicLib/magnetic                                          &&  \
+          cd catkin_ws/src/innopolis_vtol_dynamics/uav_dynamics/geographiclib_conversions/wmm2020   &&  \
+          cp magnetic/wmm2020.wmm /usr/local/share/GeographicLib/magnetic/wmm2020.wmm               &&  \
+          cp magnetic/wmm2020.wmm.cof /usr/local/share/GeographicLib/magnetic/wmm2020.wmm.cof
+      - name: Install uavcan_communicator requirements
+        run: |
+          cd catkin_ws/src/innopolis_vtol_dynamics/drone_communicators                              &&  \
+          ./scripts/install_requirements.sh                                                         &&  \
+          ./scripts/install_libuavcan.sh
+      - name: Install inno-sim-interface requirements
+        run: |
+          sudo apt-get install -y ros-melodic-rosauth                                               &&  \
+          pip install bson pymongo protobuf Pillow twisted
+
+      # 4. Build
+      - name: catkin build
+        run: |
+          source /opt/ros/melodic/setup.bash                                                        &&  \
+          cd catkin_ws                                                                              &&  \
+          catkin build
