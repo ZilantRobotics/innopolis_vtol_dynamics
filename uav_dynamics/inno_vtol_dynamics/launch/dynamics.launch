@@ -29,6 +29,7 @@
         <node pkg="innopolis_vtol_dynamics" type="mavlink_communicator" name="px4_mavlink_communicatormavlink_communicator" output="screen"/>
     </group>
     <group unless="$(arg run_sitl_flight_stack)">
+        <node pkg="innopolis_vtol_dynamics" type="inno_vtol_reverse_mixer_node" name="inno_vtol_reverse_mixer" output="screen"/>
         <include file="$(find innopolis_vtol_dynamics)/launch/uavcan_communicator.launch"/>
     </group>
 
