@@ -5,9 +5,7 @@ WORKDIR /catkin_ws/src/inno_vtol_simulator
 
 
 # 1. Install basic requirements
-RUN sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' && \
-    apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654 && \
-    apt-get update                                  &&  \
+RUN apt-get update                                  &&  \
     apt-get upgrade -y                              &&  \
     apt-get install -y  git                             \
                         iproute2                        \
@@ -68,17 +66,18 @@ RUN pip install bson pymongo protobuf Pillow twisted
 
 # 4.4. drone_communicators
 RUN cd communicators/drone_communicators            &&  \
-    ./scripts/install_libuavcan.sh                  &&  \
-    ./scripts/install_requirements.sh
+    ./scripts/install_requirements.sh               &&  \
+    ./scripts/install_libuavcan.sh
 
 
 # 5. Build ROS
 RUN source /opt/ros/melodic/setup.bash              &&  \
     cd ../../                                       &&  \
-    catkin build uavcan_communicator innopolis_vtol_dynamics
+    catkin build
 
 
-CMD ./setup_containter.sh                           &&  \
-    echo "main process has been started"            &&  \
-    roslaunch innopolis_vtol_dynamics sitl.launch   &&  \
+CMD echo "main process has been started"            &&  \
+    source /opt/ros/melodic/setup.bash              &&  \
+    source /catkin_ws/devel/setup.bash              &&  \
+    roslaunch innopolis_vtol_dynamics hitl.launch   &&  \
     echo "container has been finished"

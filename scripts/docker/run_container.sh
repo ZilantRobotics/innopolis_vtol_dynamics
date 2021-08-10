@@ -1,5 +1,6 @@
 #!/bin/bash
-sudo docker container run -p 14552:14552/udp                        \
-                          -p 11311:11311/tcp                        \
-                          --privileged -v /dev/bus/usb:/dev/bus/usb \
+cd "$(dirname "$0")"
+source config.sh
+sudo docker container run --privileged -v /dev/bus/usb:/dev/bus/usb \
+                          --net=host                                \
                           $DOCKERHUB_REPOSITOTY:$TAG_NAME
