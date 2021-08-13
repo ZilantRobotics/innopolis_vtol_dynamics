@@ -1,6 +1,6 @@
-# Innopolis VTOL dynamics
+# Innopolis VTOL dynamics simulator
 
-Innopolis VTOL dynamics is a ROS node that simulates full Innopolis VTOL dynamics. It includes quadcopter and plane dynamics with aerodynamics coefficients, minimum sensors set.
+Innopolis VTOL dynamics simulator is a set of ROS packages suggested full UAV simulation.
 
 ![dynamics](img/dynamics.png?raw=true "dynamics")
 
@@ -11,6 +11,13 @@ The key feature of this simulation is to run it in such way that the hardware kn
 So, Inno VTOL dynamics simulation allows to run simulation in both SITL and `uavcan HITL` mode. It also allows to run InnopolisSimulator (left part of the first figure) and visualize forces and moments in RVIZ (right part of the first figure).
 
 # Design
+
+Innopolis VTOL dynamics simulator consist of following components:
+
+1. UAV dynamics simulator based on `Innopolis VTOL` (quadcopter and plane dynamics with aerodynamics coefficients)
+2. Communication with `PX4` flight stack in `HITL (via UAVCAN)` and `SITL (via MAVLink)` modes
+3. Bridge for interaction with `Inno Simulator` through ROS.
+
 
 The design of simulator shown below.
 
@@ -23,10 +30,10 @@ To communicate with flight stack via [px4 drone communicator]() it publishes and
 | № | Type         | topic                      | msg                                   |
 | - | ------------ | -------------------------- | ------------------------------------- |
 | 1 | subscribtion | /uav/actuators             | sensor_msgs/Joy                       |
-| 2 | publication  | /uav/static_temperature    | drone_communicators/StaticTemperature |
-| 3 | publication  | /uav/static_pressure       | drone_communicators/StaticPressure    |
-| 4 | publication  | /uav/raw_air_data          | drone_communicators/RawAirData        |
-| 5 | publication  | /uav/gps_position          | drone_communicators/Fix               |
+| 2 | publication  | /uav/static_temperature    | uavcan_msgs/StaticTemperature         |
+| 3 | publication  | /uav/static_pressure       | uavcan_msgs/StaticPressure            |
+| 4 | publication  | /uav/raw_air_data          | uavcan_msgs/RawAirData                |
+| 5 | publication  | /uav/gps_position          | uavcan_msgs/Fix                       |
 | 6 | publication  | /uav/imu                   | sensor_msgs/Imu                       |
 | 7 | publication  | /uav/mag                   | sensor_msgs/MagneticField             |
 
@@ -35,7 +42,7 @@ To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulat
 | № | topic             | msg                             |
 | - | ----------------- | ------------------------------- |
 | 1 | /uav/actuators    | sensor_msgs/Joy                 |
-| 5 | /uav/gps_position | drone_communicators/Fix         |
+| 5 | /uav/gps_position | uavcan_msgs/Fix                 |
 | 2 | /uav/attitude     | geometry_msgs/QuaternionStamped |
 
 
@@ -122,30 +129,40 @@ Build all by typing `./catkin_build.sh` from `InnoDynamics` package.
 
 # Usage
 
-1. Running dymamics, PX4 flight stack and communicator between them:
+You can run it in 2 ways:
+- sitl simulation using MAVLink,
+- hitl simulation using UAVCAN.
 
-If you are going to use uavcan, you need to setup slcan module. Type:
+1. (optional). If you want to use HITL mode, you need to initialy connect UAVCAN sniffer with your PC and PX4 autopilot and setup slcan.
 
 ```bash
-cd drone_communicators
-./scripts/create_slcan.sh
+./communicators/drone_communicators/scripts/create_slcan.sh
 ```
 
-This script requires sudo.
+This script requires sudo. It will load slcan module into your linux kernel and create virtual can. It means it will not work neither inside docker container without `--net=host` nor in github workflow.
 
-Then launch `hitl.launch` or `sitl.launch` with desired parameters:
+2. Run dymamics, communicator module (and PX4 flight stack in SITL mode) using either `hitl.launch` or `sitl.launch`:
+
+```bash
+roslaunch innopolis_vtol_dynamics hitl.launch
+```
+
+These launch files have following optional parameters:
 - vehicle:=standard_vtol - it allows to choose one of 2 vehicles: standard_vtol (by default, it means Innopolis VTOL) and iris
 - run_rviz:=false - it allows to run rviz to visualize orientation, forces and moments (it is turned off by default)
 - run_inno_sim_bridge:=true - run bridge between dynamics and InnoSimulator
-2. Controlling and monitoring flight using QGroundControl
 
-```~/software/qgroundcontrol/QGroundControl.AppImage```
+3. Run QGroundControl for controlling and monitoring flight. If your PX4 autopilot parameters are not specified yet, this is right time for doing it. Also at this step you should check version of PX4 Firmware and if it is not fit you, upload correct version.
 
-3. Visualization using InnoSimulator
-
-If you set parameter `run_inno_sim_bridge:=true` or leave it by default, you will only need to type following:
-
+```bash
+~/software/qgroundcontrol/QGroundControl.AppImage
 ```
+
+4. (optional) Visualization using InnoSimulator
+
+If you set parameter `run_inno_sim_bridge:=true` or leave it by default, you will only need to type something loke that:
+
+```bash
 roscd inno_sim_interface/cfg
 ~/software/InnoSimulator-Linux64-2020.1.2/InnoSimulator.x86_64 --config config.yaml
 ```

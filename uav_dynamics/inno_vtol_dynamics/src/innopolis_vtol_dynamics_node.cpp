@@ -16,11 +16,12 @@
 #include <geometry_msgs/QuaternionStamped.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <sensor_msgs/Imu.h>
+#include <std_msgs/Time.h>
 #include <sensor_msgs/MagneticField.h>
-#include <drone_communicators/RawAirData.h>
-#include <drone_communicators/StaticPressure.h>
-#include <drone_communicators/StaticTemperature.h>
-#include <drone_communicators/Fix.h>
+#include <uavcan_msgs/RawAirData.h>
+#include <uavcan_msgs/StaticPressure.h>
+#include <uavcan_msgs/StaticTemperature.h>
+#include <uavcan_msgs/Fix.h>
 
 #include "innopolis_vtol_dynamics_node.hpp"
 #include "flightgogglesDynamicsSim.hpp"
@@ -144,14 +145,14 @@ int8_t Uav_Dynamics::init(){
     armSub_ = node_.subscribe(ARM_TOPIC_NAME, 1, &Uav_Dynamics::armCallback, this);
 
     imuPub_ = node_.advertise<sensor_msgs::Imu>(IMU_TOPIC_NAME, 96);
-    gpsPositionPub_ = node_.advertise<drone_communicators::Fix>(GPS_POSE_TOPIC_NAME, 1);
+    gpsPositionPub_ = node_.advertise<uavcan_msgs::Fix>(GPS_POSE_TOPIC_NAME, 1);
     attitudePub_ = node_.advertise<geometry_msgs::QuaternionStamped>(ATTITUDE_TOPIC_NAME, 1);
     speedPub_ = node_.advertise<geometry_msgs::Twist>(VELOCITY_TOPIC_NAME, 1);
     magPub_ = node_.advertise<sensor_msgs::MagneticField>(MAG_TOPIC_NAME, 1);
 
-    rawAirDataPub_ = node_.advertise<drone_communicators::RawAirData>(RAW_AIR_DATA_TOPIC_NAME, 1);
-    staticTemperaturePub_ = node_.advertise<drone_communicators::StaticTemperature>(STATIC_TEMPERATURE_TOPIC_NAME, 1);
-    staticPressurePub_ = node_.advertise<drone_communicators::StaticPressure>(STATIC_PRESSURE_TOPIC_NAME, 1);
+    rawAirDataPub_ = node_.advertise<uavcan_msgs::RawAirData>(RAW_AIR_DATA_TOPIC_NAME, 1);
+    staticTemperaturePub_ = node_.advertise<uavcan_msgs::StaticTemperature>(STATIC_TEMPERATURE_TOPIC_NAME, 1);
+    staticPressurePub_ = node_.advertise<uavcan_msgs::StaticPressure>(STATIC_PRESSURE_TOPIC_NAME, 1);
 
     // Calibration
     calibrationSub_ = node_.subscribe("/uav/calibration", 1, &Uav_Dynamics::calibrationCallback, this);
@@ -183,7 +184,9 @@ int8_t Uav_Dynamics::init(){
 
     if(useSimTime_){
         clockPub_ = node_.advertise<rosgraph_msgs::Clock>("/clock", 1);
-        clockPub_.publish(currentTime_);
+        rosgraph_msgs::Clock clock_time;
+        clock_time.clock = currentTime_;
+        clockPub_.publish(clock_time);
     }else{
         // Get the current time if we are using wall time. Otherwise, use 0 as initial clock.
         currentTime_ = ros::Time::now();
@@ -217,7 +220,9 @@ int8_t Uav_Dynamics::init(){
 void Uav_Dynamics::simulationLoopTimerCallback(const ros::WallTimerEvent& event){
     if (useSimTime_){
         currentTime_ += ros::Duration(dt_secs_);
-        clockPub_.publish(currentTime_);
+        rosgraph_msgs::Clock clock_time;
+        clock_time.clock = currentTime_;
+        clockPub_.publish(clock_time);
     } else {
         ros::Time loopStartTime = ros::Time::now();
         dt_secs_ = (loopStartTime - currentTime_).toSec();
@@ -501,7 +506,7 @@ void Uav_Dynamics::publishUavAttitude(Eigen::Quaterniond attitudeFrdToNed){
 }
 
 void Uav_Dynamics::publishUavGpsPosition(Eigen::Vector3d geoPosition, Eigen::Vector3d nedVelocity){
-    drone_communicators::Fix msg;
+    uavcan_msgs::Fix msg;
 
     msg.header.stamp = currentTime_;
 
@@ -565,7 +570,7 @@ void Uav_Dynamics::publishUavMag(Eigen::Vector3d geoPosition, Eigen::Quaterniond
 void Uav_Dynamics::publishUavAirData(float absPressureHpa,
                                      float diffPressure,
                                      float staticTemperature){
-    drone_communicators::RawAirData msg;
+    uavcan_msgs::RawAirData msg;
     msg.header.stamp = ros::Time();
 
     msg.static_pressure = absPressureHpa * 100;
@@ -580,7 +585,7 @@ void Uav_Dynamics::publishUavAirData(float absPressureHpa,
 }
 
 void Uav_Dynamics::publishUavStaticTemperature(float staticTemperature){
-    drone_communicators::StaticTemperature msg;
+    uavcan_msgs::StaticTemperature msg;
     msg.header.stamp = ros::Time();
     msg.static_temperature = staticTemperature + 5;
     msg.static_temperature += TEMPERATURE_NOISE * normalDistribution_(randomGenerator_);
@@ -588,7 +593,7 @@ void Uav_Dynamics::publishUavStaticTemperature(float staticTemperature){
 }
 
 void Uav_Dynamics::publishUavStaticPressure(float staticPressureHpa){
-    drone_communicators::StaticPressure msg;
+    uavcan_msgs::StaticPressure msg;
     msg.header.stamp = ros::Time();
     msg.static_pressure = staticPressureHpa * 100;
     msg.static_pressure += STATIC_PRESSURE_NOISE * normalDistribution_(randomGenerator_);

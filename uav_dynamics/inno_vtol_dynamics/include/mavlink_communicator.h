@@ -55,10 +55,10 @@
 #include <sensor_msgs/MagneticField.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/QuaternionStamped.h>
-#include <drone_communicators/Fix.h>
-#include <drone_communicators/StaticPressure.h>
-#include <drone_communicators/StaticTemperature.h>
-#include <drone_communicators/RawAirData.h>
+#include <uavcan_msgs/Fix.h>
+#include <uavcan_msgs/StaticPressure.h>
+#include <uavcan_msgs/StaticTemperature.h>
+#include <uavcan_msgs/RawAirData.h>
 
 
 #include "uavDynamicsSimBase.hpp"
@@ -158,26 +158,26 @@ private:
     void publishArm();
 
     ros::Subscriber staticTemperatureSub_;
-    drone_communicators::StaticTemperature staticTemperatureMsg_;
+    uavcan_msgs::StaticTemperature staticTemperatureMsg_;
     float staticTemperature_;
-    void staticTemperatureCallback(drone_communicators::StaticTemperature::Ptr staticTemperature);
+    void staticTemperatureCallback(uavcan_msgs::StaticTemperature::Ptr staticTemperature);
 
     ros::Subscriber staticPressureSub_;
-    drone_communicators::StaticPressure staticPressureMsg_;
+    uavcan_msgs::StaticPressure staticPressureMsg_;
     float staticPressure_;
-    void staticPressureCallback(drone_communicators::StaticPressure::Ptr staticPressure);
+    void staticPressureCallback(uavcan_msgs::StaticPressure::Ptr staticPressure);
 
     ros::Subscriber rawAirDataSub_;
-    drone_communicators::RawAirData rawAirDataMsg_;
+    uavcan_msgs::RawAirData rawAirDataMsg_;
     float diffPressure_;
-    void rawAirDataCallback(drone_communicators::RawAirData::Ptr rawAirData);
+    void rawAirDataCallback(uavcan_msgs::RawAirData::Ptr rawAirData);
 
     ros::Subscriber gpsSub_;
-    drone_communicators::Fix gpsPositionMsg_;
+    uavcan_msgs::Fix gpsPositionMsg_;
     Eigen::Vector3d gpsPosition_;
     Eigen::Vector3d linearVelocityNed_;
     uint64_t gpsMsgCounter_ = 0;
-    void gpsCallback(drone_communicators::Fix::Ptr gpsPosition);
+    void gpsCallback(uavcan_msgs::Fix::Ptr gpsPosition);
 
     ros::Subscriber imuSub_;
     sensor_msgs::Imu imuMsg_;
