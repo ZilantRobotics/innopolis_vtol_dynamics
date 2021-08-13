@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find innopolis_vtol_dynamics)/launch/load_parameters.launch"/>
+    <node pkg="innopolis_vtol_dynamics" type="inno_vtol_reverse_mixer_node" name="inno_vtol_reverse_mixer_node" output="screen"/>
+</launch>

@@ -1,25 +1,22 @@
 # 1. Simulator parameters
-
-# use_sim_time means that dynamics node is working in clock server mode or not
-# http://wiki.ros.org/Clock#Running_a_Clock_Server
 use_sim_time: true
+clockscale: 1.0                         # only 1.0 is supported yet
 
-# We use dynamics sim in real time only, so this parametr should always be 1.0
-clockscale: 1.0
-
-
-# 2. Drone position and initial state:
-
-# Home geodetic position.
-# Innopolis example: 55.7544426, 48.742684, -6.5
-# Gazebo eaxmple: 47.3977420, 8.5455940, 488.157
+# 2. Vehicle initial geodetic position
 lat_ref : 55.7544426
 lon_ref : 48.742684
 alt_ref : -6.5
 
-# Initial local position
+# 3. Vehicle initial local position
+# X, Y, Z, roll, pitch, yaw, weight
 init_pose: [0.00, 0.00, 0.0,
-            0.00, 0.00, +0.00, +1.00]   # roll, pitch, yaw, weight
+            0.00, 0.00, +0.00, +1.00]
 
-# Dynamics type: doc=[inno_vtol, flightgoggles_multicopter]
+# 4. Dynamics type
+# doc=[inno_vtol (VTOL), flightgoggles_multicopter (MC only)]
 dynamics_type: "inno_vtol"
+
+# 4. Airframe type
+#    - babyshark_standard_vtol - supported by PX4 airframe with only MAIN mixer
+#    - inno_standard_vtol - custom airframe with only MAIN mixer
+airframe: "babyshark_standard_vtol"
