@@ -19,4 +19,5 @@ dynamics_type: "inno_vtol"
 # 4. Airframe type
 #    - babyshark_standard_vtol - supported by PX4 airframe with only MAIN mixer
 #    - inno_standard_vtol - custom airframe with only MAIN mixer
-airframe: "babyshark_standard_vtol"
+#    - iris - custom airframe with only MAIN mixer
+airframe: "inno_standard_vtol"

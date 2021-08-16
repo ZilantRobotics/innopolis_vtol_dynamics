@@ -63,7 +63,7 @@ class Uav_Dynamics {
         };
         enum AirframeType{
             IRIS = 0,
-            STANDARD_VTOL,
+            INNOPOLIS_VTOL,
         };
 
         DynamicsType dynamicsType_;

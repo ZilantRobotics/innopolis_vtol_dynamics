@@ -81,8 +81,8 @@ int main(int argc, char **argv){
     }
     bool isCopterAirframe;
     const std::string VEHICLE_IRIS = "iris";
-    const std::string VEHICLE_STANDARD_VTOL = "standard_vtol";
-    if(vehicle == VEHICLE_STANDARD_VTOL){
+    const std::string VEHICLE_INNOPOLIS_VTOL = "innopolis_vtol";
+    if(vehicle == VEHICLE_INNOPOLIS_VTOL){
         isCopterAirframe = false;
     }else if(vehicle == VEHICLE_IRIS){
         isCopterAirframe = true;

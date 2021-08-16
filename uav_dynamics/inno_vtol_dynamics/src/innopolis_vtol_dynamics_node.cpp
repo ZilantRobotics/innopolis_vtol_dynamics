@@ -104,7 +104,7 @@ int8_t Uav_Dynamics::init(){
      */
     const char DYNAMICS_TYPE_FLIGHTGOGGLES[] = "flightgoggles_multicopter";
     const char DYNAMICS_TYPE_INNO_VTOL[] = "inno_vtol";
-    const char AIRFRAME_TYPE_STANDARD_VTOL[] = "standard_vtol";
+    const char AIRFRAME_TYPE_INNOPOLIS_VTOL[] = "innopolis_vtol";
     const char AIRFRAME_TYPE_IRIS[] = "iris";
     if(dynamicsTypeName_ == DYNAMICS_TYPE_FLIGHTGOGGLES){
         dynamicsType_ = FLIGHTGOGGLES_MULTICOPTER;
@@ -119,12 +119,12 @@ int8_t Uav_Dynamics::init(){
         return -1;
     }
 
-    if(vehicle == AIRFRAME_TYPE_STANDARD_VTOL){
-        airframeType_ = STANDARD_VTOL;
+    if(vehicle == AIRFRAME_TYPE_INNOPOLIS_VTOL){
+        airframeType_ = INNOPOLIS_VTOL;
     }else if(vehicle == AIRFRAME_TYPE_IRIS){
         airframeType_ = IRIS;
     }else{
-        ROS_ERROR("Wrong vehicle. It should be 'standard_vtol' or 'iris'");
+        ROS_ERROR("Wrong vehicle. It should be 'innopolis_vtol' or 'iris'");
         return -1;
     }
 
@@ -271,7 +271,7 @@ void Uav_Dynamics::performDiagnostic(double periodSec){
                                                 << actuators_[2] << ", "
                                                 << actuators_[3] << "]";
 
-        if(airframeType_ == STANDARD_VTOL){
+        if(airframeType_ == INNOPOLIS_VTOL){
             infoStream << " \033[1;29m fw rpy \033[0m ["
                        << actuators_[4] << ", "
                        << actuators_[5] << ", "
