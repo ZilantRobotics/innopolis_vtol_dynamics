@@ -46,7 +46,7 @@ enum INNO_VTOL_OUTPUTS {
 
 class BaseReverseMixer {
     public:
-        BaseReverseMixer(ros::NodeHandle nh);
+        BaseReverseMixer(ros::NodeHandle nh): node_(nh) {}
         int8_t init();
     protected:
         ros::Publisher mappedActuatorPub_;
@@ -56,11 +56,6 @@ class BaseReverseMixer {
         ros::NodeHandle node_;
         ros::Subscriber rawActuatorsSub_;
 };
-BaseReverseMixer::BaseReverseMixer(ros::NodeHandle nh): node_(nh)  {
-    for (size_t channel = 0; channel < 8; channel++) {
-        mappedActuatorMsg_.axes.push_back(0);
-    }
-}
 int8_t BaseReverseMixer::init() {
     rawActuatorsSub_ = node_.subscribe(RAW_ACTUATOR_TOPIC, 2, &BaseReverseMixer::rawActuatorsCallback, this);
     mappedActuatorPub_ = node_.advertise<sensor_msgs::Joy>(MAPPED_ACTUATOR_TOPIC, 5);
@@ -70,7 +65,11 @@ int8_t BaseReverseMixer::init() {
 
 class BabysharkReverseMixer : public BaseReverseMixer {
     public:
-        BabysharkReverseMixer(ros::NodeHandle nh) : BaseReverseMixer(nh) {}
+        BabysharkReverseMixer(ros::NodeHandle nh) : BaseReverseMixer(nh) {
+            for (size_t channel = 0; channel < 8; channel++) {
+                mappedActuatorMsg_.axes.push_back(0);
+            }
+        }
     protected:
         virtual void rawActuatorsCallback(sensor_msgs::Joy msg) override;
 };
@@ -125,6 +124,27 @@ void InnoVtolReverseMixer::rawActuatorsCallback(sensor_msgs::Joy msg) {
     }
 }
 
+class IrisReverseMixer : public BaseReverseMixer {
+    public:
+        IrisReverseMixer(ros::NodeHandle nh) : BaseReverseMixer(nh) {
+            for (size_t channel = 0; channel < 4; channel++) {
+                mappedActuatorMsg_.axes.push_back(0);
+            }
+        }
+    protected:
+        virtual void rawActuatorsCallback(sensor_msgs::Joy msg) override;
+};
+void IrisReverseMixer::rawActuatorsCallback(sensor_msgs::Joy msg) {
+    if (msg.axes.size() >= 4) {
+        mappedActuatorMsg_.axes[0] = msg.axes[0];
+        mappedActuatorMsg_.axes[1] = msg.axes[1];
+        mappedActuatorMsg_.axes[2] = msg.axes[2];
+        mappedActuatorMsg_.axes[3] = msg.axes[3];
+
+        mappedActuatorMsg_.header = msg.header;
+        mappedActuatorPub_.publish(mappedActuatorMsg_);
+    }
+}
 
 
 int main(int argc, char **argv){
@@ -146,6 +166,8 @@ int main(int argc, char **argv){
         reverseMixer = new BabysharkReverseMixer(node_handler);
     } else if (airframe == "inno_standard_vtol") {
         reverseMixer = new InnoVtolReverseMixer(node_handler);
+    } else if (airframe == "iris") {
+        reverseMixer = new IrisReverseMixer(node_handler);
     } else {
         ROS_ERROR("ReverseMixer: Wrong `/uav/sim_params/airframe` parameter.");
         return -1;
