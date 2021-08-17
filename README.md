@@ -23,7 +23,7 @@ You may write your own `dynamics`, `airframe`, use any `vehicle` (to simulate PX
 
 The simulator is divided into following components:
 
-1. UAV dynamics simulator based on `Innopolis VTOL` (quadcopter and plane dynamics with aerodynamics coefficients)
+1. UAV dynamics simulator based on `Innopolis VTOL` (quadcopter and plane dynamics with aerodynamics coefficients), `flight_goggles multicopter` dynamics or something else
 2. Communication with `PX4` flight stack in `HITL (via UAVCAN)` and `SITL (via MAVLink)` modes
 3. Bridge for interaction with `Inno Simulator` through ROS
 4. `Reverse mixer`
@@ -34,25 +34,37 @@ The design of simulator shown below.
 
 As you can see, UavDynamics is a separate ROS node that performs communication via topics and it doesn't matter which type of communication with flight stack you are using.
 
-To communicate with flight stack via communicator it publishes and subscribes on following topics:
+To communicate with flight stack via communicator it subscribes on following topics:
 
-| № | Type         | topic                      | msg                                   |
-| - | ------------ | -------------------------- | ------------------------------------- |
-| 1 | subscribtion | /uav/actuators             | sensor_msgs/Joy                       |
-| 2 | publication  | /uav/static_temperature    | uavcan_msgs/StaticTemperature         |
-| 3 | publication  | /uav/static_pressure       | uavcan_msgs/StaticPressure            |
-| 4 | publication  | /uav/raw_air_data          | uavcan_msgs/RawAirData                |
-| 5 | publication  | /uav/gps_position          | uavcan_msgs/Fix                       |
-| 6 | publication  | /uav/imu                   | sensor_msgs/Imu                       |
-| 7 | publication  | /uav/mag                   | sensor_msgs/MagneticField             |
+| № | UAVCAN->ROS topics         | msg                                   |
+| - | -------------------------- | ------------------------------------- |
+| 1 | /uav/actuators             | [sensor_msgs/Joy](https://docs.ros.org/en/api/sensor_msgs/html/msg/Joy.html)                             |
+| 2 | /uav/actuators             | [std_msgs::Bool](http://docs.ros.org/en/noetic/api/std_msgs/html/msg/Bool.html)                          |
+
+and publishes to following topics:
+
+| № | ROS->UAVCAN topics         | msg                                   |
+| - | -------------------------- | ------------------------------------- |
+| 1 | /uav/static_temperature    | uavcan_msgs/StaticTemperature         |
+| 2 | /uav/static_pressure       | uavcan_msgs/StaticPressure            |
+| 3 | /uav/raw_air_data          | uavcan_msgs/RawAirData                |
+| 4 | /uav/gps_position          | uavcan_msgs/Fix                       |
+| 5 | /uav/imu                   | [sensor_msgs/Imu](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/Imu.html)                      |
+| 6 | /uav/mag                   | [sensor_msgs/MagneticField](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/MagneticField.html)  |
+| 7 | /uav/esc_status            | uavcan_msgs/EscStatus                 |
+| 8 | /uav/ice_status            | uavcan_msgs/IceReciprocatingStatus                       |
+| 9 | /uav/fuel_tank_status      | uavcan_msgs/IceFuelTankStatus             |
+| 10| /uav/battery_status        | [sensor_msgs/BatteryState](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/BatteryState.html)    |
+
+Last 4 topics above are auxilliary and you may enable/disable them in [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml) config file, other topics are necessary.
 
 To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) as physics engine via [InnoSimInterface ros bridge package](https://github.com/InnopolisAero/inno_sim_interface) it publishes and subscribes on following topics.
 
 | № | topic             | msg                             |
 | - | ----------------- | ------------------------------- |
-| 1 | /uav/actuators    | sensor_msgs/Joy                 |
-| 5 | /uav/gps_position | uavcan_msgs/Fix                 |
-| 2 | /uav/attitude     | geometry_msgs/QuaternionStamped |
+| 1 | /uav/actuators    | [sensor_msgs/Joy](https://docs.ros.org/en/api/sensor_msgs/html/msg/Joy.html)                 |
+| 2 | /uav/gps_position | uavcan_msgs/Fix                 |
+| 3 | /uav/attitude     | geometry_msgs/QuaternionStamped |
 
 
 # Installation and building:
@@ -69,7 +81,7 @@ Clone this repository with submodules and follow the instruction from [Dockerfil
 
 You need [following version of PX4 Autopilot](https://github.com/PonomarevDA/Firmware/tree/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d/airframes).
 
-For installation use official instruction and [this version of PX4 Autopilot](https://github.com/InnopolisAero/Inno_PX4_Firmware/tree/inno_dynamics).
+For installation use official instruction and [InnopolisAero/PX4-Autopilot](https://github.com/InnopolisAero/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics).
 
 To build either in SITL or in TRUE HITL mode run:
 
