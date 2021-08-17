@@ -12,20 +12,29 @@ So, Inno VTOL dynamics simulation allows to run simulation in both SITL and `uav
 
 # Design
 
-Innopolis VTOL dynamics simulator consist of following components:
+Innopolis VTOL dynamics simulator is divided into modules to make it possibly simply change airframe, dynamics and use either default mavlink or suggested uavcan mode.
+
+You may write your own `dynamics`, `airframe`, use any `vehicle` (to simulate PX4 flight stack in SITL) in both UAVCAN HITL and SITL modes. At that moment this simulator supports following features:
+
+| № | dynamics | airframe | Vehicle (for SITL) |
+| - | -------- | -------- | ------------------ |
+| 1 | inno_vtol | inno_standard_vtol [(13070)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d/airframes/13070_innopolis_vtol) | innopolis_vtol [(1050)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/1050_innopolis_vtol)    |
+| 2 | [flightgoggles_multicopter](https://github.com/mit-aera/FlightGoggles)    | iris [(10016)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d/airframes/10016_3dr_iris)               | iris [(10016)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/10016_iris) |
+
+The simulator is divided into following components:
 
 1. UAV dynamics simulator based on `Innopolis VTOL` (quadcopter and plane dynamics with aerodynamics coefficients)
 2. Communication with `PX4` flight stack in `HITL (via UAVCAN)` and `SITL (via MAVLink)` modes
-3. Bridge for interaction with `Inno Simulator` through ROS.
-
+3. Bridge for interaction with `Inno Simulator` through ROS
+4. `Reverse mixer`
 
 The design of simulator shown below.
 
 ![scheme](img/scheme.png?raw=true "scheme")
 
-As you can see, InnoDynamics is a separate ROS node that perform communication via topics and it doesn't matter which type of communication with flight stack you are using.
+As you can see, UavDynamics is a separate ROS node that performs communication via topics and it doesn't matter which type of communication with flight stack you are using.
 
-To communicate with flight stack via [px4 drone communicator]() it publishes and subscribes on following topics:
+To communicate with flight stack via communicator it publishes and subscribes on following topics:
 
 | № | Type         | topic                      | msg                                   |
 | - | ------------ | -------------------------- | ------------------------------------- |
@@ -48,33 +57,17 @@ To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulat
 
 # Installation and building:
 
-At first, it's assumed that you are using Ubuntu 18.04 with installed ROS and created catkin_ws. 
+It's assumed that you are using Ubuntu 18.04 with installed ROS and created catkin_ws. 
 
 The whole system required several packages.
 
 **1. Inno Dynamics**
 
-Clone [this package](https://github.com/InnopolisAero/innopolis_vtol_dynamics), [timed_roslaunch](https://github.com/MoriKen254/timed_roslaunch.git) that allows to run nodes with delay from launch file and [geographiclib_conversions](https://github.com/PonomarevDA/geographiclib_conversions) package:
-
-```
-git clone https://github.com/InnopolisAero/innopolis_vtol_dynamics.git
-git clone https://github.com/MoriKen254/timed_roslaunch.git
-git clone https://github.com/PonomarevDA/geographiclib_conversions.git
-```
-
-Then install python packages:
-
-```
-cd innopolis_vtol_dynamics
-pip install -r requirements
-```
-
-And download `wmm2020` from [here](https://geographiclib.sourceforge.io/html/magnetic.html) and put them into corresponding folder.
+Clone this repository with submodules and follow the instruction from [Dockerfile](Dockerfile).
 
 **2. (optional) PX4 Autopilot**
 
-You need it only if you want to work in SITL mode or if you want to manually build PX4 Firmware and upload it on your hardware.
-If you need only SITL and your autopilot is ready, you can avoid this step.
+You need [following version of PX4 Autopilot](https://github.com/PonomarevDA/Firmware/tree/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d/airframes).
 
 For installation use official instruction and [this version of PX4 Autopilot](https://github.com/InnopolisAero/Inno_PX4_Firmware/tree/inno_dynamics).
 
@@ -82,15 +75,15 @@ To build either in SITL or in TRUE HITL mode run:
 
 ```
 cd Firmware
-git checkout inno_dynamics
-make clean
-make distclean
+git checkout px4_v1.12.1_inno_vtol_dynamics
+git submodule update --init --recursive && make clean && make distclean
 ```
 
 Then for SITL mode:
 
 ```
-DONT_RUN=1 make px4_sitl gazebo_standard_vtol
+DONT_RUN=1 make px4_sitl gazebo_innopolis_vtol
+DONT_RUN=1 make px4_sitl gazebo_iris
 ```
 
 And for HITL mode for Cuav V5+ type line below. If you use another hardware, read the [PX4 doc](https://dev.px4.io/master/en/setup/building_px4.html) for details.
@@ -108,14 +101,7 @@ export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/Firmware
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/Firmware/Tools/sitl_gazebo
 ```
 
-**3. Drone communicator**
-
-This package establishes communication between flight stack and dynamics, it also required `mavlink` and `mavros` packages which could be installed while PX4 Autopilot installation. As alternative way you can install them using `apt`.
-
-Use instruction from `drone_communicators repo`. It's preaty simple. 
-
-
-**4. InnoSimulator**
+**3. InnoSimulator**
 
 InnoSimulator is a photorealistic simulator.
 
@@ -123,44 +109,32 @@ To use it you should install [inno_sim_interface](https://github.com/InnopolisAe
 
 Use branch `uavcan` in `inno_sim_interface` repository.
 
-**Building**
+**4. Building**
 Build all by typing `./catkin_build.sh` from `InnoDynamics` package.
 
+# Usage example
 
-# Usage
-
-You can run it in 2 ways:
-- sitl simulation using MAVLink,
-- hitl simulation using UAVCAN.
-
-1. (optional). If you want to use HITL mode, you need to initialy connect UAVCAN sniffer with your PC and PX4 autopilot and setup slcan.
-
+1. Run any of `scripts/start*` scripts.
+If you run `hitl` script, it will automatically attached slcan based on your serial port (if sniffer is connected).
+Example:
 ```bash
-./communicators/drone_communicators/scripts/create_slcan.sh
+./scripts/start_hitl_inno_vtol.sh
 ```
+2. Run QGC
+3. Setup your vehicle
+- Run QGC and load correposponded [params](uav_dynamics/inno_vtol_dynamics/config/) into vehicle
+- Restart your vehicle and QGC
+- Note: sometimes from the first attempt params is not loaded correctly, so you may try it twice
+ 
+![usage_load_params](img/usage_load_params.png?raw=true "usage_load_params")
 
-This script requires sudo. It will load slcan module into your linux kernel and create virtual can. It means it will not work neither inside docker container without `--net=host` nor in github workflow.
+4. Check correspondences of your airframe and that vehicle is `Ready To Fly`
 
-2. Run dymamics, communicator module (and PX4 flight stack in SITL mode) using either `hitl.launch` or `sitl.launch`:
+![usage_check_airframe](img/usage_check_airframe.png?raw=true "usage_check_airframe")
 
-```bash
-roslaunch innopolis_vtol_dynamics hitl.launch
-```
+5. (optional) Visualization using InnoSimulator
 
-These launch files have following optional parameters:
-- vehicle:=standard_vtol - it allows to choose one of 2 vehicles: standard_vtol (by default, it means Innopolis VTOL) and iris
-- run_rviz:=false - it allows to run rviz to visualize orientation, forces and moments (it is turned off by default)
-- run_inno_sim_bridge:=true - run bridge between dynamics and InnoSimulator
-
-3. Run QGroundControl for controlling and monitoring flight. If your PX4 autopilot parameters are not specified yet, this is right time for doing it. Also at this step you should check version of PX4 Firmware and if it is not fit you, upload correct version.
-
-```bash
-~/software/qgroundcontrol/QGroundControl.AppImage
-```
-
-4. (optional) Visualization using InnoSimulator
-
-If you set parameter `run_inno_sim_bridge:=true` or leave it by default, you will only need to type something loke that:
+If you set parameter `run_inno_sim_bridge:=true` or leave it by default, you will only need to type something like that:
 
 ```bash
 roscd inno_sim_interface/cfg
