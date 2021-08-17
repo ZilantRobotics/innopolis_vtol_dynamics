@@ -3,8 +3,8 @@
 #include <Eigen/Geometry>
 #include <random>
 #include <geographiclib_conversions/geodetic_conv.hpp>
-#include "../sensors_isa_model.hpp"
-#include "../vtolDynamicsSim.hpp"
+#include "sensors_isa_model.hpp"
+#include "vtolDynamicsSim.hpp"
 
 TEST(InnoVtolDynamicsSim, calculateWind){
     InnoVtolDynamicsSim vtolDynamicsSim;
