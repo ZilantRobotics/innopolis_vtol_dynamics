@@ -1,13 +1,17 @@
 <launch>
     <arg name="vehicle"                 default="innopolis_vtol"                doc="[innopolis_vtol, iris]"/>
+    <arg name="airframe"                default="inno_standard_vtol"            doc="[inno_standard_vtol, babyshark_standard_vtol, iris]"/>
+    <arg name="dynamics"                default="inno_vtol"                     doc="[inno_vtol, flightgoggles_multicopter]"/>
     <arg name="run_rviz"                default="false"                         doc="[true, false]"/>
-    <arg name="run_sitl_flight_stack"   default="true"                          doc="[true means sitl, false means true hitl]"/>
     <arg name="run_inno_sim_bridge"     default="true"                          doc="[true, false]"/>
 
     <include file="$(find innopolis_vtol_dynamics)/launch/dynamics.launch">
         <arg name="vehicle"                 value="$(arg vehicle)"/>
+        <arg name="airframe"                value="$(arg airframe)"/>
+        <arg name="dynamics"                value="$(arg dynamics)"/>
         <arg name="run_rviz"                value="$(arg run_rviz)"/>
-        <arg name="run_sitl_flight_stack"   value="true"/>
         <arg name="run_inno_sim_bridge"     value="$(arg run_inno_sim_bridge)"/>
+
+        <arg name="run_sitl_flight_stack"   value="true"/>
     </include>
 </launch>

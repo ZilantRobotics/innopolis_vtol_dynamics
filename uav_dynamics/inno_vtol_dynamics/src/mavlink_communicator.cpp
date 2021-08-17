@@ -69,14 +69,14 @@ int main(int argc, char **argv){
     if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
         ros::console::notifyLoggerLevelsChanged();
     }
-    ros::NodeHandle nodeHandler;
+    ros::NodeHandle nodeHandler("mavlink_communicator");
 
     // 2. Define which mavlink actuators format should we use (
     // - quad rotors with actuators cmd size = 4
     // - or VTOL with actuators cmd size = 8)
     std::string vehicle;
-    if(!nodeHandler.getParam("/inno_dynamics_sim/vehicle", vehicle)){
-        ROS_ERROR_STREAM(NODE_NAME << "There is no /inno_dynamics_sim/vehicle");
+    if(!nodeHandler.getParam("vehicle", vehicle)){
+        ROS_ERROR_STREAM(NODE_NAME << "There is no vehicle params");
         ros::shutdown();
     }
     bool isCopterAirframe;

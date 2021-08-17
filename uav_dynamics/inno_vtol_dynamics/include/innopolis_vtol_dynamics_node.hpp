@@ -58,16 +58,16 @@ class Uav_Dynamics {
         double altRef_;
 
         enum DynamicsType{
-            FLIGHTGOGGLES_MULTICOPTER = 0,
-            INNO_VTOL,
+            DYNAMICS_FLIGHTGOGGLES_MULTICOPTER = 0,
+            DYNAMICS_INNO_VTOL,
         };
-        enum AirframeType{
-            IRIS = 0,
-            INNOPOLIS_VTOL,
+        enum VehicleType{
+            VEHICLE_IRIS = 0,
+            VEHICLE_INNOPOLIS_VTOL,
         };
 
         DynamicsType dynamicsType_;
-        AirframeType airframeType_;
+        VehicleType vehicleType_;
 
         std::string dynamicsTypeName_;
 

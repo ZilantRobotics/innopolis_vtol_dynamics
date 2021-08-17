@@ -153,14 +153,13 @@ int main(int argc, char **argv){
         ros::console::notifyLoggerLevelsChanged();
     }
 
+    ros::NodeHandle node_handler("inno_vtol_reverse_mixer");
     std::string airframe;
-    const std::string SIM_PARAMS_PATH = "/uav/sim_params/";
-    if (!ros::param::get(SIM_PARAMS_PATH + "airframe", airframe)) {
-        ROS_ERROR("ReverseMixer: There is no `/uav/sim_params/airframe` parameter.");
+    if(!node_handler.getParam("airframe", airframe)){
+        ROS_ERROR("ReverseMixer: There is no `airframe` parameter.");
         return -1;
     }
 
-    ros::NodeHandle node_handler;
     BaseReverseMixer* reverseMixer;
     if (airframe == "babyshark_standard_vtol") {
         reverseMixer = new BabysharkReverseMixer(node_handler);

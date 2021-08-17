@@ -63,7 +63,7 @@ int main(int argc, char **argv){
         ros::console::notifyLoggerLevelsChanged();
     }
 
-    ros::NodeHandle node_handler;
+    ros::NodeHandle node_handler("inno_dynamics_sim");
     Uav_Dynamics uav_dynamics_node(node_handler);
     if(uav_dynamics_node.init() == -1){
         ROS_ERROR("Shutdown.");
@@ -88,12 +88,12 @@ int8_t Uav_Dynamics::init(){
     std::vector<double> initPose(7);
     std::string vehicle;
     const std::string SIM_PARAMS_PATH = "/uav/sim_params/";
-    if(!ros::param::get(SIM_PARAMS_PATH + "use_sim_time",       useSimTime_ ) ||
-       !ros::param::get(SIM_PARAMS_PATH + "lat_ref",            latRef_) ||
-       !ros::param::get(SIM_PARAMS_PATH + "lon_ref",            lonRef_) ||
-       !ros::param::get(SIM_PARAMS_PATH + "alt_ref",            altRef_) ||
-       !ros::param::get(SIM_PARAMS_PATH + "dynamics_type",      dynamicsTypeName_) ||
-       !node_.getParam("/inno_dynamics_sim/vehicle",            vehicle) ||
+    if(!ros::param::get(SIM_PARAMS_PATH + "use_sim_time",       useSimTime_ )       ||
+       !ros::param::get(SIM_PARAMS_PATH + "lat_ref",            latRef_)            ||
+       !ros::param::get(SIM_PARAMS_PATH + "lon_ref",            lonRef_)            ||
+       !ros::param::get(SIM_PARAMS_PATH + "alt_ref",            altRef_)            ||
+       !node_.getParam("vehicle",                               vehicle)            ||
+       !node_.getParam("dynamics",                              dynamicsTypeName_)  ||
        !ros::param::get(SIM_PARAMS_PATH + "init_pose",          initPose)){
         ROS_ERROR("Dynamics: There is no at least one of required simulator parameters.");
         return -1;
@@ -102,27 +102,27 @@ int8_t Uav_Dynamics::init(){
      * @brief Init dynamics simulator
      * @todo it's better to use some build method instead of manually call new
      */
-    const char DYNAMICS_TYPE_FLIGHTGOGGLES[] = "flightgoggles_multicopter";
-    const char DYNAMICS_TYPE_INNO_VTOL[] = "inno_vtol";
-    const char AIRFRAME_TYPE_INNOPOLIS_VTOL[] = "innopolis_vtol";
-    const char AIRFRAME_TYPE_IRIS[] = "iris";
-    if(dynamicsTypeName_ == DYNAMICS_TYPE_FLIGHTGOGGLES){
-        dynamicsType_ = FLIGHTGOGGLES_MULTICOPTER;
+    const char DYNAMICS_NAME_FLIGHTGOGGLES[] = "flightgoggles_multicopter";
+    const char DYNAMICS_NAME_INNO_VTOL[] = "inno_vtol";
+    const char VEHICLE_NAME_INNOPOLIS_VTOL[] = "innopolis_vtol";
+    const char VEHICLE_NAME_IRIS[] = "iris";
+    if(dynamicsTypeName_ == DYNAMICS_NAME_FLIGHTGOGGLES){
+        dynamicsType_ = DYNAMICS_FLIGHTGOGGLES_MULTICOPTER;
         uavDynamicsSim_ = new FlightgogglesDynamics;
         dynamicsNotation_ = ROS_ENU_FLU;
-    }else if(dynamicsTypeName_ == DYNAMICS_TYPE_INNO_VTOL){
+    }else if(dynamicsTypeName_ == DYNAMICS_NAME_INNO_VTOL){
         uavDynamicsSim_ = new InnoVtolDynamicsSim;
-        dynamicsType_ = INNO_VTOL;
+        dynamicsType_ = DYNAMICS_INNO_VTOL;
         dynamicsNotation_ = PX4_NED_FRD;
     }else{
         ROS_ERROR("Dynamics type with name \"%s\" is not exist.", dynamicsTypeName_.c_str());
         return -1;
     }
 
-    if(vehicle == AIRFRAME_TYPE_INNOPOLIS_VTOL){
-        airframeType_ = INNOPOLIS_VTOL;
-    }else if(vehicle == AIRFRAME_TYPE_IRIS){
-        airframeType_ = IRIS;
+    if(vehicle == VEHICLE_NAME_INNOPOLIS_VTOL){
+        vehicleType_ = VEHICLE_INNOPOLIS_VTOL;
+    }else if(vehicle == VEHICLE_NAME_IRIS){
+        vehicleType_ = VEHICLE_IRIS;
     }else{
         ROS_ERROR("Wrong vehicle. It should be 'innopolis_vtol' or 'iris'");
         return -1;
@@ -271,7 +271,7 @@ void Uav_Dynamics::performDiagnostic(double periodSec){
                                                 << actuators_[2] << ", "
                                                 << actuators_[3] << "]";
 
-        if(airframeType_ == INNOPOLIS_VTOL){
+        if(vehicleType_ == VEHICLE_INNOPOLIS_VTOL){
             infoStream << " \033[1;29m fw rpy \033[0m ["
                        << actuators_[4] << ", "
                        << actuators_[5] << ", "
@@ -641,7 +641,7 @@ void Uav_Dynamics::initMarkers(){
  * @brief Publish forces and moments of vehicle
  */
 void Uav_Dynamics::publishMarkers(void){
-    if(dynamicsType_ == INNO_VTOL){
+    if(dynamicsType_ == DYNAMICS_INNO_VTOL){
         arrowMarkers_.header.stamp = ros::Time();
         Eigen::Vector3d MOMENT_COLOR(0.5, 0.5, 0.0),
                         MOTORS_FORCES_COLOR(0.0, 0.5, 0.5),
