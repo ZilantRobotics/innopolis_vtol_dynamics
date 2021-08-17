@@ -4,3 +4,7 @@
  */
 
 #include "uavDynamicsSimBase.hpp"
+
+bool UavDynamicsSimBase::getMotorsRpm(std::vector<double>& motorsRpm) {
+    return false;
+}

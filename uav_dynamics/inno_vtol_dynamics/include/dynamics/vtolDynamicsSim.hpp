@@ -66,6 +66,7 @@ struct State{
     Eigen::Vector3d MmotorsTotal;                   // N*m
     std::array<Eigen::Vector3d, 5> Fmotors;         // N
     std::array<Eigen::Vector3d, 5> Mmotors;         // N*m
+    std::array<double, 5> motorsRpm;                // rpm
     Eigen::Vector3d Fspecific;                      // N
     Eigen::Vector3d Ftotal;                         // N
     Eigen::Vector3d Mtotal;                         // N*m
@@ -109,7 +110,7 @@ struct TablesWithCoeffs{
     Eigen::Matrix<double, 8, 20, Eigen::RowMajor> CmyElevator;
     Eigen::Matrix<double, 8, 20, Eigen::RowMajor> CmzRudder;
 
-    Eigen::Matrix<double, 40, 4, Eigen::RowMajor> prop;
+    Eigen::Matrix<double, 40, 5, Eigen::RowMajor> prop;
 
     std::vector<double> actuatorTimeConstants;
 };
@@ -137,6 +138,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         virtual Eigen::Vector3d getVehicleVelocity() const override;
         virtual Eigen::Vector3d getVehicleAngularVelocity() const override;
         virtual void getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut) override;
+        virtual bool getMotorsRpm(std::vector<double>& motorsRpm) override;
 
         /**
          * @note These methods should be public for debug only (publish to ros topic)
@@ -168,7 +170,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         double calculateDynamicPressure(double airSpeedMod);
         double calculateAnglesOfAtack(const Eigen::Vector3d& airSpeed) const;
         double calculateAnglesOfSideslip(const Eigen::Vector3d& airSpeed) const;
-        void thruster(double actuator, double& thrust, double& torque) const;
+        void thruster(double actuator, double& thrust, double& torque, double& rpm) const;
         void calculateNewState(const Eigen::Vector3d& Maero,
                                const Eigen::Vector3d& Faero,
                                const std::vector<double>& actuator,

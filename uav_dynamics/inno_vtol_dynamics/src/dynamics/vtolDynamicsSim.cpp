@@ -65,7 +65,7 @@ void InnoVtolDynamicsSim::loadTables(const std::string& path){
     tables_.CmxAileron = getTableNew<8, 20, Eigen::RowMajor>(path, "CmxAileron");
     tables_.CmyElevator = getTableNew<8, 20, Eigen::RowMajor>(path, "CmyElevator");
     tables_.CmzRudder = getTableNew<8, 20, Eigen::RowMajor>(path, "CmzRudder");
-    tables_.prop = getTableNew<40, 4, Eigen::RowMajor>(path, "prop");
+    tables_.prop = getTableNew<40, 5, Eigen::RowMajor>(path, "prop");
     if(ros::param::get(path + "actuatorTimeConstants", tables_.actuatorTimeConstants) == false){
         throw std::runtime_error(std::string("Wrong parameter name: ") + "actuatorTimeConstants");
     }
@@ -495,19 +495,22 @@ void InnoVtolDynamicsSim::calculateAerodynamics(const Eigen::Vector3d& airspeed,
     #endif
 }
 
-void InnoVtolDynamicsSim::thruster(double actuator, double& thrust, double& torque) const{
-    constexpr size_t ACTUATOR_IDX = 0;
+void InnoVtolDynamicsSim::thruster(double actuator,
+                                   double& thrust, double& torque, double& rpm) const{
+    constexpr size_t CONTROL_IDX = 0;
     constexpr size_t THRUST_IDX = 1;
     constexpr size_t TORQUE_IDX = 2;
+    constexpr size_t RPM_IDX = 4;
 
     size_t prev_idx = findRow(tables_.prop, actuator);
     size_t next_idx = prev_idx + 1;
     if(next_idx < tables_.prop.rows()){
         auto prev_row = tables_.prop.row(prev_idx);
         auto next_row = tables_.prop.row(next_idx);
-        auto t = (actuator - prev_row(ACTUATOR_IDX)) / (next_row(ACTUATOR_IDX) - prev_row(ACTUATOR_IDX));
+        auto t = (actuator - prev_row(CONTROL_IDX)) / (next_row(CONTROL_IDX) - prev_row(CONTROL_IDX));
         thrust = lerp(prev_row(THRUST_IDX), next_row(THRUST_IDX), t);
         torque = lerp(prev_row(TORQUE_IDX), next_row(TORQUE_IDX), t);
+        rpm = lerp(prev_row(RPM_IDX), next_row(RPM_IDX), t);
     }
 }
 
@@ -517,7 +520,7 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
                                         double dt_sec){
     Eigen::VectorXd thrust(5), torque(5);
     for(size_t idx = 0; idx < 5; idx++){
-        thruster(actuator[idx], thrust[idx], torque[idx]);
+        thruster(actuator[idx], thrust[idx], torque[idx], state_.motorsRpm[idx]);
     }
 
     for(size_t idx = 0; idx < 4; idx++){
@@ -858,4 +861,12 @@ const std::array<Eigen::Vector3d, 5>& InnoVtolDynamicsSim::getFmotors() const{
 }
 const std::array<Eigen::Vector3d, 5>& InnoVtolDynamicsSim::getMmotors() const{
     return state_.Mmotors;
+}
+
+bool InnoVtolDynamicsSim::getMotorsRpm(std::vector<double>& motorsRpm) {
+    motorsRpm.push_back(state_.motorsRpm[0]);
+    motorsRpm.push_back(state_.motorsRpm[1]);
+    motorsRpm.push_back(state_.motorsRpm[2]);
+    motorsRpm.push_back(state_.motorsRpm[3]);
+    return true;
 }

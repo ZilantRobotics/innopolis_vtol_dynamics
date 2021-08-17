@@ -29,6 +29,8 @@
 #include <std_msgs/Empty.h>
 
 #include "uavDynamicsSimBase.hpp"
+#include "sensors.hpp"
+
 
 
 /**
@@ -40,6 +42,14 @@ class Uav_Dynamics {
         int8_t init();
 
     private:
+        int8_t getParamsFromRos();
+        int8_t initDynamicsSimulator();
+        int8_t initMainCommunicatorSensors();
+        int8_t initAuxilliaryCommunicatorSensors();
+        int8_t initCalibration();
+        int8_t initRvizVisualizationMarkers();
+        int8_t startClockAndThreads();
+
         /// @name Simulator
         //@{
         ros::NodeHandle node_;
@@ -56,6 +66,7 @@ class Uav_Dynamics {
         double latRef_;
         double lonRef_;
         double altRef_;
+        std::vector<double> initPose_;
 
         enum DynamicsType{
             DYNAMICS_FLIGHTGOGGLES_MULTICOPTER = 0,
@@ -69,6 +80,7 @@ class Uav_Dynamics {
         DynamicsType dynamicsType_;
         VehicleType vehicleType_;
 
+        std::string vehicleName_;
         std::string dynamicsTypeName_;
 
         geodetic_converter::GeodeticConverter geodeticConverter_;
@@ -128,6 +140,16 @@ class Uav_Dynamics {
         const double STATIC_PRESSURE_PERIOD = 0.05;
         void publishUavStaticPressure(float staticPressure);
 
+        EscStatusSensor escStatusSensor_;
+        IceStatusSensor iceStatusSensor_;
+        FuelTankStatusSensor fuelTankStatusSensor_;
+        BatteryInfoStatusSensor batteryInfoStatusSensor_;
+
+        bool isEscStatusEnabled_;
+        bool isIceStatusEnabled_;
+        bool isFuelTankStatusEnabled_;
+        bool isBatteryStatusEnabled_;
+
         void publishStateToCommunicator();
         //@}
 
@@ -183,7 +205,7 @@ class Uav_Dynamics {
         std::thread diagnosticTask;
 
         void simulationLoopTimerCallback(const ros::WallTimerEvent& event);
-        void proceedQuadcopterDynamics(double period);
+        void proceedDynamics(double period);
         void publishToRos(double period);
         void performDiagnostic(double period);
 
