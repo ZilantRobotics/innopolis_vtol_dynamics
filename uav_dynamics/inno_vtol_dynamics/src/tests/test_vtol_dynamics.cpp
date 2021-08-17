@@ -403,18 +403,53 @@ TEST(InnoVtolDynamicsSim, calculateAerodynamicsRealCase){
     ASSERT_TRUE(std::all_of(&diff[0], &diff[3], isZeroComparator));
 }
 
-TEST(InnoVtolDynamicsSim, thruster){
+TEST(thruster, thrusterFirstZeroCmd){
     InnoVtolDynamicsSim vtolDynamicsSim;
     vtolDynamicsSim.init();
-    double thrust, torque;
+    double control,
+           actualThrust, actualTorque, actualRpm,
+           expectedThrust, expectedTorque, expectedRpm;
 
-    vtolDynamicsSim.thruster(500.004648, thrust, torque);
-    ASSERT_TRUE(abs(thrust - 15.8930) < 0.001);
-    ASSERT_TRUE(abs(torque - 0.27273) < 0.00001);
+    control = 0;
+    expectedThrust = 0;
+    expectedTorque = 0;
+    expectedRpm = 0;
+    vtolDynamicsSim.thruster(control, actualThrust, actualTorque, actualRpm);
+    ASSERT_TRUE(abs(actualThrust - expectedThrust) < 0.001);
+    ASSERT_TRUE(abs(actualTorque - expectedTorque) < 0.00001);
+    ASSERT_TRUE(abs(actualRpm - expectedRpm) < 0.00001);
+}
+TEST(thruster, thrusterSecond){
+    InnoVtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double control,
+           actualThrust, actualTorque, actualRpm,
+           expectedThrust, expectedTorque, expectedRpm;
 
-    vtolDynamicsSim.thruster(134.254698, thrust, torque);
-    ASSERT_TRUE(abs(thrust - 3.590800) < 0.0001);
-    ASSERT_TRUE(abs(torque - 0.013696) < 0.000001);
+    control = 134.254698;
+    expectedThrust = 3.590800;
+    expectedTorque = 0.013696;
+    expectedRpm = 732.298;
+    vtolDynamicsSim.thruster(control, actualThrust, actualTorque, actualRpm);
+    ASSERT_TRUE(abs(actualThrust - expectedThrust) < 0.0001);
+    ASSERT_TRUE(abs(actualTorque - expectedTorque) < 0.000001);
+    ASSERT_TRUE(abs(actualRpm - expectedRpm) < 0.001);
+}
+TEST(thruster, thrusterThird){
+    InnoVtolDynamicsSim vtolDynamicsSim;
+    vtolDynamicsSim.init();
+    double control,
+           actualThrust, actualTorque, actualRpm,
+           expectedThrust, expectedTorque, expectedRpm;
+
+    control = 500.004648;
+    expectedThrust = 15.8930;
+    expectedTorque = 0.27273;
+    expectedRpm = 2727.3;
+    vtolDynamicsSim.thruster(control, actualThrust, actualTorque, actualRpm);
+    ASSERT_TRUE(abs(actualThrust - expectedThrust) < 0.001);
+    ASSERT_TRUE(abs(actualTorque - expectedTorque) < 0.00001);
+    ASSERT_TRUE(abs(actualRpm - expectedRpm) < 0.2);
 }
 
 /**
