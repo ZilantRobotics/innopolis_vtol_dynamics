@@ -190,10 +190,6 @@ int8_t Uav_Dynamics::initMainCommunicatorSensors(){
 }
 
 int8_t Uav_Dynamics::initAuxilliaryCommunicatorSensors(){
-    static constexpr char ICE_STATUS_TOPIC[]       = "/uav/ice_status";
-    static constexpr char FUEL_TANK_STATUS_TOPIC[] = "/uav/fuel_tank";
-    static constexpr char BATTERY_STATUS_TOPIC[]   = "/uav/battery";
-
     if(isEscStatusEnabled_){
         escStatusSensor_.enable();
     }
