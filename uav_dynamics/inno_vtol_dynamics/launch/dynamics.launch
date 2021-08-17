@@ -1,13 +1,15 @@
 <launch>
     <!--
         Prerequirements for SITL:
-        DONT_RUN=1 make px4_sitl gazebo_standard_vtol   // for InnoVTOL dynamics
+        DONT_RUN=1 make px4_sitl gazebo_innopolis_vtol  // for InnoVTOL dynamics
         DONT_RUN=1 make px4_sitl gazebo_iris            // for FlightGoggles dynamics
 
-        Prerequirements for true HITL, for example for cuav v5:
+        Prerequirements for HITL, for example for cuav v5:
         make px4_fmu-v5_default upload
      -->
-    <arg name="vehicle"                 default="standard_vtol"                 doc="[standard_vtol, iris]"/>
+    <arg name="vehicle"                 default="innopolis_vtol"                doc="[innopolis_vtol, iris]"/>
+    <arg name="airframe"                default="inno_standard_vtol"            doc="[inno_standard_vtol, babyshark_standard_vtol, iris]"/>
+    <arg name="dynamics"                default="inno_vtol"                     doc="[inno_vtol, flightgoggles_multicopter]"/>
     <arg name="run_rviz"                default="false"                         doc="[true, false]"/>
     <arg name="run_sitl_flight_stack"   default="true"                          doc="[true means sitl, false means true hitl]"/>
     <arg name="run_inno_sim_bridge"     default="true"                          doc="[true, false]"/>
@@ -26,10 +28,15 @@
 
     <!-- 2. Run mavlink or uavcan communicator depending on simulation mode -->
     <group if="$(arg run_sitl_flight_stack)">
-        <node pkg="innopolis_vtol_dynamics" type="mavlink_communicator" name="px4_mavlink_communicatormavlink_communicator" output="screen"/>
+        <node pkg="innopolis_vtol_dynamics" type="mavlink_communicator" name="mavlink_communicator" output="screen">
+        <param name="vehicle"   value="$(arg vehicle)"  />
+    </node>
     </group>
     <group unless="$(arg run_sitl_flight_stack)">
-        <node pkg="innopolis_vtol_dynamics" type="inno_vtol_reverse_mixer_node" name="inno_vtol_reverse_mixer" output="screen"/>
+        <node pkg="innopolis_vtol_dynamics" type="inno_vtol_reverse_mixer_node" name="inno_vtol_reverse_mixer" output="screen">
+            <param name="vehicle"   value="$(arg vehicle)"  />
+            <param name="airframe"  value="$(arg airframe)" />
+        </node>
         <include file="$(find innopolis_vtol_dynamics)/launch/uavcan_communicator.launch"/>
     </group>
 
@@ -37,7 +44,8 @@
     <!-- 3. Run dynamics simulation -->
     <include file="$(find innopolis_vtol_dynamics)/launch/load_parameters.launch"/>
     <node pkg="innopolis_vtol_dynamics" type="node" name="inno_dynamics_sim" output="screen">
-        <param name="vehicle" value="$(arg vehicle)" />/>
+        <param name="vehicle"   value="$(arg vehicle)"  />
+        <param name="dynamics"  value="$(arg dynamics)" />
     </node>
 
     <!-- 4. (optional) Run rviz -->
