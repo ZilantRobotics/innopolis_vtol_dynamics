@@ -36,6 +36,7 @@ public:
     virtual Eigen::Vector3d getVehicleVelocity(void) const = 0;
     virtual Eigen::Vector3d getVehicleAngularVelocity(void) const = 0;
     virtual void getIMUMeasurement(Eigen::Vector3d & accOutput, Eigen::Vector3d & gyroOutput) = 0;
+    virtual bool getMotorsRpm(std::vector<double>& motorsRpm);
 
     enum CalibrationType_t{
         WORK_MODE,

@@ -39,18 +39,6 @@ static const double STATIC_PRESSURE_NOISE = 0.001;
 static const double DIFF_PRESSURE_NOISE = 0.001;
 static const double TEMPERATURE_NOISE = 0.1;
 
-static constexpr char IMU_TOPIC_NAME[]                 = "/uav/imu";
-static constexpr char MAG_TOPIC_NAME[]                 = "/uav/mag";
-static constexpr char GPS_POSE_TOPIC_NAME[]            = "/uav/gps_position";
-static constexpr char ATTITUDE_TOPIC_NAME[]            = "/uav/attitude";
-static constexpr char VELOCITY_TOPIC_NAME[]            = "/uav/velocity";
-static constexpr char ACTUATOR_TOPIC_NAME[]            = "/uav/actuators";
-static constexpr char ARM_TOPIC_NAME[]                 = "/uav/arm";
-
-static constexpr char RAW_AIR_DATA_TOPIC_NAME[]        = "/uav/raw_air_data";
-static constexpr char STATIC_TEMPERATURE_TOPIC_NAME[]  = "/uav/static_temperature";
-static constexpr char STATIC_PRESSURE_TOPIC_NAME[]     = "/uav/static_pressure";
-
 const std::string MOTOR_NAMES[5] = {"motor0",
                                     "motor1",
                                     "motor2",
@@ -76,7 +64,14 @@ int main(int argc, char **argv){
 }
 
 
-Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), actuators_(8, 0.){
+Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh) :
+    node_(nh),
+    actuators_(8, 0.),
+    initPose_(7),
+    escStatusSensor_(&nh, "/uav/esc_status", 0.25),
+    iceStatusSensor_(&nh, "/uav/ice_status", 0.25),
+    fuelTankStatusSensor_(&nh, "/uav/fuel_tank", 2.0),
+    batteryInfoStatusSensor_(&nh, "/uav/battery", 1.0){
 }
 
 
@@ -84,24 +79,47 @@ Uav_Dynamics::Uav_Dynamics(ros::NodeHandle nh): node_(nh), actuators_(8, 0.){
  * @return -1 if error occured, else 0
  */
 int8_t Uav_Dynamics::init(){
-    // Get Simulator parameters
-    std::vector<double> initPose(7);
-    std::string vehicle;
+    normalDistribution_ = std::normal_distribution<double>(0.0, 1.0);
+
+    if(getParamsFromRos() == -1){
+        return -1;
+    }else if(initDynamicsSimulator() == -1){
+        return -1;
+    }else if(initMainCommunicatorSensors() == -1){
+        return -1;
+    }else if(initAuxilliaryCommunicatorSensors() == -1){
+        return -1;
+    }else if(initCalibration() == -1){
+        return -1;
+    }else if(initRvizVisualizationMarkers() == -1){
+        return -1;
+    }else if(startClockAndThreads() == -1){
+        return -1;
+    }
+
+    return 0;
+}
+
+int8_t Uav_Dynamics::getParamsFromRos(){
     const std::string SIM_PARAMS_PATH = "/uav/sim_params/";
-    if(!ros::param::get(SIM_PARAMS_PATH + "use_sim_time",       useSimTime_ )       ||
-       !ros::param::get(SIM_PARAMS_PATH + "lat_ref",            latRef_)            ||
-       !ros::param::get(SIM_PARAMS_PATH + "lon_ref",            lonRef_)            ||
-       !ros::param::get(SIM_PARAMS_PATH + "alt_ref",            altRef_)            ||
-       !node_.getParam("vehicle",                               vehicle)            ||
-       !node_.getParam("dynamics",                              dynamicsTypeName_)  ||
-       !ros::param::get(SIM_PARAMS_PATH + "init_pose",          initPose)){
+    if(!ros::param::get(SIM_PARAMS_PATH + "use_sim_time",       useSimTime_ )               ||
+       !ros::param::get(SIM_PARAMS_PATH + "lat_ref",            latRef_)                    ||
+       !ros::param::get(SIM_PARAMS_PATH + "lon_ref",            lonRef_)                    ||
+       !ros::param::get(SIM_PARAMS_PATH + "alt_ref",            altRef_)                    ||
+       !node_.getParam("vehicle",                               vehicleName_)               ||
+       !node_.getParam("dynamics",                              dynamicsTypeName_)          ||
+       !ros::param::get(SIM_PARAMS_PATH + "init_pose",          initPose_)                  ||
+       !ros::param::get(SIM_PARAMS_PATH + "esc_status",         isEscStatusEnabled_)        ||
+       !ros::param::get(SIM_PARAMS_PATH + "ice_status",         isIceStatusEnabled_)        ||
+       !ros::param::get(SIM_PARAMS_PATH + "fuel_tank_status",   isFuelTankStatusEnabled_)   ||
+       !ros::param::get(SIM_PARAMS_PATH + "battery_status",     isBatteryStatusEnabled_)){
         ROS_ERROR("Dynamics: There is no at least one of required simulator parameters.");
         return -1;
     }
-    /**
-     * @brief Init dynamics simulator
-     * @todo it's better to use some build method instead of manually call new
-     */
+    return 0;
+}
+
+int8_t Uav_Dynamics::initDynamicsSimulator(){
     const char DYNAMICS_NAME_FLIGHTGOGGLES[] = "flightgoggles_multicopter";
     const char DYNAMICS_NAME_INNO_VTOL[] = "inno_vtol";
     const char VEHICLE_NAME_INNOPOLIS_VTOL[] = "innopolis_vtol";
@@ -119,9 +137,9 @@ int8_t Uav_Dynamics::init(){
         return -1;
     }
 
-    if(vehicle == VEHICLE_NAME_INNOPOLIS_VTOL){
+    if(vehicleName_ == VEHICLE_NAME_INNOPOLIS_VTOL){
         vehicleType_ = VEHICLE_INNOPOLIS_VTOL;
-    }else if(vehicle == VEHICLE_NAME_IRIS){
+    }else if(vehicleName_ == VEHICLE_NAME_IRIS){
         vehicleType_ = VEHICLE_IRIS;
     }else{
         ROS_ERROR("Wrong vehicle. It should be 'innopolis_vtol' or 'iris'");
@@ -134,13 +152,27 @@ int8_t Uav_Dynamics::init(){
     }
     geodeticConverter_.initialiseReference(latRef_, lonRef_, altRef_);
 
-    Eigen::Vector3d initPosition(initPose.at(0), initPose.at(1), initPose.at(2));
-    Eigen::Quaterniond initAttitude(initPose.at(6), initPose.at(3), initPose.at(4), initPose.at(5));
+    Eigen::Vector3d initPosition(initPose_.at(0), initPose_.at(1), initPose_.at(2));
+    Eigen::Quaterniond initAttitude(initPose_.at(6), initPose_.at(3), initPose_.at(4), initPose_.at(5));
     initAttitude.normalize();
     uavDynamicsSim_->setInitialPosition(initPosition, initAttitude);
 
-    // Init subscribers and publishers for communicator
-    // Imu should has up to 100ms sim time buffer (see issue #63)
+    return 0;
+}
+
+int8_t Uav_Dynamics::initMainCommunicatorSensors(){
+    static constexpr char IMU_TOPIC_NAME[]                 = "/uav/imu";
+    static constexpr char MAG_TOPIC_NAME[]                 = "/uav/mag";
+    static constexpr char GPS_POSE_TOPIC_NAME[]            = "/uav/gps_position";
+    static constexpr char ATTITUDE_TOPIC_NAME[]            = "/uav/attitude";
+    static constexpr char VELOCITY_TOPIC_NAME[]            = "/uav/velocity";
+    static constexpr char ACTUATOR_TOPIC_NAME[]            = "/uav/actuators";
+    static constexpr char ARM_TOPIC_NAME[]                 = "/uav/arm";
+
+    static constexpr char RAW_AIR_DATA_TOPIC_NAME[]        = "/uav/raw_air_data";
+    static constexpr char STATIC_TEMPERATURE_TOPIC_NAME[]  = "/uav/static_temperature";
+    static constexpr char STATIC_PRESSURE_TOPIC_NAME[]     = "/uav/static_pressure";
+
     actuatorsSub_ = node_.subscribe(ACTUATOR_TOPIC_NAME, 1, &Uav_Dynamics::actuatorsCallback, this);
     armSub_ = node_.subscribe(ARM_TOPIC_NAME, 1, &Uav_Dynamics::armCallback, this);
 
@@ -154,10 +186,36 @@ int8_t Uav_Dynamics::init(){
     staticTemperaturePub_ = node_.advertise<uavcan_msgs::StaticTemperature>(STATIC_TEMPERATURE_TOPIC_NAME, 1);
     staticPressurePub_ = node_.advertise<uavcan_msgs::StaticPressure>(STATIC_PRESSURE_TOPIC_NAME, 1);
 
-    // Calibration
-    calibrationSub_ = node_.subscribe("/uav/calibration", 1, &Uav_Dynamics::calibrationCallback, this);
+    return 0;
+}
 
-    // Other publishers and subscribers
+int8_t Uav_Dynamics::initAuxilliaryCommunicatorSensors(){
+    static constexpr char ICE_STATUS_TOPIC[]       = "/uav/ice_status";
+    static constexpr char FUEL_TANK_STATUS_TOPIC[] = "/uav/fuel_tank";
+    static constexpr char BATTERY_STATUS_TOPIC[]   = "/uav/battery";
+
+    if(isEscStatusEnabled_){
+        escStatusSensor_.enable();
+    }
+    if(isIceStatusEnabled_){
+        iceStatusSensor_.enable();
+    }
+    if(isFuelTankStatusEnabled_){
+        fuelTankStatusSensor_.enable();
+    }
+    if(isBatteryStatusEnabled_){
+        batteryInfoStatusSensor_.enable();
+    }
+
+    return 0;
+}
+
+int8_t Uav_Dynamics::initCalibration(){
+    calibrationSub_ = node_.subscribe("/uav/calibration", 1, &Uav_Dynamics::calibrationCallback, this);
+    return 0;
+}
+
+int8_t Uav_Dynamics::initRvizVisualizationMarkers(){
     initMarkers();
     totalForcePub_ = node_.advertise<visualization_msgs::Marker>("/uav/Ftotal", 1);
     aeroForcePub_ = node_.advertise<visualization_msgs::Marker>("/uav/Faero", 1);
@@ -182,6 +240,10 @@ int8_t Uav_Dynamics::init(){
 
     velocityPub_ = node_.advertise<visualization_msgs::Marker>("/uav/linearVelocity", 1);
 
+    return 0;
+}
+
+int8_t Uav_Dynamics::startClockAndThreads(){
     if(useSimTime_){
         clockPub_ = node_.advertise<rosgraph_msgs::Clock>("/clock", 1);
         rosgraph_msgs::Clock clock_time;
@@ -192,14 +254,13 @@ int8_t Uav_Dynamics::init(){
         currentTime_ = ros::Time::now();
     }
 
-    normalDistribution_ = std::normal_distribution<double>(0.0, 1.0);
 
     simulationLoopTimer_ = node_.createWallTimer(ros::WallDuration(dt_secs_/clockScale_),
                                                  &Uav_Dynamics::simulationLoopTimerCallback,
                                                  this);
     simulationLoopTimer_.start();
 
-    proceedDynamicsTask = std::thread(&Uav_Dynamics::proceedQuadcopterDynamics, this, dt_secs_);
+    proceedDynamicsTask = std::thread(&Uav_Dynamics::proceedDynamics, this, dt_secs_);
     proceedDynamicsTask.detach();
 
     publishToRosTask = std::thread(&Uav_Dynamics::publishToRos, this, ROS_PUB_PERIOD_SEC);
@@ -207,11 +268,7 @@ int8_t Uav_Dynamics::init(){
 
     diagnosticTask = std::thread(&Uav_Dynamics::performDiagnostic, this, 1.0);
     diagnosticTask.detach();
-
-
-    return 0;
 }
-
 
 /**
  * @brief Main Simulator loop
@@ -304,7 +361,7 @@ void Uav_Dynamics::performDiagnostic(double periodSec){
 // including time and therefore runs PX4 until it has initialized and responds with an actautor
 // message.
 // But instead of waiting actuators cmd, we will wait for an arming
-void Uav_Dynamics::proceedQuadcopterDynamics(double period){
+void Uav_Dynamics::proceedDynamics(double period){
     while(ros::ok()){
         auto crnt_time = std::chrono::system_clock::now();
         auto sleed_period = std::chrono::milliseconds(int(1000 * period * clockScale_));
@@ -405,6 +462,17 @@ void Uav_Dynamics::publishStateToCommunicator(){
         publishUavStaticTemperature(temperatureKelvin);
         staticTemperatureLastPubTimeSec_ = crntTimeSec;
     }
+
+    std::vector<double> motorsRpm;
+    if(uavDynamicsSim_->getMotorsRpm(motorsRpm)){
+        escStatusSensor_.publish(motorsRpm);
+        if(motorsRpm.size() == 5){
+            iceStatusSensor_.publish(motorsRpm[4]);
+        }
+    }
+    double fuelLevel = 1.0, batteryPercentage = 0.90;
+    fuelTankStatusSensor_.publish(fuelLevel);
+    batteryInfoStatusSensor_.publish(batteryPercentage);
 }
 
 void Uav_Dynamics::publishToRos(double period){

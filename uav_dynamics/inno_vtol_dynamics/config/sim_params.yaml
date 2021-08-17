@@ -11,3 +11,9 @@ alt_ref : -6.5
 # X, Y, Z, roll, pitch, yaw, weight
 init_pose: [0.00, 0.00, 0.0,
             0.00, 0.00, +0.00, +1.00]
+
+# 4. Additional sensors set
+esc_status: true
+ice_status: true
+fuel_tank_status: true
+battery_status: true

@@ -66,6 +66,7 @@ struct State{
     Eigen::Vector3d MmotorsTotal;                   // N*m
     std::array<Eigen::Vector3d, 5> Fmotors;         // N
     std::array<Eigen::Vector3d, 5> Mmotors;         // N*m
+    std::array<double, 5> motorsRpm;                // rpm
     Eigen::Vector3d Fspecific;                      // N
     Eigen::Vector3d Ftotal;                         // N
     Eigen::Vector3d Mtotal;                         // N*m
@@ -137,6 +138,7 @@ class InnoVtolDynamicsSim : public UavDynamicsSimBase{
         virtual Eigen::Vector3d getVehicleVelocity() const override;
         virtual Eigen::Vector3d getVehicleAngularVelocity() const override;
         virtual void getIMUMeasurement(Eigen::Vector3d& accOut, Eigen::Vector3d& gyroOut) override;
+        virtual bool getMotorsRpm(std::vector<double>& motorsRpm) override;
 
         /**
          * @note These methods should be public for debug only (publish to ros topic)

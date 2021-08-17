@@ -518,9 +518,9 @@ void InnoVtolDynamicsSim::calculateNewState(const Eigen::Vector3d& Maero,
                                         const Eigen::Vector3d& Faero,
                                         const std::vector<double>& actuator,
                                         double dt_sec){
-    Eigen::VectorXd thrust(5), torque(5), rpm(5);
+    Eigen::VectorXd thrust(5), torque(5);
     for(size_t idx = 0; idx < 5; idx++){
-        thruster(actuator[idx], thrust[idx], torque[idx], rpm[idx]);
+        thruster(actuator[idx], thrust[idx], torque[idx], state_.motorsRpm[idx]);
     }
 
     for(size_t idx = 0; idx < 4; idx++){
@@ -861,4 +861,12 @@ const std::array<Eigen::Vector3d, 5>& InnoVtolDynamicsSim::getFmotors() const{
 }
 const std::array<Eigen::Vector3d, 5>& InnoVtolDynamicsSim::getMmotors() const{
     return state_.Mmotors;
+}
+
+bool InnoVtolDynamicsSim::getMotorsRpm(std::vector<double>& motorsRpm) {
+    motorsRpm.push_back(state_.motorsRpm[0]);
+    motorsRpm.push_back(state_.motorsRpm[1]);
+    motorsRpm.push_back(state_.motorsRpm[2]);
+    motorsRpm.push_back(state_.motorsRpm[3]);
+    return true;
 }
