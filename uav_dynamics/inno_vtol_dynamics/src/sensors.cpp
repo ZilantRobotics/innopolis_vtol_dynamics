@@ -32,7 +32,7 @@ bool EscStatusSensor::publish(const std::vector<double>& rpm) {
         escStatusMsg.esc_index = nextEscIdx_;
         escStatusMsg.rpm = rpm[nextEscIdx_];
         publisher_.publish(escStatusMsg);
-        nextPubTimeSec_ += PERIOD / rpm.size();
+        nextPubTimeSec_ = crntTimeSec + PERIOD / rpm.size();
         nextEscIdx_++;
     }
 }
@@ -46,7 +46,7 @@ bool IceStatusSensor::publish(double rpm) {
         uavcan_msgs::IceReciprocatingStatus iceStatusMsg;
         iceStatusMsg.engine_speed_rpm = rpm;
         publisher_.publish(iceStatusMsg);
-        nextPubTimeSec_ += PERIOD;
+        nextPubTimeSec_ = crntTimeSec + PERIOD;
     }
 }
 
@@ -59,7 +59,7 @@ bool FuelTankStatusSensor::publish(double fuelLevel) {
         uavcan_msgs::IceFuelTankStatus fuelTankMsg;
         fuelTankMsg.available_fuel_volume_percent = fuelLevel;
         publisher_.publish(fuelTankMsg);
-        nextPubTimeSec_ += PERIOD;
+        nextPubTimeSec_ = crntTimeSec + PERIOD;
     }
 }
 
@@ -75,6 +75,6 @@ bool BatteryInfoStatusSensor::publish(double percentage) {
         batteryInfoMsg.percentage = percentage;
         batteryInfoMsg.capacity = 6;
         publisher_.publish(batteryInfoMsg);
-        nextPubTimeSec_ += PERIOD;
+        nextPubTimeSec_ = crntTimeSec + PERIOD;
     }
 }
