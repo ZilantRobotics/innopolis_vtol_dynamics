@@ -1,10 +1,12 @@
 # Innopolis VTOL dynamics simulator
 
-Innopolis VTOL dynamics simulator is a set of ROS packages suggested full UAV simulation.
+Innopolis VTOL dynamics simulator is a set of ROS packages suggested full simulation for UAV based on PX4.
 
 ![dynamics](img/dynamics.png?raw=true "dynamics")
 
-Typical PX4 simulations ways are [SITL and HITL](https://docs.px4.io/master/en/simulation/). While SITL allows you to run simulation and flight stack fully on your computer, HITL allows to run flight stack in real device in special `HITL mode`.
+Typical PX4 simulations ways are [SITL and HITL](https://docs.px4.io/master/en/simulation/):
+- SITL (software in the loop) allows you to run simulation and flight stack fully on your computer, it doesn't cover hardware related modules,
+- HITL (hardware in the loop) allows to run flight stack on real device, but it still doesn't cover actuator and sensor related modules because autopilot works in special mode and uses special MAVLink HITL messages instead of real actuators and sensor drivers.
 
 The key feature of this simulation is to run it in such way that the hardware knows nothing about simulation. This could be possible using uavcan. For users, expecialy those using the uavcan network for uav, it can be very usefull, because it covers more PX4 modules than standard SITL and HITL.
 
@@ -12,29 +14,26 @@ So, Inno VTOL dynamics simulation allows to run simulation in both SITL and `uav
 
 # Design
 
-Innopolis VTOL dynamics simulator is divided into modules to make it possibly simply change airframe, dynamics and use either default mavlink or suggested uavcan mode.
+Innopolis VTOL dynamics simulator is designed to support several dynamics and both `MAVLink SITL` and `UAVCAN HITL` modes. As an example, beside `inno_vtol` dynamics [flightgoggles_multicopter](https://github.com/mit-aera/FlightGoggles) dynamics was integrated into simulator as well. You also may use different airframes based on your version of PX4-Autopilot.
 
-You may write your own `dynamics`, `airframe`, use any `vehicle` (to simulate PX4 flight stack in SITL) in both UAVCAN HITL and SITL modes. At that moment this simulator supports following features:
+At that moment following combination of dynamics and airframes are supported:
 
-| № | dynamics | airframe | Vehicle (for SITL) |
+| № | dynamics | HITL airframe | SITL airframe (vehicle) |
 | - | -------- | -------- | ------------------ |
 | 1 | inno_vtol | inno_standard_vtol [(13070)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d/airframes/13070_innopolis_vtol) | innopolis_vtol [(1050)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/1050_innopolis_vtol)    |
 | 2 | [flightgoggles_multicopter](https://github.com/mit-aera/FlightGoggles)    | iris [(10016)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d/airframes/10016_3dr_iris)               | iris [(10016)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/10016_iris) |
 
-The simulator is divided into following components:
+The simulator is divided into following main components:
 
-1. UAV dynamics simulator based on `Innopolis VTOL` (quadcopter and plane dynamics with aerodynamics coefficients), `flight_goggles multicopter` dynamics or something else
-2. Communication with `PX4` flight stack in `HITL (via UAVCAN)` and `SITL (via MAVLink)` modes
-3. Bridge for interaction with `Inno Simulator` through ROS
-4. `Reverse mixer`
+1. `UAV dynamics` is the main node that handles actuator commands from communicator, performs dynamics simulation and publishes vehicle and sensors states.
+2. `Communicator` is the set of nodes which communicate with `PX4 flight stack` in HITL (via UAVCAN) and SITL (via MAVLink) modes.
+3. `inno_sim_interface` is a bridge for interaction with `Inno Simulator` through ROS.
 
-The design of simulator shown below.
+The design of the simulator is shown below.
 
 ![scheme](img/scheme.png?raw=true "scheme")
 
-As you can see, UavDynamics is a separate ROS node that performs communication via topics and it doesn't matter which type of communication with flight stack you are using.
-
-To communicate with flight stack via communicator it subscribes on following topics:
+To communicate with flight stack via communicator `UAV dynamics` node subscribes on following topics:
 
 | № | UAVCAN->ROS topics         | msg                                   |
 | - | -------------------------- | ------------------------------------- |
@@ -56,9 +55,9 @@ and publishes to following topics:
 | 9 | /uav/fuel_tank_status      | uavcan_msgs/IceFuelTankStatus             |
 | 10| /uav/battery_status        | [sensor_msgs/BatteryState](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/BatteryState.html)    |
 
-Last 4 topics above are auxilliary and you may enable/disable them in [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml) config file, other topics are necessary.
+Here topics 1-6 are necessary for any simulation. Last 4 topics are auxilliary and you may enable/disable them in [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml) config file. You may implement your own sensors in [sensors.cpp](uav_dynamics/inno_vtol_dynamics/src/sensors.cpp) file.
 
-To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) as physics engine via [InnoSimInterface ros bridge package](https://github.com/InnopolisAero/inno_sim_interface) it publishes and subscribes on following topics.
+To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) as physics engine via [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) it publishes and subscribes on following topics.
 
 | № | topic             | msg                             |
 | - | ----------------- | ------------------------------- |
@@ -69,7 +68,7 @@ To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulat
 
 # Installation and building:
 
-It's assumed that you are using Ubuntu 18.04 with installed ROS and created catkin_ws. 
+It's assumed that you are using Ubuntu 18.04 with installed ROS and created catkin_ws. Ubuntu 20.04 may works as well, but we didn't test it.
 
 The whole system required several packages.
 
