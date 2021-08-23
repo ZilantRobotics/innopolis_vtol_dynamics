@@ -466,8 +466,21 @@ void Uav_Dynamics::publishStateToCommunicator(){
             iceStatusSensor_.publish(motorsRpm[4]);
         }
     }
-    double fuelLevel = 1.0, batteryPercentage = 0.90;
-    fuelTankStatusSensor_.publish(fuelLevel);
+
+    ///< Simplified Fuel tank model
+    ///< todo: refactor it
+    static double fuelLevelPercentage = 100.0;
+    if(motorsRpm.size() == 5 && motorsRpm[4] >= 1) {
+        fuelLevelPercentage -= 0.002;
+        if(fuelLevelPercentage < 0) {
+            fuelLevelPercentage = 0;
+        }
+    }
+    fuelTankStatusSensor_.publish(fuelLevelPercentage);
+
+    ///< Battery is just constant
+    ///< todo: add model
+    static double batteryPercentage = 90.0;
     batteryInfoStatusSensor_.publish(batteryPercentage);
 }
 

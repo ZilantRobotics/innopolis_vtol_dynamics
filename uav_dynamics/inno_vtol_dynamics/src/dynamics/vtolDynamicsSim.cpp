@@ -868,5 +868,6 @@ bool InnoVtolDynamicsSim::getMotorsRpm(std::vector<double>& motorsRpm) {
     motorsRpm.push_back(state_.motorsRpm[1]);
     motorsRpm.push_back(state_.motorsRpm[2]);
     motorsRpm.push_back(state_.motorsRpm[3]);
+    motorsRpm.push_back(state_.motorsRpm[4]);
     return true;
 }

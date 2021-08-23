@@ -53,11 +53,11 @@ bool IceStatusSensor::publish(double rpm) {
 FuelTankStatusSensor::FuelTankStatusSensor(ros::NodeHandle* nh, const char* topic, double period) : BaseSensor(nh, period){
     publisher_ = node_handler_->advertise<uavcan_msgs::IceFuelTankStatus>(topic, 16);
 }
-bool FuelTankStatusSensor::publish(double fuelLevel) {
+bool FuelTankStatusSensor::publish(double fuelLevelPercentage) {
     auto crntTimeSec = ros::Time::now().toSec();
     if(isEnabled_ && (nextPubTimeSec_ < crntTimeSec)){
         uavcan_msgs::IceFuelTankStatus fuelTankMsg;
-        fuelTankMsg.available_fuel_volume_percent = fuelLevel;
+        fuelTankMsg.available_fuel_volume_percent = fuelLevelPercentage;
         publisher_.publish(fuelTankMsg);
         nextPubTimeSec_ = crntTimeSec + PERIOD;
     }
