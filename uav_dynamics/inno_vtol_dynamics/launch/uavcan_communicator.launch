@@ -1,4 +1,4 @@
 <launch>
     <rosparam file="$(find innopolis_vtol_dynamics)/config/uavcan_params.yaml" command="load" ns="uavcan/" />
-    <node pkg="uavcan_communicator" type="uavcan_communicator" name="px4_uavcan_communicator" output="screen"/>
+    <node pkg="uavcan_communicator" type="uavcan_communicator" name="px4_uavcan_communicator" output="screen" required="true"/>
 </launch>
