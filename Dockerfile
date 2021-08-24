@@ -21,7 +21,6 @@ RUN apt-get update                                                              
 COPY uav_dynamics/ uav_dynamics/
 COPY inno_sim_interface/ inno_sim_interface/
 COPY communicators/ communicators/
-COPY scripts/uavcan_tools/ scripts/uavcan_tools/
 COPY catkin_build.sh catkin_build.sh
 
 
@@ -57,6 +56,9 @@ RUN sudo apt-get install -y udev
 RUN source /opt/ros/melodic/setup.bash                                          &&  \
     cd ../../                                                                   &&  \
     catkin build
+
+COPY scripts/ scripts/
+COPY scripts/uavcan_tools/ scripts/uavcan_tools/
 
 
 CMD echo "main process has been started"                                        &&  \
