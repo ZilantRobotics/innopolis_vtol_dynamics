@@ -15,17 +15,8 @@ RUN apt-get update                                                              
                         python-pip                                                  \
                         tcpdump
 
-
-# 2. Copy repository
-# @todo use git clone with submodules instead of COPY
-COPY uav_dynamics/ uav_dynamics/
-COPY inno_sim_interface/ inno_sim_interface/
-COPY communicators/ communicators/
-COPY catkin_build.sh catkin_build.sh
-
-
-# 3. Install requirements
-# 3.1. innopolis_vtol_dynamics
+# 2. Install packages requirements
+# 2.1. innopolis_vtol_dynamics
 RUN sudo apt-get install -y ros-melodic-mav-msgs                                    \
                             ros-melodic-tf                                          \
                             ros-melodic-tf2                                         \
@@ -33,32 +24,40 @@ RUN sudo apt-get install -y ros-melodic-mav-msgs                                
                             ros-melodic-mavlink                                     \
                             ros-melodic-mavros
 
-# 3.2. geographiclib_conversions
+# 2.2. inno-sim-interface
+RUN sudo apt-get install -y ros-melodic-rosauth                                 &&  \
+    pip install bson pymongo protobuf Pillow twisted                            &&  \
+    sudo apt-get install -y ros-melodic-turtlesim
+
+# 2.3 uavcan_tools
+RUN sudo apt-get install -y udev
+
+# 3. Copy repository
+# @todo use git clone with submodules instead of COPY
+COPY uav_dynamics/ uav_dynamics/
+COPY inno_sim_interface/ inno_sim_interface/
+COPY communicators/ communicators/
+COPY catkin_build.sh catkin_build.sh
+
+# 4. Setup packages
+# 4.1. geographiclib_conversions
 RUN mkdir -p /usr/local/share/GeographicLib/magnetic                            &&  \
     cd uav_dynamics/geographiclib_conversions/wmm2020/magnetic                  &&  \
     cp wmm2020.wmm /usr/local/share/GeographicLib/magnetic/wmm2020.wmm          &&  \
     cp wmm2020.wmm.cof /usr/local/share/GeographicLib/magnetic/wmm2020.wmm.cof
 
-# 3.3. inno-sim-interface
-RUN sudo apt-get install -y ros-melodic-rosauth                                 &&  \
-    pip install bson pymongo protobuf Pillow twisted                            &&  \
-    sudo apt-get install -y ros-melodic-turtlesim
-
-# 3.4. drone_communicators
+# 4.2. drone_communicators
 RUN cd communicators/drone_communicators                                        &&  \
     ./scripts/install_requirements.sh                                           &&  \
     ./scripts/install_libuavcan.sh
 
-# 3.5 uavcan_tools
-RUN sudo apt-get install -y udev
-
-# 4. Build ROS
+# 5. Build ROS
 RUN source /opt/ros/melodic/setup.bash                                          &&  \
     cd ../../                                                                   &&  \
     catkin build
 
+# 6. Copy scripts
 COPY scripts/ scripts/
-COPY scripts/uavcan_tools/ scripts/uavcan_tools/
 
 
 CMD echo "main process has been started"                                        &&  \
