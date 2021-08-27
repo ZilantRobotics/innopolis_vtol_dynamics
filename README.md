@@ -99,14 +99,14 @@ git clone https://github.com/InnopolisAero/innopolis_vtol_dynamics.git --recursi
 
 ### 2.2. (optional) PX4 Autopilot
 
-You need [following version of PX4 Autopilot](https://github.com/PonomarevDA/Firmware/tree/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d/airframes).
+You need [following version of PX4 Autopilot](https://github.com/InnopolisAero/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics).
 
 For installation use official instruction and [InnopolisAero/PX4-Autopilot](https://github.com/InnopolisAero/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics).
 
 To build either in SITL or in TRUE HITL mode run:
 
 ```
-cd Firmware
+cd PX4-Autopilot
 git checkout px4_v1.12.1_inno_vtol_dynamics
 git submodule update --init --recursive && make clean && make distclean
 ```
@@ -124,13 +124,13 @@ And for HITL mode for Cuav V5+ type line below. If you use another hardware, rea
 make px4_fmu-v5_default upload
 ```
 
-Don't forget to add these lines to your `.bashrc` file, don't forget to change `~/Firmware` to your actual Firmware path
+You you want to use SITL, don't forget to add these lines to your `.bashrc` file, don't forget to change `~/PX4-Autopilot` to your actual Firmware path
 
 ```
 source ~/catkin_ws/devel/setup.bash    # (optional)
-source ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
-export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/Firmware
-export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/Firmware/Tools/sitl_gazebo
+source ~/PX4-Autopilot/Tools/setup_gazebo.bash ~/PX4-Autopilot ~/PX4-Autopilot/build/px4_sitl_default
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot/Tools/sitl_gazebo
 ```
 
 ### 2.3. (optional) InnoSimulator
