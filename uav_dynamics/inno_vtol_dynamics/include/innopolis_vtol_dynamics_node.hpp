@@ -19,8 +19,6 @@
 #include <ros/time.h>
 #include <tf2_ros/transform_broadcaster.h>
 
-#include <mav_msgs/RateThrust.h>
-#include <mav_msgs/Actuators.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/Joy.h>
 #include <std_msgs/Float32.h>

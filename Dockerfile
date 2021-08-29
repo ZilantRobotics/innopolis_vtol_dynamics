@@ -1,4 +1,6 @@
-FROM ros:melodic
+ARG ROS_DISTRO=noetic
+
+FROM ros:$ROS_DISTRO
 LABEL description="Inno VTOL simulator"
 SHELL ["/bin/bash", "-c"]
 WORKDIR /catkin_ws/src/inno_vtol_simulator
@@ -9,25 +11,24 @@ RUN apt-get update                                                              
     apt-get upgrade -y                                                          &&  \
     apt-get install -y  git                                                         \
                         iproute2                                                    \
-                        ros-melodic-catkin                                          \
-                        python-catkin-tools                                         \
+                        ros-$ROS_DISTRO-catkin                                      \
                         net-tools                                                   \
-                        python-pip                                                  \
-                        tcpdump
+                        tcpdump                                                     \
+                        python3-pip                                                 \
+                        python3-catkin-tools
+RUN if [[ "$ROS_DISTRO" = "melodic" ]] ; then apt-get install -y python-pip python-catkin-tools ; fi
 
 # 2. Install packages requirements
 # 2.1. innopolis_vtol_dynamics
-RUN sudo apt-get install -y ros-melodic-mav-msgs                                    \
-                            ros-melodic-tf                                          \
-                            ros-melodic-tf2                                         \
-                            ros-melodic-tf2-ros                                     \
-                            ros-melodic-mavlink                                     \
-                            ros-melodic-mavros
+RUN sudo apt-get install -y ros-$ROS_DISTRO-mavros                                  \
+                            ros-$ROS_DISTRO-mavlink                                 \
+                            ros-$ROS_DISTRO-tf                                      \
+                            ros-$ROS_DISTRO-tf2                                     \
+                            ros-$ROS_DISTRO-tf2-ros
 
 # 2.2. inno-sim-interface
-RUN sudo apt-get install -y ros-melodic-rosauth                                 &&  \
-    pip install bson pymongo protobuf Pillow twisted                            &&  \
-    sudo apt-get install -y ros-melodic-turtlesim
+RUN sudo apt-get install -y ros-$ROS_DISTRO-rosauth                             &&  \
+    pip install bson pymongo protobuf Pillow twisted
 
 # 2.3 uavcan_tools
 RUN sudo apt-get install -y udev
@@ -52,7 +53,7 @@ RUN cd communicators/drone_communicators                                        
     ./scripts/install_libuavcan.sh
 
 # 5. Build ROS
-RUN source /opt/ros/melodic/setup.bash                                          &&  \
+RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
     cd ../../                                                                   &&  \
     catkin build
 
@@ -61,7 +62,7 @@ COPY scripts/ scripts/
 
 
 CMD echo "main process has been started"                                        &&  \
-    source /opt/ros/melodic/setup.bash                                          &&  \
+    source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
     source /catkin_ws/devel/setup.bash                                          &&  \
     roslaunch innopolis_vtol_dynamics hitl.launch                               &&  \
     echo "container has been finished"
