@@ -733,7 +733,7 @@ size_t InnoVtolDynamicsSim::search(const Eigen::MatrixXd& matrix, double key) co
 
 // first collomn of the table must be sorted!
 size_t InnoVtolDynamicsSim::findRow(const Eigen::MatrixXd& table, double value) const{
-    size_t row;
+    size_t row = 0;
     size_t c = table.rows();
     while(row + 2 < c && table(row + 1, 0) < value){
         row++;
