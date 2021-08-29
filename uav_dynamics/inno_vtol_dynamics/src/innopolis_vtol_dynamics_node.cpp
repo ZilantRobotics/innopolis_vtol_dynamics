@@ -56,7 +56,7 @@ int main(int argc, char **argv){
     if(uav_dynamics_node.init() == -1){
         ROS_ERROR("Shutdown.");
         ros::shutdown();
-        return 0;
+        return -1;
     }
 
     ros::spin();

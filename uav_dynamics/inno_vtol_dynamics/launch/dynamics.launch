@@ -43,7 +43,7 @@
 
     <!-- 3. Run dynamics simulation -->
     <include file="$(find innopolis_vtol_dynamics)/launch/load_parameters.launch"/>
-    <node pkg="innopolis_vtol_dynamics" type="node" name="inno_dynamics_sim" output="screen">
+    <node pkg="innopolis_vtol_dynamics" type="node" name="inno_dynamics_sim" output="screen" required="true">
         <param name="vehicle"   value="$(arg vehicle)"  />
         <param name="dynamics"  value="$(arg dynamics)" />
     </node>
