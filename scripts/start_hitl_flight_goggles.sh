@@ -2,7 +2,7 @@
 
 cd "$(dirname "$0")"
 source docker/config.sh
-source /opt/ros/melodic/setup.bash
+source /opt/ros/$ROS_DISTRO/setup.bash
 source /catkin_ws/devel/setup.bash
 
 # if DEV_NAME env variable is not initialized, this script will try to define it on his own
