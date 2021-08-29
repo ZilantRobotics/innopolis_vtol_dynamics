@@ -54,7 +54,7 @@ public:
         ACC_5_TURNED_LEFT,          // ROLL POSITIVE pi/2
         ACC_6_TURNED_RIGHT,         // ROLL NEGATIVE pi/2
     };
-    virtual int8_t calibrate(CalibrationType_t calibrationType) {}
+    virtual int8_t calibrate(CalibrationType_t calibrationType) { return -1; }
 };
 
 

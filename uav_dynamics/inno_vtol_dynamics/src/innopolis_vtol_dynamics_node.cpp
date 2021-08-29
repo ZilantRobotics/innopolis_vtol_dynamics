@@ -264,6 +264,8 @@ int8_t Uav_Dynamics::startClockAndThreads(){
 
     diagnosticTask = std::thread(&Uav_Dynamics::performDiagnostic, this, 1.0);
     diagnosticTask.detach();
+
+    return 0;
 }
 
 /**
