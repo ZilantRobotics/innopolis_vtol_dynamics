@@ -35,6 +35,7 @@ bool EscStatusSensor::publish(const std::vector<double>& rpm) {
         nextPubTimeSec_ = crntTimeSec + PERIOD / rpm.size();
         nextEscIdx_++;
     }
+    return true;
 }
 
 IceStatusSensor::IceStatusSensor(ros::NodeHandle* nh, const char* topic, double period) : BaseSensor(nh, period){
@@ -48,6 +49,7 @@ bool IceStatusSensor::publish(double rpm) {
         publisher_.publish(iceStatusMsg);
         nextPubTimeSec_ = crntTimeSec + PERIOD;
     }
+    return true;
 }
 
 FuelTankStatusSensor::FuelTankStatusSensor(ros::NodeHandle* nh, const char* topic, double period) : BaseSensor(nh, period){
@@ -61,6 +63,7 @@ bool FuelTankStatusSensor::publish(double fuelLevelPercentage) {
         publisher_.publish(fuelTankMsg);
         nextPubTimeSec_ = crntTimeSec + PERIOD;
     }
+    return true;
 }
 
 
@@ -77,4 +80,5 @@ bool BatteryInfoStatusSensor::publish(double percentage) {
         publisher_.publish(batteryInfoMsg);
         nextPubTimeSec_ = crntTimeSec + PERIOD;
     }
+    return true;
 }

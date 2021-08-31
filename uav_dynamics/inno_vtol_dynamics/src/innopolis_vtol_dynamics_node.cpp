@@ -47,7 +47,7 @@ const std::string MOTOR_NAMES[5] = {"motor0",
 
 int main(int argc, char **argv){
     ros::init(argc, argv, "innopolis_vtol_dynamics_node");
-    if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
+    if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info) ) {
         ros::console::notifyLoggerLevelsChanged();
     }
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv){
     if(uav_dynamics_node.init() == -1){
         ROS_ERROR("Shutdown.");
         ros::shutdown();
-        return 0;
+        return -1;
     }
 
     ros::spin();
@@ -240,6 +240,7 @@ int8_t Uav_Dynamics::initRvizVisualizationMarkers(){
 }
 
 int8_t Uav_Dynamics::startClockAndThreads(){
+    ros::Duration(0.1).sleep();
     if(useSimTime_){
         clockPub_ = node_.advertise<rosgraph_msgs::Clock>("/clock", 1);
         rosgraph_msgs::Clock clock_time;
@@ -264,6 +265,8 @@ int8_t Uav_Dynamics::startClockAndThreads(){
 
     diagnosticTask = std::thread(&Uav_Dynamics::performDiagnostic, this, 1.0);
     diagnosticTask.detach();
+
+    return 0;
 }
 
 /**

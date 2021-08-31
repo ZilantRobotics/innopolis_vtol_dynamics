@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     roslib
     std_msgs
-    mav_msgs
     sensor_msgs
     geometry_msgs
     uavcan_msgs
@@ -25,9 +24,11 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(mavlink)
 
+find_package(Eigen3 REQUIRED)
+
 catkin_package(
     LIBRARIES innopolis_vtol_dynamics
-    CATKIN_DEPENDS roscpp std_msgs mav_msgs sensor_msgs geometry_msgs tf2 tf2_ros roslib message_runtime
+    CATKIN_DEPENDS roscpp std_msgs sensor_msgs geometry_msgs tf2 tf2_ros roslib message_runtime
 )
 
 
@@ -39,6 +40,7 @@ include_directories(
     include/dynamics
     ${catkin_INCLUDE_DIRS}
     ${mavlink_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} src/dynamics/vtolDynamicsSim.cpp

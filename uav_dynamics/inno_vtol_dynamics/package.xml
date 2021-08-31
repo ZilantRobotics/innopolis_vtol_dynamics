@@ -19,7 +19,6 @@
 
   <!-- Message types used -->
   <depend>std_msgs</depend>
-  <depend>mav_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>uavcan_msgs</depend>

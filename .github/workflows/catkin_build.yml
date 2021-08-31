@@ -33,8 +33,7 @@ jobs:
       # 3. Install requirements
       - name: Install innopolis_vtol_dynamics requirements
         run: |
-          sudo apt-get install -y ros-melodic-mav-msgs                                                  \
-                                  ros-melodic-tf                                                        \
+          sudo apt-get install -y ros-melodic-tf                                                        \
                                   ros-melodic-tf2                                                       \
                                   ros-melodic-tf2-ros                                                   \
                                   ros-melodic-mavlink                                                   \
