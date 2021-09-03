@@ -23,6 +23,7 @@ So, Inno VTOL dynamics simulation allows to run simulation in both `SITL` and `u
     - [3.2. Running the simulator](#32-running-the-simulator)
     - [3.3. Loading parameters into a vehicle](#33-loading-parameters-into-a-vehicle)
     - [3.4. InnoSimulator](#34-innosimulator)
+    - [3.5. Example](#35-example)
   - [4. Repos used as references](#4-repos-used-as-references)
   - [5. Tests](#5-tests)
 
@@ -198,6 +199,12 @@ If you set parameter `run_inno_sim_bridge:=true` or leave it by default, you wil
 ```
 
 Then choose a drone and press Launch button.
+
+### 3.5 Example
+
+Check the video below.
+
+[![uavcan vtol dynamics simulator](https://img.youtube.com/vi/e9MREW6tCmE/0.jpg)](https://youtu.be/e9MREW6tCmE)
 
 ## 4. Repos used as references
 
