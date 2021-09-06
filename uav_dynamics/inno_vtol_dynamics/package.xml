@@ -10,6 +10,8 @@
 
   <author>Roman Fedorenko</author>
   <author>Dmitry Ponomarev</author>
+  <author>Ezra Tal</author>
+  <author>Winter Guerra</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
