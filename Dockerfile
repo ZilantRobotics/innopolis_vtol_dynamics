@@ -1,4 +1,4 @@
-ARG ROS_DISTRO=noetic
+ARG ROS_DISTRO=melodic
 
 FROM ros:$ROS_DISTRO
 LABEL description="Inno VTOL simulator"
@@ -24,7 +24,8 @@ RUN sudo apt-get install -y ros-$ROS_DISTRO-mavros                              
                             ros-$ROS_DISTRO-mavlink                                 \
                             ros-$ROS_DISTRO-tf                                      \
                             ros-$ROS_DISTRO-tf2                                     \
-                            ros-$ROS_DISTRO-tf2-ros
+                            ros-$ROS_DISTRO-tf2-ros                                 \
+                            psmisc
 
 # 2.2. inno-sim-interface
 RUN sudo apt-get install -y ros-$ROS_DISTRO-rosauth                             &&  \
@@ -59,7 +60,6 @@ RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      
 
 # 6. Copy scripts
 COPY scripts/ scripts/
-
 
 CMD echo "main process has been started"                                        &&  \
     source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \

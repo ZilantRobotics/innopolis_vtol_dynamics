@@ -1,4 +1,4 @@
-name: catkin_build
+name: tests
 
 on: [push]
 
@@ -48,14 +48,14 @@ jobs:
           cd catkin_ws/src/innopolis_vtol_dynamics/communicators/drone_communicators                &&  \
           ./scripts/install_requirements.sh                                                         &&  \
           ./scripts/install_libuavcan.sh
-      - name: Install inno-sim-interface requirements
-        run: |
-          sudo apt-get install -y ros-melodic-rosauth                                               &&  \
-          pip install bson pymongo protobuf Pillow twisted
 
-      # 4. Build
-      - name: catkin build
+      # 4. Tests
+      - name: tests
         run: |
           source /opt/ros/melodic/setup.bash                                                        &&  \
           cd catkin_ws                                                                              &&  \
-          catkin build
+          catkin build                                                                              &&  \
+          source devel/setup.bash                                                                   &&  \
+          cd src/innopolis_vtol_dynamics/uav_dynamics/inno_vtol_dynamics/                           &&  \
+          sudo apt-get install psmisc                                                               &&  \
+          ./catkin_test.sh
