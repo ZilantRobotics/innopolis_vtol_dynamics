@@ -8,7 +8,6 @@
 #include <Eigen/Geometry>
 #include <random>
 #include <geographiclib_conversions/geodetic_conv.hpp>
-#include "sensors_isa_model.hpp"
 #include "vtolDynamicsSim.hpp"
 
 
@@ -161,28 +160,6 @@ TEST(InnoVtolDynamicsSim, DISABLED_calculateLiftForce){
         CL = vtolDynamicsSim.polyval(polynomialCoeffs, AoA_deg);
         FL = 0.5 * dynamicPressure * (Eigen::Vector3d(0, 1, 0).cross(airspeed.normalized())) * CL;
         std::cout << AoA_deg << " FL = " << FL.transpose() << ", " << airspeed.norm() << std::endl;
-    }
-}
-
-TEST(InnoVtolDynamicsSim, DISABLED_estimate_atmosphere){
-    InnoVtolDynamicsSim vtolDynamicsSim;
-    ASSERT_EQ(vtolDynamicsSim.init(), 0);
-
-    Eigen::Vector3d gpsPosition, linVelNed, enuPosition;
-    float temperatureKelvin, absPressureHpa, diffPressureHpa;
-
-    geodetic_converter::GeodeticConverter geodeticConverter;
-    geodeticConverter.initialiseReference(55.7544426, 48.742684, 0);
-
-    for(double pose = 0; pose <= 100; pose += 10){
-        enuPosition << 0, 0, pose;
-        gpsPosition << 55.7544426, 48.742684, 0;
-        linVelNed << 0, 0, 0;
-        geodeticConverter.enu2Geodetic(enuPosition[0], enuPosition[1], enuPosition[2],
-                                       &gpsPosition[0], &gpsPosition[1], &gpsPosition[2]);
-        SensorModelISA::EstimateAtmosphere(gpsPosition, linVelNed,
-                                           temperatureKelvin, absPressureHpa, diffPressureHpa);
-        std::cout << pose << ": " << temperatureKelvin << ", " << gpsPosition[2] << ", " << absPressureHpa << ", " << diffPressureHpa << std::endl;
     }
 }
 

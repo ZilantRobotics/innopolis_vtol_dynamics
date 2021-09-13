@@ -90,11 +90,18 @@ target_link_libraries(${PROJECT_NAME}_inno_vtol_reverse_mixer_node
 #############
 ## Testing ##
 #############
-catkin_add_gtest(${PROJECT_NAME}-test src/tests/test_vtol_dynamics.cpp)
+catkin_add_gtest(${PROJECT_NAME}-inno-vtol-dynamics-test src/tests/test_vtol_dynamics.cpp)
+if(TARGET ${PROJECT_NAME}-inno-vtol-dynamics-test)
+  target_link_libraries(${PROJECT_NAME}-inno-vtol-dynamics-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+  target_include_directories(${PROJECT_NAME}-inno-vtol-dynamics-test
+                BEFORE
+                PUBLIC ${MAVLINK_INCLUDE_DIRS})
+endif()
 
-if(TARGET ${PROJECT_NAME}-test)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
-  target_include_directories(${PROJECT_NAME}-test
+catkin_add_gtest(${PROJECT_NAME}-isa_model-test src/tests/test_isa_model.cpp)
+if(TARGET ${PROJECT_NAME}-isa_model-test)
+  target_link_libraries(${PROJECT_NAME}-isa_model-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+  target_include_directories(${PROJECT_NAME}-isa_model-test
                 BEFORE
                 PUBLIC ${MAVLINK_INCLUDE_DIRS})
 endif()
