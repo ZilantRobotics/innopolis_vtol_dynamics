@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TAG_NAME=v0.3.0
+TAG_NAME=v0.3.1
 DOCKERHUB_REPOSITOTY=ponomarevda/uavcan_hitl_dynamics_simulator
 
 if uname -m | grep -q 'aarch64'; then
