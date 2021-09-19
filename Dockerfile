@@ -1,4 +1,4 @@
-ARG ROS_DISTRO=melodic
+ARG ROS_DISTRO=noetic
 
 FROM ros:$ROS_DISTRO
 LABEL description="Inno VTOL simulator"

@@ -4,21 +4,15 @@ set -e
 trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 # Setup ROS environment variables if inside a container
-while [[ $# -gt 0 ]]; do
-    key="$1"
-    case $key in
-        -d|--docker)
-            echo "inside docker container"
-            source /opt/ros/$ROS_DISTRO/setup.bash
-            source /catkin_ws/devel/setup.bash
-            shift
-            shift
-            ;;
-    *)
-        shift
+key="$1"
+case $key in
+    -d|--docker)
+        source /opt/ros/$ROS_DISTRO/setup.bash
+        source /catkin_ws/devel/setup.bash
         ;;
-    esac
-done
+*)
+    ;;
+esac
 
 # Run tests
 roscore &
