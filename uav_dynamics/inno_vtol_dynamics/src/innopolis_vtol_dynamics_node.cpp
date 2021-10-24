@@ -31,7 +31,7 @@
 
 
 static char GLOBAL_FRAME_ID[] = "world";
-static char UAV_FRAME_ID[] = "/uav/enu";
+static char UAV_FRAME_ID[] = "uav/enu";
 static char UAV_FIXED_FRAME_ID[] = "uav/com";
 
 static const double MAG_NOISE = 0.001;
