@@ -16,3 +16,6 @@
 [submodule "scripts/uavcan_tools"]
 	path = scripts/uavcan_tools
 	url = git@github.com:Innopolis-UAV-Team/uavcan_tools.git
+[submodule "uav_dynamics/inno_vtol_dynamics"]
+	path = uav_dynamics/inno_vtol_dynamics
+	url = git@github.com:InnopolisAero/inno_vtol_dynamics.git
