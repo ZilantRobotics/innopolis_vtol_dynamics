@@ -83,19 +83,27 @@ To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulat
 
 ## 2. Installation and building
 
-It's assumed that you are using Ubuntu 18.04. Ubuntu 20.04 may works as well, but we didn't test it.
+It's recommended to use Ubuntu 18.04, but 20.04 should be ok as well.
 
 The whole system required several packages.
 
 ### 2.1. Inno Dynamics
 
-1. Initially, you need to clone repository.
+This reposityory is the only necessary component to start work with the simulator.
 
-```
+1. Clone it with submodules.
+
+```bash
 git clone https://github.com/InnopolisAero/innopolis_vtol_dynamics.git --recursive
 ```
 
-2. Then you may either build it manualy (following instruction from [Dockerfile](Dockerfile)) or clone docker image (you may use [docker/pull_image.sh](scripts/docker/pull_image.sh) script).
+Every time when you pull this repository, don't forget to update submodules:
+
+```bash
+git submodules update --init --recursive
+```
+
+2. If you are going to build this repository manually, it's better to follow the instruction from [Dockerfile](Dockerfile). If you are going to use Docker instead, you needn't install any additional packages.
 
 
 ### 2.2. (optional) PX4 Autopilot
@@ -114,8 +122,12 @@ git submodule update --init --recursive && make clean && make distclean
 
 Then for SITL mode:
 
+```bash
+DONT_RUN=1 make px4_sitl gazebo_standard_vtol
 ```
-DONT_RUN=1 make px4_sitl gazebo_innopolis_vtol
+or
+
+```bash
 DONT_RUN=1 make px4_sitl gazebo_iris
 ```
 
@@ -125,7 +137,7 @@ And for HITL mode for Cuav V5+ type line below. If you use another hardware, rea
 make px4_fmu-v5_default upload
 ```
 
-You you want to use SITL, don't forget to add these lines to your `.bashrc` file, don't forget to change `~/PX4-Autopilot` to your actual Firmware path
+If you want to use SITL, don't forget to add these lines to your `.bashrc` file, don't forget to change `~/PX4-Autopilot` to your actual Firmware path
 
 ```
 source ~/catkin_ws/devel/setup.bash    # (optional)
@@ -159,16 +171,11 @@ We use [cuav v5+](https://docs.px4.io/master/en/flight_controller/cuav_v5_plus.h
 
 If you use docker, you need to run [docker/run_hitl_inno_vtol.sh](scripts/docker/run_hitl_inno_vtol.sh) script:
 
-```
-Temporary issue.
-udevadm doesn't automatically start inside a container.
-So, you need to specify the path to you sniffer device in docker/config.sh file.
-It will be fixed soon.
-```
-
 ```bash
 ./scripts/docker/run_hitl_inno_vtol.sh
 ```
+
+It will simply download the Docker image and run it.
 
 **Usage without docker**
 
