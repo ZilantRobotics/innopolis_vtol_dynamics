@@ -2,6 +2,7 @@
 cd "$(dirname "$0")"
 source config.sh
 
+./build_image.sh
 sudo docker container run --rm                                      \
                           $FLAGS_FOR_DEV                            \
                           $DOCKERHUB_REPOSITOTY:$TAG_NAME           \

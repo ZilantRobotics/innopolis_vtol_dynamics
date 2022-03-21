@@ -58,4 +58,4 @@ jobs:
           source devel/setup.bash                                                                   &&  \
           cd src/innopolis_vtol_dynamics/uav_dynamics/inno_vtol_dynamics/                           &&  \
           sudo apt-get install psmisc                                                               &&  \
-          ./catkin_test.sh
+          source catkin_test.sh
