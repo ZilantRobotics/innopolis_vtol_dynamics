@@ -6,7 +6,7 @@ defaults:
   run:
     shell: bash
 jobs:
-  catkin_build:
+  tests:
     runs-on: ubuntu-18.04
     container:
       image: ros:melodic
