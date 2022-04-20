@@ -11,8 +11,10 @@ Commands:
 build                   Build docker image.
 pull                    Pull docker image.
 push                    Push docker image.
-hitl_inno_vtol          Run dynamics simulator in HITL mode for inno_vtol airframe (VTOL)
-hitl_flight_goggles     Run dynamics simulator in HITL mode for flight_goggles airframe (MR)
+hitl_inno_vtol          Run dynamics simulator in HITL mode for inno_vtol airframe
+hitl_flight_goggles     Run dynamics simulator in HITL mode for flight_goggles airframe
+sitl_inno_vtol          Run dynamics simulator in SITL mode for inno_vtol airframe
+sitl_flight_goggles     Run dynamics simulator in SITL mode for flight_goggles airframe
 interactive             Run container in interactive mode.
 test                    Run tests.
 kill                    Kill all containers.
@@ -64,20 +66,22 @@ push_docker_image() {
 
 hitl_inno_vtol() {
     setup_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/start_hitl_inno_vtol.sh
+    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh hitl_inno_vtol
 }
 
 hitl_flight_goggles() {
     setup_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/start_hitl_flight_goggles.sh
+    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh hitl_flight_goggles
 }
 
 sitl_inno_vtol() {
-    echo "Not implemented yet..."
+    setup_config
+    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh sitl_inno_vtol
 }
 
 sitl_flight_goggles() {
-    echo "Not implemented yet..."
+    setup_config
+    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh sitl_flight_goggles
 }
 
 run_interactive() {
