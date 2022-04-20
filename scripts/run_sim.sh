@@ -20,8 +20,17 @@ help                                    Print this message and exit"
 }
 
 setup_ros() {
-    source /opt/ros/$ROS_DISTRO/setup.bash
-    source /catkin_ws/devel/setup.bash
+    # /opt/ros/$ROS_DISTRO/setup.bash should be either run first, or not run at all
+    # If catkin_ws is not found, do nothing.
+    DOCKER_CATKIN_WS_SETUP_BASH_PATH=/catkin_ws/devel/setup.bash
+    MOST_PROBABLE_CATKIN_WS_SETUP_BASH_PATH=~/catkin_ws/devel/setup.bash
+    if [ -f "$DOCKER_CATKIN_WS_SETUP_BASH_PATH" ]; then
+        source /opt/ros/$ROS_DISTRO/setup.bash
+        source $DOCKER_CATKIN_WS_SETUP_BASH_PATH
+    elif [ -f "$MOST_PROBABLE_CATKIN_WS_SETUP_BASH_PATH" ]; then
+        source /opt/ros/$ROS_DISTRO/setup.bash
+        source $MOST_PROBABLE_CATKIN_WS_SETUP_BASH_PATH
+    fi
 }
 
 setup_sitl_px4_flight_stack() {
@@ -55,7 +64,6 @@ hitl_flight_goggles() {
 
 sitl_inno_vtol() {
     setup_ros
-    setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=innopolis_vtol                     \
         airframe:=inno_standard_vtol                \
@@ -65,7 +73,6 @@ sitl_inno_vtol() {
 
 sitl_flight_goggles() {
     setup_ros
-    setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=iris                               \
         airframe:=iris                              \
@@ -75,6 +82,7 @@ sitl_flight_goggles() {
 
 sitl_inno_vtol_with_flight_stack() {
     setup_ros
+    setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=innopolis_vtol                     \
         airframe:=inno_standard_vtol                \
@@ -84,6 +92,7 @@ sitl_inno_vtol_with_flight_stack() {
 
 sitl_flight_goggles_with_flight_stack() {
     setup_ros
+    setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=iris                               \
         airframe:=iris                              \
