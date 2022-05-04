@@ -9,23 +9,14 @@ WORKDIR /catkin_ws/src/inno_vtol_simulator
 # 1. Install basic requirements
 RUN apt-get update                                                              &&  \
     apt-get upgrade -y                                                          &&  \
-    apt-get install -y  git                                                         \
-                        iproute2                                                    \
-                        ros-$ROS_DISTRO-catkin                                      \
-                        net-tools                                                   \
-                        tcpdump                                                     \
-                        python3-pip                                                 \
-                        python3-catkin-tools
+    apt-get install -y  git ros-$ROS_DISTRO-catkin python3-pip python3-catkin-tools
 RUN if [[ "$ROS_DISTRO" = "melodic" ]] ; then apt-get install -y python-pip python-catkin-tools ; fi
 
-# 2. Install packages requirements
+# 2. Install requirements
 # 2.1. innopolis_vtol_dynamics
-RUN sudo apt-get install -y ros-$ROS_DISTRO-mavros                                  \
-                            ros-$ROS_DISTRO-mavlink                                 \
-                            ros-$ROS_DISTRO-tf                                      \
-                            ros-$ROS_DISTRO-tf2                                     \
-                            ros-$ROS_DISTRO-tf2-ros                                 \
-                            psmisc
+COPY uav_dynamics/inno_vtol_dynamics/install_requirements.sh    uav_dynamics/inno_vtol_dynamics/install_requirements.sh
+COPY uav_dynamics/inno_vtol_dynamics/requirements.txt           uav_dynamics/inno_vtol_dynamics/requirements.txt
+RUN uav_dynamics/inno_vtol_dynamics/install_requirements.sh
 
 # 2.2. inno-sim-interface
 RUN sudo apt-get install -y ros-$ROS_DISTRO-rosauth                             &&  \
@@ -34,32 +25,44 @@ RUN sudo apt-get install -y ros-$ROS_DISTRO-rosauth                             
 # 2.3 uavcan_tools
 RUN sudo apt-get install -y udev
 
-# 3. Copy repository
-# @todo use git clone with submodules instead of COPY
-COPY uav_dynamics/ uav_dynamics/
-COPY inno_sim_interface/ inno_sim_interface/
+# 2.4. geographiclib_conversions
+COPY uav_dynamics/geographiclib_conversions uav_dynamics/geographiclib_conversions/
+RUN ./uav_dynamics/geographiclib_conversions/scripts/install.sh
+
+# 2.5. communicators
 COPY communicators/ communicators/
-COPY catkin_build.sh catkin_build.sh
-
-# 4. Setup packages
-# 4.1. geographiclib_conversions
-RUN mkdir -p /usr/local/share/GeographicLib/magnetic                            &&  \
-    cd uav_dynamics/geographiclib_conversions/wmm2020/magnetic                  &&  \
-    cp wmm2020.wmm /usr/local/share/GeographicLib/magnetic/wmm2020.wmm          &&  \
-    cp wmm2020.wmm.cof /usr/local/share/GeographicLib/magnetic/wmm2020.wmm.cof
-
-# 4.2. drone_communicators
-RUN cd communicators/drone_communicators                                        &&  \
+RUN cd communicators/uavcan_communicator                                        &&  \
     ./scripts/install_requirements.sh                                           &&  \
     ./scripts/install_libuavcan.sh
 
-# 5. Build ROS
+
+# 3. Copy the source files
+COPY inno_sim_interface/ inno_sim_interface/
+COPY catkin_build.sh catkin_build.sh
+
+COPY uav_dynamics/inno_vtol_dynamics/include            uav_dynamics/inno_vtol_dynamics/include
+COPY uav_dynamics/inno_vtol_dynamics/libs               uav_dynamics/inno_vtol_dynamics/libs
+COPY uav_dynamics/inno_vtol_dynamics/meshes             uav_dynamics/inno_vtol_dynamics/meshes
+COPY uav_dynamics/inno_vtol_dynamics/msg                uav_dynamics/inno_vtol_dynamics/msg
+COPY uav_dynamics/inno_vtol_dynamics/src                uav_dynamics/inno_vtol_dynamics/src
+COPY uav_dynamics/inno_vtol_dynamics/urdf               uav_dynamics/inno_vtol_dynamics/urdf
+COPY uav_dynamics/inno_vtol_dynamics/CMakeLists.txt     uav_dynamics/inno_vtol_dynamics/CMakeLists.txt
+COPY uav_dynamics/inno_vtol_dynamics/package.xml        uav_dynamics/inno_vtol_dynamics/package.xml
+
+
+# 4. Build ROS
 RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
     cd ../../                                                                   &&  \
+    git config --global http.sslverify false                                    && \
     catkin build
 
-# 6. Copy scripts
+# 5. Copy configs, scripts, etc
+COPY uav_dynamics/inno_vtol_dynamics/scripts/           uav_dynamics/inno_vtol_dynamics/scripts
+COPY uav_dynamics/inno_vtol_dynamics/launch/            uav_dynamics/inno_vtol_dynamics/launch
+COPY uav_dynamics/inno_vtol_dynamics/config/            uav_dynamics/inno_vtol_dynamics/config
+COPY uav_dynamics/inno_vtol_dynamics/catkin_test.sh     uav_dynamics/inno_vtol_dynamics/catkin_test.sh
 COPY scripts/ scripts/
+
 
 CMD echo "main process has been started"                                        &&  \
     source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
