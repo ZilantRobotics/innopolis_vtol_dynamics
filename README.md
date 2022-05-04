@@ -16,10 +16,10 @@ So, Inno VTOL dynamics simulation allows to run simulation in both `SITL` and `u
   - [1. Design](#1-design)
   - [2. Installation and building](#2-installation-and-building)
     - [2.1. Inno Dynamics](#21-inno-dynamics)
-    - [2.2. (optional) PX4 Autopilot](#22-optional-px4-autopilot)
+    - [2.2. PX4 Autopilot](#22-px4-autopilot)
     - [2.3. (optional) InnoSimulator ](#23-optional-innosimulator)
   - [3. Usage example](#3-usage-example)
-    - [3.1. Autopilot connection](#31-autopilot-connection)
+    - [3.1. Autopilot setup](#31-autopilot-setup)
     - [3.2. Running the simulator](#32-running-the-simulator)
     - [3.3. Loading parameters into a vehicle](#33-loading-parameters-into-a-vehicle)
     - [3.4. InnoSimulator](#34-innosimulator)
@@ -83,15 +83,19 @@ To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulat
 
 ## 2. Installation and building
 
-It's recommended to use Ubuntu 18.04, but 20.04 should be ok as well.
+First thing you need to do is to decide in which mode you are going to use the simulator.
 
-The whole system required several packages.
+Typically, you can run the simulator in:
+- either HITL mode (using real hardware and UAVCAN sniffer) or SITL (by running px4 flight stack on the computer),
+- and either with docker (the easiest way to start playing with the simulator), or by building and installing the simulator manually (might be preffered if you are going to contribute something).
+
+Then follow the instruction below. The steps you need to take will depend on the selected mode.
 
 ### 2.1. Inno Dynamics
 
-This reposityory is the only necessary component to start work with the simulator.
+This repository is the only necessary component to start work with the simulator.
 
-1. Clone it with submodules.
+**Step 1.** Firstly, you need to clone the repository with submodules.
 
 ```bash
 git clone https://github.com/InnopolisAero/innopolis_vtol_dynamics.git --recursive
@@ -103,14 +107,33 @@ Every time when you pull this repository, don't forget to update submodules:
 git submodules update --init --recursive
 ```
 
-2. If you are going to build this repository manually, it's better to follow the instruction from [Dockerfile](Dockerfile). If you are going to use Docker instead, you needn't install any additional packages.
+**Step 2.** Then, you should either build/pull the docker image, or install and build everything manually.
+
+1. With Docker. All work with docker is recommended to do via `./scripts/docker.sh` script. For example, you can build it by typing `./scripts/docker.sh build` or you can pull the image by typing `./scripts/docker.sh pull`. This script is simply configurate the correct image name and run all necessary auxilliary scripts.
+
+2. Without Docker. If you are going to build this repository and install all dependencies manually, please follow the instruction from [Dockerfile](Dockerfile) or from [build workflow](.github/workflows/catkin_build.yml).
 
 
-### 2.2. (optional) PX4 Autopilot
+### 2.2. PX4 Autopilot
 
-You need [following version of PX4 Autopilot](https://github.com/InnopolisAero/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics).
+Anyway, to start the simulator at least initially, you need to install PX4 Autopilot Firmware.
 
-For installation use official instruction and [InnopolisAero/PX4-Autopilot](https://github.com/InnopolisAero/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics).
+Docker image of this repository doesn't include PX4 Autopilot to make the work more flexible and image ligher.
+
+- In HITL mode the PX4 Autopilot is necessary for uploading the firmware to the hardware.
+- In SITL mode the PX4 Autopilot is required any time when you run the simulator.
+
+Most probably, you need exactly [the following version of PX4 Autopilot](https://github.com/InnopolisAero/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics). It has 2 differences compared to the master branch:
+- Firstly, it has [the ability to disable board sensors](https://github.com/PX4/PX4-Autopilot/pull/18550). This feature is higly necessary for working in HITL mode.
+- Secondly, it has `inno_vtol` custom airframe.
+
+So, the only way when you can use the master or any other branch based on the original software, is SITL simulator with `flight_goggles` (MR) dynamics. It is based on default `iris` airframe.
+
+**Step 1.** Installation
+
+For installation use the official PX4 instruction, but the custom firmware version [InnopolisAero/PX4-Autopilot](https://github.com/InnopolisAero/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics) (or the original one, if you are going to use the simuator in SITL for `iris` airframe only as mentioned above).
+
+**Step 2.** Build
 
 To build either in SITL or in TRUE HITL mode run:
 
@@ -157,39 +180,62 @@ To use it you need to download it from [inno-robolab/InnoSimulator](https://gith
 
 ## 3. Usage example
 
-### 3.1. Autopilot connection
+### 3.1. Autopilot setup
 
-If you want to use HITL mode, connect your autopilot and sniffer together via CAN.
+This step is higtly different for HITL and SITL modes.
+
+**1. SITL mode** requires running PX4 flight stack on your PC.
+
+Depending on which airframe you are going to use, you need to run px4.launch file with argument correponded to your airframe.
+
+If you are going to use the simulator for `inno_vtol` dynamics, you may run:
+
+```
+roslaunch px4 px4.launch vehicle:=innopolis_vtol
+```
+
+If you are going to use the simulator for `flight_goggles` dynamics, you may run:
+
+```
+roslaunch px4 px4.launch vehicle:=iris
+```
+
+For extended documentation about PX4 SITL flight stack, please check the official PX4 instruction.
+
+**2. HITL mode** requires physical connection of your autopilot and PC via CAN/UART sniffer.
+
+The example of connection shown on the picture below.
 
 ![sniffer_connection](img/sniffer_connection.png?raw=true "sniffer_connection")
 
-We use [cuav v5+](https://docs.px4.io/master/en/flight_controller/cuav_v5_plus.html) and [inno-programmer-sniffer](https://github.com/InnopolisAero/inno_uavcan_node_binaries/blob/master/doc/programmer_sniffer/README.md), but it might be anything else.
+Typically we use [cuav v5+](https://docs.px4.io/master/en/flight_controller/cuav_v5_plus.html) and [inno-programmer-sniffer](https://github.com/InnopolisAero/inno_uavcan_node_binaries/blob/master/doc/programmer_sniffer/README.md), but it might be anything else.
 
 ### 3.2. Running the simulator
 
-**Usage with docker**
+It is recommended to play with the simulator with one of 2 scripts depending on your mode:
+- use [scripts/docker.sh](scripts/docker.sh) if you build the docker image
+- use [scripts/run_sim.sh](scripts/run_sim.sh) if you build and install all necessary dependencies manually.
 
-If you use docker, you need to run [docker/run_hitl_inno_vtol.sh](scripts/docker/run_hitl_inno_vtol.sh) script:
+The usage of these scripts are the same. Moremore, `docker.sh` actually internally call the `run_sim.sh` script. To get extended info about these scripts try them with `help` command, for example: `./scripts/docker.sh help`.
 
-```bash
-./scripts/docker/run_hitl_inno_vtol.sh
+Both HITL and SITL modes requires only to run a single command in the termianl. Below your can see an example how to run HITL mode for inno_vtol dynamics and SITL simulator for flight goggles dynamics.
+
+```
+./scripts/docker.sh hitl_inno_vtol
+./scripts/run_sim.sh sitl_flight_goggles
 ```
 
-It will simply download the Docker image and run it.
+If you are using SITL mode, don't forget to run PX4 SITL flight stack according to [3.1. Autopilot setup](#31-autopilot-setup).
 
-**Usage without docker**
-
-I you don't use docker, you may run it using one of `scripts/start_*` scripts. If you run `hitl` script, it will automatically attached slcan based on your serial port.
-Example:
-```bash
-./scripts/start_hitl_inno_vtol.sh
-```
 
 ### 3.3. Loading parameters into a vehicle
 
-- Run QGC and load correposponded [params](uav_dynamics/inno_vtol_dynamics/config/) into your vehicle
-- Restart your vehicle and QGC
-- Note: sometimes from the first attempt params is not loaded correctly, so you may try it twice. Usually it happens in HITL mode
+This step is the same for all modes. Each vehicle especially need to update his default parameters. Especially for HITL it is necessary to disable board sensors and disable few pre-flight checks.
+
+- Run QGC and load correposponded [params](uav_dynamics/inno_vtol_dynamics/config/) into your vehicle,
+- Restart your vehicle and QGC,
+- Note: if your QGC is turned off right after the loading of parameters, you need to run QGC again and perform device rebooting manually,
+- Note: sometimes from the first attempt params are not loaded correctly, so it's better to load them twice. Usually it happens in HITL mode.
  
 ![usage_load_params](img/usage_load_params.png?raw=true "usage_load_params")
 
