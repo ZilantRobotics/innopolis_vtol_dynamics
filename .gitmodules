@@ -19,3 +19,6 @@
 [submodule "uav_dynamics/inno_vtol_dynamics"]
 	path = uav_dynamics/inno_vtol_dynamics
 	url = git@github.com:InnopolisAero/inno_vtol_dynamics.git
+[submodule "communicators/mavlink_communicator"]
+	path = communicators/mavlink_communicator
+	url = git@github.com:InnopolisAero/mavlink_communicator.git
