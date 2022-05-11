@@ -55,7 +55,6 @@ hitl_inno_vtol() {
 hitl_flight_goggles() {
     setup_ros
     setup_hitl
-    ./uavcan_tools/create_slcan_from_serial.sh $DEV_PATH_SYMLINK
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         vehicle:=iris                               \
         airframe:=iris                              \

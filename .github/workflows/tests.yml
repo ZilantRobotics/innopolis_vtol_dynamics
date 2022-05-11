@@ -31,21 +31,12 @@ jobs:
 
       # 3. Install requirements
       - name: Install innopolis_vtol_dynamics requirements
-        run: |
-          sudo apt-get install -y ros-melodic-tf                                                        \
-                                  ros-melodic-tf2                                                       \
-                                  ros-melodic-tf2-ros                                                   \
-                                  ros-melodic-mavlink                                                   \
-                                  ros-melodic-mavros
+        run: ./catkin_ws/src/innopolis_vtol_dynamics/uav_dynamics/inno_vtol_dynamics/install_requirements.sh
       - name: Install geographiclib_conversions requirements
-        run: |
-          mkdir -p /usr/local/share/GeographicLib/magnetic                                          &&  \
-          cd catkin_ws/src/innopolis_vtol_dynamics/uav_dynamics/geographiclib_conversions/wmm2020   &&  \
-          cp magnetic/wmm2020.wmm /usr/local/share/GeographicLib/magnetic/wmm2020.wmm               &&  \
-          cp magnetic/wmm2020.wmm.cof /usr/local/share/GeographicLib/magnetic/wmm2020.wmm.cof
+        run: ./catkin_ws/src/innopolis_vtol_dynamics/uav_dynamics/geographiclib_conversions/scripts/install.sh
       - name: Install uavcan_communicator requirements
         run: |
-          cd catkin_ws/src/innopolis_vtol_dynamics/communicators/drone_communicators                &&  \
+          cd catkin_ws/src/innopolis_vtol_dynamics/communicators/uavcan_communicator                &&  \
           ./scripts/install_requirements.sh                                                         &&  \
           ./scripts/install_libuavcan.sh
 
