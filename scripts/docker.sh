@@ -36,17 +36,24 @@ setup_config() {
     DOCKER_CONTAINER_NAME=$DOCKERHUB_REPOSITOTY:$TAG_NAME
 
     source ./uavcan_tools/get_sniffer_symlink.sh
+    DRONECAN_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066FFF575654888667251342-if02"
+    CYPHAL_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0669FF535151726687231340-if02"
 
-    DOCKER_FLAGS="--privileged -v $DEV_PATH_SYMLINK:$DEV_PATH_SYMLINK       \
-                 --net=host                                                 \
-                 -e DEV_PATH_SYMLINK=$DEV_PATH_SYMLINK                      \
-                 -v "/tmp/.X11-unix:/tmp/.X11-unix:rw"                      \
-                 -e DISPLAY=$DISPLAY                                        \
-                 -e QT_X11_NO_MITSHM=1)"
+    DOCKER_FLAGS="--net=host"
+    if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
+        DOCKER_FLAGS="$DOCKER_FLAGS --privileged -v $DRONECAN_DEV_PATH_SYMLINK:$DRONECAN_DEV_PATH_SYMLINK"
+        DOCKER_FLAGS="$DOCKER_FLAGS -e DRONECAN_DEV_PATH_SYMLINK=$DRONECAN_DEV_PATH_SYMLINK"
+    fi
+    if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
+        DOCKER_FLAGS="$DOCKER_FLAGS --privileged -v $CYPHAL_DEV_PATH_SYMLINK:$CYPHAL_DEV_PATH_SYMLINK"
+        DOCKER_FLAGS="$DOCKER_FLAGS -e CYPHAL_DEV_PATH_SYMLINK=$CYPHAL_DEV_PATH_SYMLINK"
+    fi
+    DOCKER_FLAGS="$DOCKER_FLAGS -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1)"
 
-    echo "TAG_NAME is" $TAG_NAME
-    echo "DOCKER_CONTAINER_NAME is" $DOCKER_CONTAINER_NAME
-    echo "DEV_PATH_SYMLINK is" $DEV_PATH_SYMLINK
+    echo "Docker settings:"
+    echo "- DOCKER_CONTAINER_NAME is" $DOCKER_CONTAINER_NAME
+    echo "- DRONECAN_DEV_PATH_SYMLINK is" $DRONECAN_DEV_PATH_SYMLINK
+    echo "- CYPHAL_DEV_PATH_SYMLINK is" $CYPHAL_DEV_PATH_SYMLINK
 }
 
 build_docker_image() {
