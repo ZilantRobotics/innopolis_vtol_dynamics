@@ -31,10 +31,10 @@ RUN ./uav_dynamics/geographiclib_conversions/scripts/install.sh
 
 # 2.5. communicators
 COPY communicators/ communicators/
-RUN cd communicators/uavcan_communicator                                        &&  \
-    ./scripts/install_requirements.sh                                           &&  \
-    ./scripts/install_libuavcan.sh
-
+RUN ./communicators/uavcan_communicator/scripts/install_requirements.sh         &&  \
+    ./communicators/uavcan_communicator/scripts/install_libuavcan.sh
+RUN ./communicators/cyphal_communicator/install_requirements.sh                 &&  \
+    ./communicators/cyphal_communicator/compile_dsdl.sh
 
 # 3. Copy the source files
 COPY inno_sim_interface/ inno_sim_interface/
@@ -48,7 +48,6 @@ COPY uav_dynamics/inno_vtol_dynamics/src                uav_dynamics/inno_vtol_d
 COPY uav_dynamics/inno_vtol_dynamics/urdf               uav_dynamics/inno_vtol_dynamics/urdf
 COPY uav_dynamics/inno_vtol_dynamics/CMakeLists.txt     uav_dynamics/inno_vtol_dynamics/CMakeLists.txt
 COPY uav_dynamics/inno_vtol_dynamics/package.xml        uav_dynamics/inno_vtol_dynamics/package.xml
-
 
 # 4. Build ROS
 RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
@@ -65,7 +64,5 @@ COPY scripts/ scripts/
 
 
 CMD echo "main process has been started"                                        &&  \
-    source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
-    source /catkin_ws/devel/setup.bash                                          &&  \
-    roslaunch innopolis_vtol_dynamics hitl.launch                               &&  \
+    source /opt/ros/$ROS_DISTRO/setup.bash && source /catkin_ws/devel/setup.bash &&  \
     echo "container has been finished"

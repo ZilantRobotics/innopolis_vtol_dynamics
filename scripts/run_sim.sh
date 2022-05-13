@@ -12,6 +12,8 @@ Usage: run_sim.sh <command>
 Commands:
 hitl_inno_vtol                          Run dynamics simulator in HITL mode for inno_vtol airframe
 hitl_flight_goggles                     Run dynamics simulator in HITL mode for flight_goggles airframe
+cyphal_flight_goggles                   Run dynamics simulator in dronecan + cyphal mode for flight_goggles airframe.
+                                        This mode uses 2 serial ports and is in the alpha testing stage yet.
 sitl_inno_vtol                          Run dynamics simulator in SITL mode for inno_vtol airframe
 sitl_flight_goggles                     Run dynamics simulator in SITL mode for flight_goggles airframe
 sitl_inno_vtol_with_flight_stack        Run dynamics simulator in SITL mode for inno_vtol airframe (with additional including px4.launch)
@@ -47,6 +49,7 @@ setup_hitl() {
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan1 for cyphal..."
         ./uavcan_tools/create_slcan_from_serial.sh $CYPHAL_DEV_PATH_SYMLINK slcan1
+        source ../communicators/cyphal_communicator/scripts/config.sh
     fi
 }
 
@@ -66,6 +69,16 @@ hitl_flight_goggles() {
         vehicle:=iris                               \
         airframe:=iris                              \
         dynamics:=flightgoggles_multicopter
+}
+
+cyphal_flight_goggles() {
+    setup_ros
+    setup_hitl
+    roslaunch innopolis_vtol_dynamics hitl.launch   \
+        vehicle:=iris                               \
+        airframe:=iris                              \
+        dynamics:=flightgoggles_multicopter         \
+        run_cyphal_communicator:=true
 }
 
 sitl_inno_vtol() {
@@ -114,6 +127,8 @@ if [ "$1" = "hitl_inno_vtol" ]; then
     hitl_inno_vtol
 elif [ "$1" = "hitl_flight_goggles" ]; then
     hitl_flight_goggles
+elif [ "$1" = "cyphal_flight_goggles" ]; then
+    cyphal_flight_goggles
 elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then
