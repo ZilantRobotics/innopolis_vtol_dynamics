@@ -25,3 +25,6 @@
 [submodule "communicators/uavcan_msgs"]
 	path = communicators/uavcan_msgs
 	url = https://github.com/InnopolisAero/uavcan_msgs.git
+[submodule "communicators/cyphal_communicator"]
+	path = communicators/cyphal_communicator
+	url = https://github.com/InnopolisAero/cyphal_communicator
