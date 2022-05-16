@@ -15,7 +15,7 @@ hitl_inno_vtol          Run dynamics simulator in HITL mode for inno_vtol airfra
 hitl_flight_goggles     Run dynamics simulator in HITL mode for flight_goggles airframe
 sitl_inno_vtol          Run dynamics simulator in SITL mode for inno_vtol airframe
 sitl_flight_goggles     Run dynamics simulator in SITL mode for flight_goggles airframe
-cyphal_flight_goggles   Run dynamics simulator in dronecan + cyphal mode for flight_goggles airframe.
+cyphal_inno_vtol        Run dynamics simulator in dronecan + cyphal mode for inno_vtol airframe.
                         This mode uses 2 serial ports and is in the alpha testing stage yet.
 interactive             Run container in interactive mode.
 test                    Run tests.
@@ -115,9 +115,9 @@ sitl_flight_goggles() {
     docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh sitl_flight_goggles
 }
 
-cyphal_flight_goggles() {
+cyphal_inno_vtol() {
     setup_cyphal_hitl_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh cyphal_flight_goggles
+    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh cyphal_inno_vtol
 }
 
 run_interactive() {
@@ -150,8 +150,8 @@ elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then
     sitl_flight_goggles
-elif [ "$1" = "cyphal_flight_goggles" ]; then
-    cyphal_flight_goggles
+elif [ "$1" = "cyphal_inno_vtol" ]; then
+    cyphal_inno_vtol
 elif [ "$1" = "interactive" ]; then
     run_interactive
 elif [ "$1" = "test" ]; then
