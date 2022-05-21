@@ -30,7 +30,12 @@ COPY uav_dynamics/geographiclib_conversions uav_dynamics/geographiclib_conversio
 RUN ./uav_dynamics/geographiclib_conversions/scripts/install.sh
 
 # 2.5. communicators
-COPY communicators/ communicators/
+COPY communicators/mavlink_communicator/                        communicators/mavlink_communicator/
+COPY communicators/uavcan_communicator/                         communicators/uavcan_communicator/
+COPY communicators/uavcan_msgs/                                 communicators/uavcan_msgs/
+COPY communicators/cyphal_communicator/scripts/config.sh        communicators/cyphal_communicator/scripts/config.sh
+COPY communicators/cyphal_communicator/install_requirements.sh  communicators/cyphal_communicator/install_requirements.sh
+COPY communicators/cyphal_communicator/compile_dsdl.sh          communicators/cyphal_communicator/compile_dsdl.sh
 RUN ./communicators/uavcan_communicator/scripts/install_requirements.sh         &&  \
     ./communicators/uavcan_communicator/scripts/install_libuavcan.sh
 RUN ./communicators/cyphal_communicator/install_requirements.sh                 &&  \
@@ -48,6 +53,8 @@ COPY uav_dynamics/inno_vtol_dynamics/src                uav_dynamics/inno_vtol_d
 COPY uav_dynamics/inno_vtol_dynamics/urdf               uav_dynamics/inno_vtol_dynamics/urdf
 COPY uav_dynamics/inno_vtol_dynamics/CMakeLists.txt     uav_dynamics/inno_vtol_dynamics/CMakeLists.txt
 COPY uav_dynamics/inno_vtol_dynamics/package.xml        uav_dynamics/inno_vtol_dynamics/package.xml
+COPY communicators/cyphal_communicator/CMakeLists.txt   communicators/cyphal_communicator/CMakeLists.txt
+COPY communicators/cyphal_communicator/package.xml      communicators/cyphal_communicator/package.xml
 
 # 4. Build ROS
 RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
@@ -61,6 +68,7 @@ COPY uav_dynamics/inno_vtol_dynamics/launch/            uav_dynamics/inno_vtol_d
 COPY uav_dynamics/inno_vtol_dynamics/config/            uav_dynamics/inno_vtol_dynamics/config
 COPY uav_dynamics/inno_vtol_dynamics/catkin_test.sh     uav_dynamics/inno_vtol_dynamics/catkin_test.sh
 COPY scripts/ scripts/
+COPY communicators/cyphal_communicator/                 communicators/cyphal_communicator/
 
 
 CMD echo "main process has been started"                                        &&  \
