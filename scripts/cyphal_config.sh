@@ -11,7 +11,7 @@ REG_DATA_TYPE_PATH_REG=$CYPHAL_PKG_DIR/public_regulated_data_types/reg
 export YAKUT_PATH="$YAKUT_COMPILE_OUTPUT"
 export REG_DATA_TYPE_PATH="$REG_DATA_TYPE_PATH_UAVCAN $REG_DATA_TYPE_PATH_REG"
 
-export UAVCAN__CAN__IFACE='socketcan:slcan1'
+export UAVCAN__CAN__IFACE='socketcan:slcan0'
 export UAVCAN__CAN__MTU=8
 export UAVCAN__NODE__ID=127
 
