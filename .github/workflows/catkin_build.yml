@@ -42,7 +42,8 @@ jobs:
       - name: Install inno-sim-interface requirements
         run: |
           sudo apt-get install -y ros-melodic-rosauth                                               &&  \
-          pip install bson pymongo protobuf Pillow twisted
+          sudo apt-get install -y python-protobuf                                                   &&  \
+          pip install bson pymongo Pillow twisted
 
       # 4. Build
       - name: catkin build
