@@ -1,6 +1,6 @@
 # Ardupilot Cyphal HITL simulation configuration
 
-This page explains how to configurate Ardupilot to work with Cyphal HITL simulator. It doesn't cover how to run the simulator.
+This page explains how to configure Ardupilot to work with Cyphal HITL simulator. It doesn't cover how to run the simulator itself.
 
 ## Requirements
 
@@ -51,17 +51,23 @@ Accept all suggested parameters changes and reboot the autopilot.
 Note: if the QGC application terminated unexpectedly, just run it again and press the reboot vehicle button.
 ```
 
-After reboot your internal board sensors should be already disabled.
+After reboot your internal board sensors should be already disabled and the `CAN_D1_PROTOCOL` parameter should be `12`.
 
 ## 3. Load registers
 
 After reboot the cyphal driver will be activated on CAN 1 bus, but registers will not be loaded yet. Typically, the autopilot will show you following errors.
 
-<img src="step_3_errors_and_warnings.png" alt="drawing" width="800"/>
+<img src="step_3_1_errors_and_warnings.png" alt="drawing" width="800"/>
 
 Fig. Errors and warnings after first load
 
 So, load parameters one more time. Since registers configuration is performed only during initialization, you need to reboot the autopilot as well.
+
+After reboot you can verify that your registers were successfully configured. An example is shown on the picture below.
+
+<img src="step_3_2_registers.png" alt="drawing" width="480"/>
+
+Fig. Configured Cyphal registers
 
 ## 4. Ready to fly
 
@@ -80,5 +86,5 @@ Note 1. I can foresee some problems on autopilot other than CUAV V5+, but you ca
 ```
 
 ```
-Note 2. It is necessary to initially connnect the hardware with the simulator via sniffer, run the simulator and only then power/reboot the vehicle. If the vehicle starts with no input data at the beginning it will not allow to fly.
+Note 2. It is necessary to initially connect the hardware with the simulator via sniffer, run the simulator and only then power/reboot the vehicle. If the vehicle starts with no input data at the beginning it will not allow to fly.
 ```
