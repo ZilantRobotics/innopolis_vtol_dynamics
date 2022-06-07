@@ -16,7 +16,7 @@ dronecan_flight_goggles         Run dynamics simulator in DroneCan HITL mode for
 sitl_inno_vtol                  Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe
 sitl_flight_goggles             Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
 cyphal_inno_vtol                Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
-cyphal_and_droncan_inno_vtol    Run dynamics simulator in DroneCan + Cyphal HITL mode for inno_vtol airframe.
+cyphal_and_dronecan_inno_vtol   Run dynamics simulator in DroneCan + Cyphal HITL mode for inno_vtol airframe.
 interactive                     Run container in interactive mode.
 test                            Run tests.
 kill                            Kill all containers.
@@ -135,7 +135,7 @@ cyphal_inno_vtol() {
     docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh cyphal_inno_vtol
 }
 
-cyphal_and_droncan_inno_vtol() {
+cyphal_and_dronecan_inno_vtol() {
     setup_cyphal_and_dronecan_hitl_config
     docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh cyphal_and_dronecan_inno_vtol
 }
@@ -172,6 +172,8 @@ elif [ "$1" = "sitl_flight_goggles" ]; then
     sitl_flight_goggles
 elif [ "$1" = "cyphal_inno_vtol" ]; then
     cyphal_inno_vtol
+elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
+    cyphal_and_dronecan_inno_vtol
 elif [ "$1" = "interactive" ]; then
     run_interactive
 elif [ "$1" = "test" ]; then

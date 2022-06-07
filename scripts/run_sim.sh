@@ -13,7 +13,7 @@ Commands:
 dronecan_inno_vtol                      Run dynamics simulator in DroneCan HITL mode for inno_vtol airframe
 dronecan_flight_goggles                 Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
 cyphal_inno_vtol                        Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
-cyphal_and_droncan_inno_vtol            Run dynamics simulator in DroneCan + Cyphal mode for inno_vtol airframe.
+cyphal_and_dronecan_inno_vtol           Run dynamics simulator in DroneCan + Cyphal mode for inno_vtol airframe.
                                         This mode uses 2 serial ports and is in the alpha testing stage yet.
 sitl_inno_vtol                          Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe
 sitl_flight_goggles                     Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
@@ -53,7 +53,7 @@ setup_cyphal_hitl() {
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan0 for cyphal..."
         ./uavcan_tools/create_slcan_from_serial.sh $CYPHAL_DEV_PATH_SYMLINK slcan0
-        source ../scripts/cyphal_config.sh
+        source ../scripts/cyphal_config_slcan0.sh
     fi
 }
 
@@ -65,7 +65,7 @@ setup_combined_hitl() {
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan1 for cyphal..."
         ./uavcan_tools/create_slcan_from_serial.sh $CYPHAL_DEV_PATH_SYMLINK slcan1
-        source ../scripts/cyphal_config.sh
+        source ../scripts/cyphal_config_slcan1.sh
     fi
 }
 
@@ -99,7 +99,7 @@ cyphal_inno_vtol() {
         dynamics:=inno_vtol
 }
 
-cyphal_and_droncan_inno_vtol() {
+cyphal_and_dronecan_inno_vtol() {
     setup_ros
     setup_combined_hitl
     roslaunch innopolis_vtol_dynamics hitl.launch   \
@@ -158,8 +158,8 @@ elif [ "$1" = "dronecan_flight_goggles" ]; then
     dronecan_flight_goggles
 elif [ "$1" = "cyphal_inno_vtol" ]; then
     cyphal_inno_vtol
-elif [ "$1" = "cyphal_and_droncan_inno_vtol" ]; then
-    cyphal_and_droncan_inno_vtol
+elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
+    cyphal_and_dronecan_inno_vtol
 elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then
