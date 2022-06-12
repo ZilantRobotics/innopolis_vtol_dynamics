@@ -4,18 +4,18 @@ Innopolis VTOL dynamics simulator is a set of ROS packages suggested full simula
 
 ![dynamics](docs/img/dynamics.png?raw=true "dynamics")
 
-Typical PX4 simulations ways are [SITL and HITL](https://docs.px4.io/master/en/simulation/):
-- SITL (software in the loop) allows you to run simulation and flight stack fully on your computer, it doesn't cover hardware related modules,
-- HITL (hardware in the loop) allows to run flight stack on real device, but it still doesn't cover actuator and sensor related modules because autopilot works in special mode and uses special MAVLink HITL messages instead of real actuators and sensor drivers.
+Typical PX4/Ardupilot simulation ways are [SITL and HITL](https://docs.px4.io/master/en/simulation/):
+- SITL (software in the loop) allows you to run simulation and flight stack fully on your computer, it doesn't cover hardware-related modules,
+- HITL (hardware in the loop) allows to run flight stack on the real device, but it still doesn't cover actuator and sensor-related modules because autopilot works in a special mode and uses special MAVLink HITL messages instead of real actuators and sensor drivers.
 
-The key feature of this simulation is to run it in such way that the hardware knows nothing about simulation. This could be possible using uavcan. For users, expecialy those using the uavcan network for uav, it can be very usefull, because it covers more PX4 modules than standard SITL and HITL.
+The key feature of this simulation is to run it in such a way that the hardware knows nothing about simulation. This could be possible using uavcan. For users, especially those using the uavcan network for uav, it can be very useful, because it covers more PX4 modules than standard SITL and HITL.
 
-So, Inno VTOL dynamics simulation allows to run simulation in both `SITL` and `uavcan HITL` mode. It also allows to run InnopolisSimulator (left part of the first figure) and visualize forces and moments in RVIZ (right part of the first figure).
+So, Inno VTOL dynamics simulation allows running simulation in both `SITL` and `uavcan HITL` mode. It also allows to run InnopolisSimulator (left part of the first figure) and visualize forces and moments in RVIZ (right part of the first figure).
 
 ## Content
   - [1. Design](#1-design)
   - [2. Supported modes](#2-supported-modes)
-  - [3. Installation, building and configuration](#3-installation-building-and-configuration)
+  - [3. Installation, building, and configuration](#3-installation-building-and-configuration)
     - [3.1. Inno Dynamics](#31-inno-dynamics)
     - [3.2. Autopilot configuration](#32-autopilot-configuration)
     - [3.3. (optional) InnoSimulator ](#33-optional-innosimulator)
@@ -30,12 +30,12 @@ So, Inno VTOL dynamics simulation allows to run simulation in both `SITL` and `u
 
 ## 1. Design
 
-Innopolis VTOL dynamics simulator is designed to support several dynamics and protocols `MAVLink SITL` and `DroneCAN HITL`, `Cyphal HITL` modes. As an example, beside `inno_vtol` dynamics [flightgoggles_multicopter](https://github.com/mit-aera/FlightGoggles) dynamics was integrated into simulator as well. It is expected to use either PX4 or Ardupilot autopilots.
+Innopolis VTOL dynamics simulator is designed to support several dynamics and protocols `MAVLink SITL` and `DroneCAN HITL`, `Cyphal HITL` modes. As an example, besides `inno_vtol` dynamics [flightgoggles_multicopter](https://github.com/mit-aera/FlightGoggles) dynamics was integrated into the simulator as well. It is expected to use either PX4 or Ardupilot autopilots.
 
-The simulator is divided into following main components:
+The simulator is divided into the following main components:
 
-1. `UAV dynamics` is the main node that handles actuator commands from communicator, performs dynamics simulation and publishes vehicle and sensors states.
-2. `Communicator` is the set of nodes which communicate with `PX4 flight stack` in HITL (via UAVCAN) and SITL (via MAVLink) modes.
+1. `UAV dynamics` is the main node that handles actuator commands from the communicator, performs dynamics simulation, and publishes vehicle and sensors states.
+2. `Communicator` is the set of nodes that communicate with the `PX4 flight stack` in HITL (via UAVCAN) and SITL (via MAVLink) modes.
 3. `inno_sim_interface` is a bridge for interaction with `Inno Simulator` through ROS.
 
 The design of the simulator is shown below.
@@ -69,7 +69,7 @@ Extended sensors publishers list of topics:
 | 9 | /uav/fuel_tank_status      | uavcan_msgs/IceFuelTankStatus             |
 | 10| /uav/battery_status        | [sensor_msgs/BatteryState](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/BatteryState.html)    |
 
-Here topics 1-6 are necessary for any simulation. Last 4 topics are auxilliary and you may enable/disable them in [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml) config file. You may implement your own sensors in [sensors.cpp](uav_dynamics/inno_vtol_dynamics/src/sensors.cpp) file.
+Here topics 1-6 are necessary for any simulation. The last 4 topics are auxiliary and you may enable/disable them in the [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml) config file. You may implement your own sensors in the [sensors.cpp](uav_dynamics/inno_vtol_dynamics/src/sensors.cpp) file.
 
 To work in pair with [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) as physics engine via [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) it publishes and subscribes on following topics.
 
@@ -94,13 +94,13 @@ At that moment the simulation might be run if following modes:
 
 New modes will be extended step by step.
 
-## 3. Installation, building and configuration
+## 3. Installation, building, and configuration
 
-First thing you need to do is to decide in which mode you are going to use the simulator.
+The first thing you need to do is to decide in which mode you are going to use the simulator.
 
 Typically, you can run the simulator in:
 - either HITL mode (using real hardware and CAN sniffer) or SITL (by running px4 flight stack on the computer),
-- and either with docker (the easiest way to start playing with the simulator), or by building and installing the simulator manually (might be preffered if you are going to contribute something).
+- and either with docker (the easiest way to start playing with the simulator) or by building and installing the simulator manually (might be preferred if you are going to contribute something).
 
 Then follow the instruction below. The steps you need to take will depend on the selected mode.
 
@@ -114,17 +114,17 @@ This repository is the only necessary component to start work with the simulator
 git clone https://github.com/InnopolisAero/innopolis_vtol_dynamics.git --recursive
 ```
 
-Every time when you pull this repository, don't forget to update submodules:
+Whenever you pull this repository, don't forget to update submodules:
 
 ```bash
-git submodules update --init --recursive
+git submodule update --init --recursive
 ```
 
 **Step 2.** Then, you should either build/pull the docker image, or install and build everything manually.
 
-1. With Docker. All work with docker is recommended to do via `./scripts/docker.sh` script. For example, you can build it by typing `./scripts/docker.sh build` or you can pull the image by typing `./scripts/docker.sh pull`. This script is simply configurate the correct image name and run all necessary auxilliary scripts.
+1. With Docker. All work with docker is recommended to do via `./scripts/docker.sh` script. For example, you can build it by typing `./scripts/docker.sh build` or you can pull the image by typing `./scripts/docker.sh pull`. This script simply configures the correct image name and runs all necessary auxiliary scripts.
 
-2. Without Docker. If you are going to build this repository and install all dependencies manually, please follow the instruction from [Dockerfile](Dockerfile) or from [build workflow](.github/workflows/catkin_build.yml).
+2. Without Docker. If you are going to build this repository and install all dependencies manually, please follow the instruction from [Dockerfile](Dockerfile) or [build workflow](.github/workflows/catkin_build.yml).
 
 
 ### 3.2. Autopilot configuration
@@ -137,7 +137,7 @@ Please, refer to the corresponded section for the references:
 
 InnoSimulator is a photorealistic simulator.
 
-At that moment we use it for visualization purpose only.
+At that moment we use it for visualization purposes only.
 
 To use it you need to download it from [inno-robolab/InnoSimulator](https://github.com/inno-robolab/InnoSimulator) repository.
 
@@ -146,11 +146,11 @@ To use it you need to download it from [inno-robolab/InnoSimulator](https://gith
 
 ### 4.1. Autopilot setup
 
-This step is higtly different for HITL and SITL modes.
+This step is highly different for HITL and SITL modes.
 
 **1. PX4 MAVLink SITL mode** requires running PX4 flight stack on your PC.
 
-Depending on which airframe you are going to use, you need to run px4.launch file with argument correponded to your airframe.
+Depending on which airframe you are going to use, you need to run px4.launch file with an argument corresponded to your airframe.
 
 If you are going to use the simulator for `inno_vtol` dynamics, you may run:
 
@@ -164,11 +164,11 @@ If you are going to use the simulator for `flight_goggles` dynamics, you may run
 roslaunch px4 px4.launch vehicle:=iris
 ```
 
-For extended documentation about PX4 SITL flight stack, please check the official PX4 instruction.
+For extended documentation about the PX4 SITL flight stack, please check the official PX4 instruction.
 
-**2. DroneCAN/Cyphal HITL modes** requires physical connection of your autopilot and PC via CAN/UART sniffer.
+**2. DroneCAN/Cyphal HITL modes** require physical connection of your autopilot and PC via CAN/UART sniffer.
 
-The example of connection shown on the picture below.
+An example of a connection is shown in the picture below.
 
 ![sniffer_connection](docs/img/sniffer_connection.png?raw=true "sniffer_connection")
 
@@ -180,7 +180,7 @@ It is recommended to play with the simulator with one of 2 scripts depending on 
 - use [scripts/docker.sh](scripts/docker.sh) if you build the docker image
 - use [scripts/run_sim.sh](scripts/run_sim.sh) if you build and install all necessary dependencies manually.
 
-The usage of these scripts are the same. Moremore, `docker.sh` actually internally call the `run_sim.sh` script. To get extended info about these scripts try them with `help` command, for example: `./scripts/docker.sh help`.
+The usage of these scripts is the same. Moreover, `docker.sh` actually internally call the `run_sim.sh` script. To get extended info about these scripts, try them with `help` command, for example: `./scripts/docker.sh help`.
 
 Both HITL and SITL modes requires only to run a single command in the termianl. Below your can see an example how to run HITL mode for inno_vtol dynamics and SITL simulator for flight goggles dynamics.
 
@@ -189,7 +189,7 @@ Both HITL and SITL modes requires only to run a single command in the termianl. 
 ./scripts/run_sim.sh sitl_flight_goggles
 ```
 
-If you are using SITL mode, don't forget to run PX4 SITL flight stack according to [3.1. Autopilot setup](#31-autopilot-setup).
+If you are using SITL mode, don't forget to run the PX4 SITL flight stack according to [3.1. Autopilot setup](#31-autopilot-setup).
 
 ### 4.4. InnoSimulator
 
@@ -199,7 +199,7 @@ If you set parameter `run_inno_sim_bridge:=true` or leave it by default, you wil
 ~/software/InnoSimulator-Linux64-2021.1.3/InnoSimulator.x86_64
 ```
 
-Then choose a drone and press Launch button.
+Then choose a drone and press the Launch button.
 
 ### 4.5 Example
 
@@ -214,11 +214,11 @@ Check the video below.
 3. [sitl_gazebo](https://github.com/PX4/sitl_gazebo)
 4. [innopolis_vtol_indi](https://github.com/InnopolisAero/innopolis_vtol_indi) - dynamics written in Octave
 5. [InnoSimulator](https://github.com/inno-robolab/InnoSimulator) - photorealistic simulator
-6. [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) - bridge between dynamics and photorealistic simulator
+6. [inno_sim_interface](https://github.com/InnopolisAero/inno_sim_interface) - the bridge between dynamics and photorealistic simulator
 
 ## 6. Tests
 We use [GoogleTest](https://github.com/google/googletest/tree/master/googletest).
-To install this you should follow official instruction or this sequence:
+To install this you should follow official instructions or this sequence:
 
 ```
 git clone https://github.com/google/googletest.git -b release-1.10.0
@@ -230,7 +230,7 @@ make
 sudo make install           # Install in /usr/local/ by default
 ```
 
-To run test, type (and read [here](http://wiki.ros.org/gtest) and [here](https://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html#building-and-running-tests) if you don't configured and launched accordingly gtest from ros yet):
+To run tests, type (and read [here](http://wiki.ros.org/gtest) and [here](https://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html#building-and-running-tests) if you didn't configure and launched accordingly gtest from ros yet):
 
 ```
 roscd innopolis_vtol_dynamics
