@@ -40,19 +40,14 @@ Then type the default command from the Ardupilot tutorial to build and load the 
 
 The configuration takes at least 10 minutes.
 
-The detailed explanation is below. A video example is [here](https://youtu.be/Dd_AazQgAzw).
+The detailed explanation and video example are below.
+
+[![uavcan vtol dynamics simulator](https://img.youtube.com/vi/Dd_AazQgAzw/0.jpg)](https://youtu.be/Dd_AazQgAzw)
 
 **Step 1.** It is expected that you start with the default configuration of the autopilot.
 
 - Press `Reset all to firmware default` button in QGC.
 - Then press `Reboot Vehicle`.
-
-After reboot you will see something like in the picture below:
-
-<img src="step_2_1_default.png" alt="drawing" width="640"/>
-<img src="step_2_2_default.png" alt="drawing" width="640"/>
-
-Fig. The default state of the autopilot illustrated in QGC
 
 The autopilot will send notifications that the vehicle is not configured yet. Let's fix it.
 
@@ -216,7 +211,7 @@ Reboot the vehicle.
 
 If the connection between the autopilot and the simulator is ok, the vehicle will be ready to fly. In the window with notification, it will always send a single warning about Cyphal IMU to remember you that you are in HITL mode and on custom firmware.
 
-<img src="step_5_ready_to_fly.png" alt="drawing" width="640"/>
+<img src="step_3_ready_to_fly.png" alt="drawing" width="640"/>
 
 Fig. The vehicle is ready to fly
 
