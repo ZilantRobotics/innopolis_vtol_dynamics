@@ -1,15 +1,20 @@
 # Ardupilot Cyphal HITL simulation configuration
 
-This page explains how to configure Ardupilot to work with the Cyphal HITL simulator. It doesn't cover how to run the simulator itself.
+This page explains how to step by step configure Ardupilot to work with the Cyphal HITL simulator.
 
 ## Requirements
 
 You need the following hardware:
 
-- CUAV V5+ autopilot or similar fmuv5,
-- CAN-sniffer (for example [inno-programmer-sniffer](https://innopolisaero.github.io/inno_uavcan_node_binaries/guide/programmer_sniffer.html)).
+- CUAV V5+ autopilot (or any other autopilot with CAN bus and at least 2 MB flash),
+- CAN-sniffer (for example [programmer-sniffer](https://innopolisaero.github.io/inno_uavcan_node_binaries/guide/programmer_sniffer.html)).
 
-The autopilot and sniffer should be connected via CAN 1 bus (the second bus is not supported at this moment).
+Software:
+- The instruction based on [QGroundControl](http://qgroundcontrol.com/),
+- [Ardupilot](https://ardupilot.org/) software,
+- [Yakut](https://github.com/OpenCyphal/yakut) is a cli tool used for Ardupilot cyphal registers configuration.
+
+It is expected that the autopilot and sniffer are connected with each other via CAN 1 bus.
 
 ## 1. Load firmware
 
@@ -19,7 +24,7 @@ It is expected you already have downloaded the repository and everything is inst
 
 Checkout on [Cyphal HITL branch](https://github.com/PonomarevDA/ardupilot/tree/pr-uavcan-v1-hitl). 
 
-Configure waf for your board:
+Configure waf for your board. For CUAVv5 it is:
 
 ```bash
 ./waf configure --board CUAVv5
@@ -31,61 +36,82 @@ Then type the default command from the Ardupilot tutorial to build and load the 
 ./waf --targets bin/arducopter --upload
 ```
 
-## 2. Load parameters
+## 2. Vehicle configuration
 
-Let's say you start with the default configuration of the autopilot (after pressing `Reset all to firmware default`).
+The configuration takes at least 10 minutes.
 
-You will see something like in the picture below:
+The detailed explanation is below. A video example is [here](https://youtu.be/Dd_AazQgAzw).
+
+**Step 1.** It is expected that you start with the default configuration of the autopilot.
+
+- Press `Reset all to firmware default` button in QGC.
+- Then press `Reboot Vehicle`.
+
+After reboot you will see something like in the picture below:
 
 <img src="step_2_1_default.png" alt="drawing" width="640"/>
 <img src="step_2_2_default.png" alt="drawing" width="640"/>
 
 Fig. The default state of the autopilot illustrated in QGC
 
-The autopilot will send notifications that the vehicle is not configured yet.
+The autopilot will send notifications that the vehicle is not configured yet. Let's fix it.
 
-There are 2 ways of configuration.
+**Step 2.** Configure frame type.
 
-1. You can manually set all required parameters
-2. Load them from the file
+At this moment the simulator supports only quadcopter mode. Go to the `Vehicle Setup`/`Frame` page and choose `Quad` and frame type `X`. Then reboot the vehicle.
 
-Below is described how to load them.
+After reboot the Frame warning on the `Vehicle Setup` should disappear.
 
-<details><summary>Click to expand the list of required parameters</summary>
-<p>
+**Step 3.** CAN-driver configuration
 
-1. Base configuration
+Let's configure the following parameters:
 
 | Parameter         | Value |
 | ----------------- | ----- |
-| FRAME_CLASS       | Quad |
-| CAN_D1_PROTOCOL   | 12 (CYPHAL) |
+| CAN_D1_PROTOCOL   | 13 (CYPHAL) |
 | CAN_D2_PROTOCOL   | Disabled |
 | CAN_P1_DRIVER     | First driver |
-| BRD_SAFETYENABLE  | Disabled |
-| FS_THR_ENABLE     | Disabled |
 
-2. Gps configuration
+> At this moment the Ardupilot firmware expected to use cyphal only as CAN1.
 
-| Parameter         | Value |
-| ----------------- | ----- |
-| GPS_TYPE          | 24 (CYPHAL) |
+> Until the Cyphal branch is not merged into the original Ardupilot firmware, it may require to choose `Advances settings` and `Manual Entry`. In this case it will show `Unknown`, but it is ok.
 
-3. Compass configuration
+Then reboot the vehicle.
 
-| Parameter         | Value |
-| ----------------- | ----- |
-| COMPASS_DEV_ID    | 76291 |
-| COMPASS_ENABLE    | Enabled |
-| COMPASS_EXTERNAL  | External |
-| COMPASS_PRIO1_ID  | 76291 |
-| COMPASS_USE       | Enabled |
-| COMPASS_USE2      | Disabled |
-| COMPASS_USE3      | Disabled |
+After reboot Cyphal registers related parameters will appear. You can verify it by searching `CAN_D1_UC1*` parameters in `Vehicle Setup` / `Parameters` window.
 
-+ calibration
+**Step 4.** Cyphal registers configuration
 
-4. IMU configuration
+> This step and all the steps below might be done only with connected to your PC sniffer.
+
+Since the Ardupilot custom firmware supports [register.Access](https://github.com/OpenCyphal/public_regulated_data_types/blob/master/uavcan/register/384.Access.1.0.dsdl) and [register.List](https://github.com/OpenCyphal/public_regulated_data_types/blob/master/uavcan/register/385.List.1.0.dsdl), the most recommended way to configure registers is to use [Yakut](https://github.com/OpenCyphal/yakut#node-configuration-example). Use instruction from [this repository](https://github.com/PonomarevDA/cyphal_configurator) to configure registers.
+
+Alternatively, you can configure parameters manually through the parameters. This way is the most straightforward, but it is not recommended because it is easy to make a mistake during the configuration of a complex network. Although if you have a vehicle parameters file with already configured registers, you can load these parameters from the file.
+
+After configuration, reboot the vehicle.
+
+You may verify that `CAN_D1_UC1*` parameters are not empty after configuration to be sure that configuration is successful.
+
+**Step 5.** IMU configuration
+
+> This step and all the steps below might be done only with running simulator.
+
+All board sensors should be disabled.
+
+Firstly, check the existed accelerometers and gyro IDs by looking at `INS_ACC_ID`, `INS_ACC2_ID`, `INS_ACC3_ID` and `INS_GYR_ID`, `INS_GYR2_ID`, `INS_GYR3_ID` parameter values.
+
+Let's say we have the following values:
+
+| Parameter         | Value   | Note   |
+| ----------------- | ------- | ------ |
+| INS_ACC_ID        | 3801603 | cyphal |
+| INS_ACC2_ID       | 2621706 | |
+| INS_ACC3_ID       | 3080714 | |
+| INS_GYR_ID        | 3801347 | cyphal |
+| INS_GYR2_ID       | 2621706 | |
+| INS_GYR3_ID       | 3080714 | |
+
+So, we should make the following configuration:
 
 | Parameter         | Value |
 | ----------------- | ----- |
@@ -93,66 +119,100 @@ Below is described how to load them.
 | INS_ENABLE_MASK   | 1 |
 | INS_ACC_ID        | 3801603 |
 | INS_GYR_ID        | 3801347 |
+| INS_USE           | Enabled |
 | INS_USE2          | Disabled |
 | INS_USE3          | Disabled |
 
-+ calibration
+Now changing the orientation of the real vehicle should not affect on the estimated orientation.
 
-5. Control
+Go to the Sensors/Accelerometer to perform the calibration.
+
+You should subsequently set each of 6 orientations shown on the QGC screen. To do so you need to send the number to the `/uav/calibrarion` topic from 11 to 16.
+
+An example:
+
+```bash
+rostopic pub /uav/calibration std_msgs/UInt8 "data: 11"
+```
+
+When accelerometer calibration is finished, return the simulator into the default mode.
+
+```bash
+rostopic pub /uav/calibration std_msgs/UInt8 "data: 0"
+```
+
+Then run gyro calibration. It doesn't require to rotate the vehicle.
+
+> Any ideas of an automatic accel calibration are welcome.
+
+**Step 6.** Compass configuration
+
+If IMU calibration is successful, go to the Sensors/Compass. It automatically detect which compasses are internal and external.
+
+Let's say we have:
+
+| Compass   | Value     |
+| --------- | --------- |
+| 1         | internal  |
+| 2         | external  |
+
+It means that first compass is onboard, and the second one is cyphal.
+
+Go to the parameters and check the identifiers of the compasses.
+
+Let's say we have the following values:
+
+| Parameter         | Value   |
+| ----------------- | ------- |
+| COMPASS_DEV_ID    | 658945  |
+| COMPASS_DEV_ID2   | 76291   |
+
+The cyphal compass should be first and have the highest priority, and the internal sensor should be disabled. So, configure the following parameters:
 
 | Parameter         | Value |
 | ----------------- | ----- |
-| ATC_RAT_YAW_P     | 1.0 |
-| ATC_RAT_PIT_P     | 0.35 |
+| COMPASS_PRIO1_ID  | 76291 |
+| COMPASS_PRIO2_ID  | 658945 |
+| COMPASS_USE       | Disabled |
+| COMPASS_USE2      | Enabled |
 
+Then reboot the vehicle.
 
-</p>
-</details>
+Go to the Sensors/Compass and start the calibration.
 
-The easiest way to configure the vehicle is to load parameters to the vehicle from the file. Just press the `load from file` button and choose corresponded [file with parameters](../../params/ardupilot_cyphal_inno_vtol.params).
+Call the `scripts/calibrate_mag.sh` script and wait until the calibration is finished.
 
-An example of how to do it is illustrated in the pictures below:
+The calibration process may take more than 1 minute.
 
-<img src="step_2_3_load_from_file.png" alt="drawing" width="640"/>
-<img src="step_2_4_choose_file.png" alt="drawing" width="640"/>
+Reboot the vehicle after the calibration.
 
-Fig. Loading parameters to the autopilot in QGC
+**Step 7.** Other settings
 
-Accept all suggested parameter changes and reboot the autopilot.
+Gps configuration:
 
-> Note: if the QGC application terminated unexpectedly, just run it again and press the reboot vehicle button.
+| Parameter         | Value       |
+| ----------------- | ----------- |
+| GPS_TYPE          | 24 (CYPHAL) |
 
-## 3. Load registers
+> Until the Cyphal branch is not merged into the original Ardupilot firmware, it may require to choose `Advances settings` and `Manual Entry`. In this case it will show `Unknown`, but it is fine.
 
-After reboot, the Cyphal driver will be activated on the CAN 1 bus, but the Cyphal-specific parameters have been not loaded yet because they appear only when Cyphal is enabled. Typically, the autopilot will show you the following errors.
+Safety configuration:
 
-<img src="step_3_1_errors_and_warnings.png" alt="drawing" width="800"/>
+| Parameter         | Value    |
+| ----------------- | -------- |
+| BRD_SAFETYENABLE  | Disabled |
+| FS_THR_ENABLE     | Disabled |
 
-Fig. Errors and warnings after the first load
+Control system configuration:
 
-The Ardupilot parameters are the storage for Cyphal registers which are particularly used for port identifier configuration.
+| Parameter         | Value |
+| ----------------- | ----- |
+| ATC_RAT_YAW_P     | 1.0   |
+| ATC_RAT_PIT_P     | 0.35  |
 
-Here 3 ways of port identifier configuration are described.
+Reboot the vehicle.
 
-1. You may configure the node manually via the QGC parameters interface. This way is the most straightforward, but it is not recommended because it is easy to make a mistake during the configuration of a complex network.
-2. You can use [Yakut](https://github.com/OpenCyphal/yakut#node-configuration-example) to make an automatic node configuration via [register.Access](https://github.com/OpenCyphal/public_regulated_data_types/blob/master/uavcan/register/384.Access.1.0.dsdl) and [register.List](https://github.com/OpenCyphal/public_regulated_data_types/blob/master/uavcan/register/385.List.1.0.dsdl) which are supported by the Ardupilot firmware. It is the most recommended way because it allows to automatically configure other network components as well. An example of how to do it will appear soon.
-3. Just now the fastest and easier way is to perform configuration in the same way as parameters. Just load parameters from the same file one more time. Loading parameters from the file allows also skipping the next step of the calibration of sensors.
-
-Since registers configuration is performed once only during firmware initialization, you need to reboot the autopilot as well.
-
-After reboot, you can verify that your registers were successfully configured. An example is shown in the picture below.
-
-<img src="step_3_2_registers.png" alt="drawing" width="480"/>
-
-Fig. Configured Cyphal registers
-
-## 4. Sensor calibration
-
-You can skip this step if you configure the autopilot Cyphal node by loading the parameters from the file.
-
-> This section will be completed later. For now, just load the parameters as described in the previous step. If you need to do it anyway, look at `/uav/calibration` topics for details.
-
-## 5. Ready to fly
+## 3. Ready to fly
 
 If the connection between the autopilot and the simulator is ok, the vehicle will be ready to fly. In the window with notification, it will always send a single warning about Cyphal IMU to remember you that you are in HITL mode and on custom firmware.
 
@@ -164,6 +224,4 @@ If the autopilot receives nothing from CAN-bus, it will be `Not Ready` and it wi
 
 At this stage, the autopilot internal sensors should be disabled as well. If they are enabled, the simulation can't work properly. 
 
-> Note 1. I can foresee some problems on autopilot other than CUAV V5+, but you can try to handle them by yourself.
-
-> Note 2. It is necessary to initially connect the hardware with the simulator via sniffer, run the simulator, and only then power/reboot the vehicle. If the vehicle starts with no input data at the beginning it will not allow to fly.
+> It is necessary to initially connect the hardware with the simulator via sniffer, run the simulator, and only then power/reboot the vehicle. If the vehicle starts with no input data at the beginning it will not allow to fly.
