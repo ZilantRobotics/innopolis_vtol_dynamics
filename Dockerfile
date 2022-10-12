@@ -1,7 +1,7 @@
 ARG ROS_DISTRO=noetic
 
 FROM ros:$ROS_DISTRO
-LABEL description="Inno VTOL simulator"
+LABEL description="UAV simulator"
 SHELL ["/bin/bash", "-c"]
 WORKDIR /catkin_ws/src/inno_vtol_simulator
 
@@ -48,7 +48,6 @@ COPY catkin_build.sh catkin_build.sh
 COPY uav_dynamics/inno_vtol_dynamics/include            uav_dynamics/inno_vtol_dynamics/include
 COPY uav_dynamics/inno_vtol_dynamics/libs               uav_dynamics/inno_vtol_dynamics/libs
 COPY uav_dynamics/inno_vtol_dynamics/meshes             uav_dynamics/inno_vtol_dynamics/meshes
-COPY uav_dynamics/inno_vtol_dynamics/msg                uav_dynamics/inno_vtol_dynamics/msg
 COPY uav_dynamics/inno_vtol_dynamics/src                uav_dynamics/inno_vtol_dynamics/src
 COPY uav_dynamics/inno_vtol_dynamics/urdf               uav_dynamics/inno_vtol_dynamics/urdf
 COPY uav_dynamics/inno_vtol_dynamics/CMakeLists.txt     uav_dynamics/inno_vtol_dynamics/CMakeLists.txt

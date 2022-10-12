@@ -45,26 +45,26 @@ setup_sitl_px4_flight_stack() {
 setup_dronecan_hitl() {
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan0 for dronecan..."
-        ./uavcan_tools/create_slcan_from_serial.sh $DRONECAN_DEV_PATH_SYMLINK slcan0
+        ./uavcan_tools/scripts/create_slcan_from_serial.sh $DRONECAN_DEV_PATH_SYMLINK slcan0
     fi
 }
 
 setup_cyphal_hitl() {
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
-        echo "Trying to create slcan0 for cyphal..."
-        ./uavcan_tools/create_slcan_from_serial.sh $CYPHAL_DEV_PATH_SYMLINK slcan0
-        source ../scripts/cyphal_config_slcan0.sh
+        echo "Trying to create slcan0 for cyphal/serial..."
+        ./uavcan_tools/scripts/create_slcan_from_serial.sh $CYPHAL_DEV_PATH_SYMLINK slcan0
     fi
+    source ../scripts/cyphal_config_slcan0.sh
 }
 
 setup_combined_hitl() {
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan0 for dronecan..."
-        ./uavcan_tools/create_slcan_from_serial.sh $DRONECAN_DEV_PATH_SYMLINK slcan0
+        ./uavcan_tools/scripts/create_slcan_from_serial.sh $DRONECAN_DEV_PATH_SYMLINK slcan0
     fi
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan1 for cyphal..."
-        ./uavcan_tools/create_slcan_from_serial.sh $CYPHAL_DEV_PATH_SYMLINK slcan1
+        ./uavcan_tools/scripts/create_slcan_from_serial.sh $CYPHAL_DEV_PATH_SYMLINK slcan1
         source ../scripts/cyphal_config_slcan1.sh
     fi
 }
