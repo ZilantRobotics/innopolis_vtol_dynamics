@@ -8,16 +8,16 @@ https://github.com/InnopolisAero/innopolis_vtol_dynamics
 usage: docker.sh [command]
 
 Commands:
-build                           Build docker image.
+build (b)                       Build docker image.
 pull                            Pull docker image.
 push                            Push docker image.
-dronecan_inno_vtol              Run dynamics simulator in DroneCan HITL mode for inno_vtol airframe
-dronecan_flight_goggles         Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
+dronecan_vtol (dv)              Run dynamics simulator in DroneCan HITL mode for inno_vtol airframe
+dronecan_iris                   Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
 sitl_inno_vtol                  Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe
 sitl_flight_goggles             Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
-cyphal_inno_vtol                Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
+cyphal_inno_vtol (cv)           Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
 cyphal_and_dronecan_inno_vtol   Run dynamics simulator in DroneCan + Cyphal HITL mode for inno_vtol airframe.
-interactive                     Run container in interactive mode.
+interactive (i)                 Run container in interactive mode.
 test                            Run tests.
 kill                            Kill all containers.
 help                            Print this message and exit"
@@ -110,12 +110,12 @@ push_docker_image() {
     docker push $DOCKER_CONTAINER_NAME
 }
 
-dronecan_inno_vtol() {
+dronecan_vtol() {
     setup_dronecan_hitl_config
     docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh dronecan_inno_vtol
 }
 
-dronecan_flight_goggles() {
+dronecan_iris() {
     setup_dronecan_hitl_config
     docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh dronecan_flight_goggles
 }
@@ -156,25 +156,25 @@ test() {
 
 cd "$(dirname "$0")"
 
-if [ "$1" = "build" ]; then
+if [ "$1" = "build" ] || [ "$1" = "b" ]; then
     build_docker_image
 elif [ "$1" = "pull" ]; then
     pull_docker_image
 elif [ "$1" = "push" ]; then
     push_docker_image
-elif [ "$1" = "dronecan_inno_vtol" ]; then
-    dronecan_inno_vtol
-elif [ "$1" = "dronecan_flight_goggles" ]; then
-    dronecan_flight_goggles
+elif [ "$1" = "dronecan_vtol" ] || [ "$1" = "dv" ]; then
+    dronecan_vtol
+elif [ "$1" = "dronecan_iris" ]; then
+    dronecan_iris
 elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then
     sitl_flight_goggles
-elif [ "$1" = "cyphal_inno_vtol" ]; then
+elif [ "$1" = "cyphal_inno_vtol" ] || [ "$1" = "cv" ]; then
     cyphal_inno_vtol
 elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
     cyphal_and_dronecan_inno_vtol
-elif [ "$1" = "interactive" ]; then
+elif [ "$1" = "interactive" ] || [ "$1" = "i" ]; then
     run_interactive
 elif [ "$1" = "test" ]; then
     test
