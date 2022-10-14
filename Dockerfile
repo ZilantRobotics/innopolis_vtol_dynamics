@@ -3,7 +3,7 @@ ARG ROS_DISTRO=noetic
 FROM ros:$ROS_DISTRO
 LABEL description="UAV simulator"
 SHELL ["/bin/bash", "-c"]
-WORKDIR /catkin_ws/src/inno_vtol_simulator
+WORKDIR /catkin_ws/src/uav_hitl_simulator
 
 
 # 1. Install basic requirements
@@ -13,21 +13,25 @@ RUN apt-get update                                                              
 RUN if [[ "$ROS_DISTRO" = "melodic" ]] ; then apt-get install -y python-pip python-catkin-tools ; fi
 
 # 2. Install requirements
-# 2.1. innopolis_vtol_dynamics
-COPY uav_dynamics/inno_vtol_dynamics/install_requirements.sh    uav_dynamics/inno_vtol_dynamics/install_requirements.sh
-COPY uav_dynamics/inno_vtol_dynamics/requirements.txt           uav_dynamics/inno_vtol_dynamics/requirements.txt
-RUN uav_dynamics/inno_vtol_dynamics/install_requirements.sh
+# 2.1. geographiclib_conversions
+COPY uav_dynamics/geographiclib_conversions uav_dynamics/geographiclib_conversions/
+RUN ./uav_dynamics/geographiclib_conversions/scripts/install.sh
+RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
+    cd ../../                                                                   &&  \
+    git config --global http.sslverify false                                    && \
+    catkin build
 
 # 2.2. inno-sim-interface
 RUN sudo apt-get install -y ros-$ROS_DISTRO-rosauth                             &&  \
     pip install bson pymongo protobuf Pillow twisted
 
+# 2.3. innopolis_vtol_dynamics
+COPY uav_dynamics/inno_vtol_dynamics/install_requirements.sh    uav_dynamics/inno_vtol_dynamics/install_requirements.sh
+COPY uav_dynamics/inno_vtol_dynamics/requirements.txt           uav_dynamics/inno_vtol_dynamics/requirements.txt
+RUN uav_dynamics/inno_vtol_dynamics/install_requirements.sh
+
 # 2.3 uavcan_tools
 RUN sudo apt-get install -y udev
-
-# 2.4. geographiclib_conversions
-COPY uav_dynamics/geographiclib_conversions uav_dynamics/geographiclib_conversions/
-RUN ./uav_dynamics/geographiclib_conversions/scripts/install.sh
 
 # 2.5. communicators
 COPY communicators/mavlink_communicator/                        communicators/mavlink_communicator/
@@ -45,7 +49,6 @@ RUN ./communicators/cyphal_communicator/install_requirements.sh                 
 COPY inno_sim_interface/ inno_sim_interface/
 COPY catkin_build.sh catkin_build.sh
 
-COPY uav_dynamics/inno_vtol_dynamics/include            uav_dynamics/inno_vtol_dynamics/include
 COPY uav_dynamics/inno_vtol_dynamics/libs               uav_dynamics/inno_vtol_dynamics/libs
 COPY uav_dynamics/inno_vtol_dynamics/meshes             uav_dynamics/inno_vtol_dynamics/meshes
 COPY uav_dynamics/inno_vtol_dynamics/src                uav_dynamics/inno_vtol_dynamics/src
