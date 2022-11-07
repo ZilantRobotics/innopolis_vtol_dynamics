@@ -1,0 +1,42 @@
+# esc
+CAN_D1_UC1_SP       : 2000.0
+CAN_D1_UC1_READ     : 2001.0
+CAN_D1_UC1_NOTE     : -1.0
+
+CAN_D1_UC1_DYN1     : -1.0
+CAN_D1_UC1_DYN2     : -1.0
+CAN_D1_UC1_DYN3     : -1.0
+CAN_D1_UC1_DYN4     : -1.0
+
+CAN_D1_UC1_EH1      : -1.0
+CAN_D1_UC1_EH2      : -1.0
+CAN_D1_UC1_EH3      : -1.0
+CAN_D1_UC1_EH4      : -1.0
+
+CAN_D1_UC1_FB1      : -1.0
+CAN_D1_UC1_FB2      : -1.0
+CAN_D1_UC1_FB3      : -1.0
+CAN_D1_UC1_FB4      : -1.0
+
+CAN_D1_UC1_POW1     : -1.0
+CAN_D1_UC1_POW2     : -1.0
+CAN_D1_UC1_POW3     : -1.0
+CAN_D1_UC1_POW4     : -1.0
+
+# gps
+CAN_D1_UC1_GPO      : 2010.0
+CAN_D1_UC1_GPSA     : 2011.0
+CAN_D1_UC1_GPST     : 2012.0
+CAN_D1_UC1_GPP      : 2013.0
+CAN_D1_UC1_GPY      : 2014.0 # todo: fix me
+
+# baro
+CAN_D1_UC1_BPR      : 2020.0
+CAN_D1_UC1_BTE      : 2021.0
+
+# mag
+CAN_D1_UC1_MAG      : 2030.0
+
+# imu
+CAN_D1_UC1_ACC      : 2040.0
+CAN_D1_UC1_GYR      : 2041.0
