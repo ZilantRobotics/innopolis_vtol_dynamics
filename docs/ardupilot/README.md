@@ -2,12 +2,20 @@
 
 This page explains how to step by step configure Ardupilot to work with the Cyphal HITL simulator.
 
-## Requirements
+## Hardware Requirements
 
-You need the following hardware:
+For HITL simulation you need the following hardware:
 
-- CUAV V5+ autopilot (or any other autopilot with CAN bus and at least 2 MB flash),
-- CAN-sniffer (for example [programmer-sniffer](https://innopolisaero.github.io/inno_uavcan_node_binaries/guide/programmer_sniffer.html)).
+- Ardupilot compatible autopilot with CAN bus and at least 2 MB flash (tested on [cuav v5+](https://docs.px4.io/main/en/flight_controller/cuav_v5_plus.html))
+- CAN-sniffer (for example [RaccoonLab sniffer](https://raccoonlabdev.github.io/docs/guide/programmer_sniffer/)).
+
+An example of connection is shown below:
+
+<img src="https://github.com/RaccoonlabDev/innopolis_vtol_dynamics/blob/master/docs/img/sniffer_connection.png?raw=true" alt="drawing" width="640"/>
+
+The autopilot and sniffer should be connected via any CAN bus.
+
+## Software requirements
 
 Software:
 - The instruction based on [QGroundControl](http://qgroundcontrol.com/),
@@ -16,7 +24,7 @@ Software:
 
 It is expected that the autopilot and sniffer are connected with each other via CAN 1 bus.
 
-## 1. Load firmware
+## Step 1. Load firmware
 
 First of all, you need to load the firmware with a few additional modifications relative to the master branch.
 
@@ -36,7 +44,7 @@ Then type the default command from the Ardupilot tutorial to build and load the 
 ./waf --targets bin/arducopter --upload
 ```
 
-## 2. Vehicle configuration
+## Step 2. Vehicle configuration
 
 The configuration takes at least 10 minutes.
 
@@ -207,7 +215,11 @@ Control system configuration:
 
 Reboot the vehicle.
 
-## 3. Ready to fly
+## Step 3. Verify with Yukon
+
+<img src="yukon.png" alt="drawing" width="640"/>
+
+## Step 4. Ready to fly
 
 If the connection between the autopilot and the simulator is ok, the vehicle will be ready to fly. In the window with notification, it will always send a single warning about Cyphal IMU to remember you that you are in HITL mode and on custom firmware.
 
