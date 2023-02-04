@@ -36,9 +36,9 @@ RUN sudo apt-get install -y udev
 # 2.5. communicators
 COPY communicators/mavlink_communicator/                        communicators/mavlink_communicator/
 COPY communicators/uavcan_communicator/                         communicators/uavcan_communicator/
-COPY communicators/uavcan_msgs/                                 communicators/uavcan_msgs/
 COPY communicators/cyphal_communicator/scripts/config.sh        communicators/cyphal_communicator/scripts/config.sh
 COPY communicators/cyphal_communicator/install_requirements.sh  communicators/cyphal_communicator/install_requirements.sh
+COPY communicators/cyphal_communicator/requirements.txt         communicators/cyphal_communicator/requirements.txt
 COPY communicators/cyphal_communicator/compile_dsdl.sh          communicators/cyphal_communicator/compile_dsdl.sh
 RUN ./communicators/uavcan_communicator/scripts/install_requirements.sh         &&  \
     ./communicators/uavcan_communicator/scripts/install_libuavcan.sh

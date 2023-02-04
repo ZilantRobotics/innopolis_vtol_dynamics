@@ -5,5 +5,4 @@ catkin build innopolis_vtol_dynamics    \
              rosbridge_suite            \
              inno_sim_interface         \
              geographiclib_conversions  \
-             uavcan_communicator        \
-             uavcan_msgs
+             uavcan_communicator
