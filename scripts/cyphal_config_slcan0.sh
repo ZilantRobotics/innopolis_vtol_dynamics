@@ -13,7 +13,7 @@ export REG_DATA_TYPE_PATH="$REG_DATA_TYPE_PATH_UAVCAN $REG_DATA_TYPE_PATH_REG"
 
 export UAVCAN__CAN__IFACE='socketcan:slcan0'
 export UAVCAN__CAN__MTU=8
-export UAVCAN__NODE__ID=127
+export UAVCAN__NODE__ID=2
 
 export ALLOCATION_TABLE_PATH=allocation_table.db
 
