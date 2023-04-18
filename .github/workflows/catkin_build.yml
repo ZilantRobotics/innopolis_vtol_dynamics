@@ -7,7 +7,8 @@ defaults:
     shell: bash
 jobs:
   catkin_build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
+    timeout-minutes: 8
     container:
       image: ros:melodic
     steps:
