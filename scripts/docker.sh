@@ -24,7 +24,7 @@ help                            Print this message and exit"
 }
 
 setup_image_name_and_version() {
-    TAG_NAME=v0.4.0
+    TAG_NAME=$(git describe --tags --abbrev=0)
     DOCKERHUB_REPOSITOTY=ponomarevda/uavcan_hitl_dynamics_simulator
 
     if uname -m | grep -q 'aarch64'; then
