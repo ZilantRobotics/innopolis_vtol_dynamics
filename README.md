@@ -126,7 +126,7 @@ wget https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.13.0_c
 
 **Step 5. Configure autopilot**
 
-You need to run the [scripts/configure_autopilot.py](scripts/configure_autopilot.py). It will automatically will reset your parameters to default, and then configure exactly the parameters your autopilot needs for the HITL simulation. It will automatically restart the autopilot a few times.
+You need to run the [scripts/autopilot_configure.py](scripts/autopilot_configure.py). It will automatically will reset your parameters to default, and then configure exactly the parameters your autopilot needs for the HITL simulation. It will automatically restart the autopilot a few times.
 
 If your desired mode is not supported, refer to the corresponded section for the details:
 - [PX4 Autopilot](docs/px4/README.md)

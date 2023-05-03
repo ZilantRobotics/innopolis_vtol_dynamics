@@ -23,15 +23,15 @@ px4_v1_13_dronecan_inno_vtol_configs = [
     "px4_common.yaml"
 ]
 
-px4_v1_13_cyphal_quadcopter_configs = [
-    "px4_v1.13_quadcopter_airframe.yaml",
+px4_v1_14_cyphal_quadcopter_configs = [
+    "px4_v1.14_quadcopter_airframe.yaml",
     "px4_cyphal.yaml",
     "px4_common.yaml"
 ]
 
 supported_modes = {
     "px4_v1_13_dronecan_inno_vtol_configs" : px4_v1_13_dronecan_inno_vtol_configs,
-    "px4_v1_13_cyphal_quadcopter_configs"  : px4_v1_13_cyphal_quadcopter_configs,
+    "px4_v1_14_cyphal_quadcopter_configs"  : px4_v1_14_cyphal_quadcopter_configs,
 }
 
 def print_help():
@@ -51,6 +51,7 @@ if __name__ == '__main__':
     vehicle.reset_params_to_default()
     for config in configs:
         print("")
+        print(f"Config {config}:")
         vehicle.configure(path + config, reboot=True)
 
     # Reserved for ardupilot:
