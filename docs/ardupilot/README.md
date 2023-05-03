@@ -11,7 +11,7 @@ For HITL simulation you need the following hardware:
 
 An example of connection is shown below:
 
-<img src="https://github.com/RaccoonlabDev/innopolis_vtol_dynamics/blob/master/docs/img/sniffer_connection.png?raw=true" alt="drawing" width="640"/>
+<img src="../img/sniffer_connection.png" alt="drawing" width="640"/>
 
 The autopilot and sniffer should be connected via any CAN bus.
 

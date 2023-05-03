@@ -100,7 +100,7 @@ Typically we use [CUAV v5+](https://docs.px4.io/master/en/flight_controller/cuav
 
 An example of a connection is shown in the picture below.
 
-<img src="https://github.com/RaccoonlabDev/innopolis_vtol_dynamics/blob/master/docs/img/sniffer_connection.png?raw=true" alt="drawing" width="640"/>
+<img src="docs/img/sniffer_connection.png" alt="drawing" width="640"/>
 
 If you have a choice, it is sometimes preferable to use CAN1 on the autopilot side.
 
