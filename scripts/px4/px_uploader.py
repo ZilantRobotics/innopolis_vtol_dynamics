@@ -794,6 +794,10 @@ def main():
     parser.add_argument('--use-protocol-splitter-format', action='store_true', help='use protocol splitter format for reboot')
     parser.add_argument('firmware', action="store", nargs='+', help="Firmware file(s)")
     args = parser.parse_args()
+    
+    for fw in args.firmware:
+        if not os.path.exists(fw):
+            raise ValueError(f"Firmware file {fw} does not exist!")
 
     if args.use_protocol_splitter_format:
         print("Using protocol splitter format to reboot pixhawk!")
