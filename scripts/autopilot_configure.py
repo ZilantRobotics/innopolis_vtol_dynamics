@@ -3,14 +3,8 @@ import sys
 import time
 from os.path import dirname, abspath
 
-try:
-    import mavlink_tools
-    from mavlink_tools.configurator.vehicle import Vehicle
-except ModuleNotFoundError as error:
-    print(f"Error: {error}")
-    alpha_version = "--index-url https://test.pypi.org/simple/"
-    print(f"Try: `python3 -m pip install {alpha_version} mavlink_tools`.")
-    exit()
+import mavlink_tools
+from mavlink_tools.configurator.vehicle import Vehicle
 
 ardupilot_cyphal_quadcopter_configs = [
     "ardupilot_cyphal_common_params.yaml",

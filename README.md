@@ -128,6 +128,11 @@ wget https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.13.0_h
 
 You need to run the [scripts/autopilot_configure.py](scripts/autopilot_configure.py). It will automatically will reset your parameters to default, and then configure exactly the parameters your autopilot needs for the HITL simulation. It will automatically restart the autopilot a few times.
 
+```bash
+pip install mavlink_tools
+./scripts/autopilot_configure.py <desired_mode>
+```
+
 If your desired mode is not supported, refer to the corresponded section for the details:
 - [PX4 Autopilot](docs/px4/README.md)
 - [Ardupilot](docs/ardupilot/README.md)
