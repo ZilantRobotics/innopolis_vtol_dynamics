@@ -113,15 +113,15 @@ The appropriated and ready to use binaries are uploaded here: [PX4](https://gith
 For PX4 DroneCAN you can upload the firmware by typing the following 2 lines:
 
 ```bash
-wget https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.13.0_dronecan_hitl/px4_fmu-v5_default.px4
+wget https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.13.0_hitl/px4_fmu-v5_default.px4
 ./scripts/px4/upload.sh px4_fmu-v5_default.px4
 ```
 
 For PX4 Cyphal you can upload the firmware by typing:
 
 ```bash
-wget https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.13.0_cyphal_hitl/px4_fmu-v5_default.px4
-./scripts/px4/upload.sh px4_fmu-v5_default.px4
+wget https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.13.0_hitl/px4_fmu-v5_cyphal.px4
+./scripts/px4/upload.sh px4_fmu-v5_cyphal.px4
 ```
 
 **Step 5. Configure autopilot**
