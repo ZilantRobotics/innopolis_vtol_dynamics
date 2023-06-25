@@ -141,7 +141,7 @@ cyphal_and_dronecan_inno_vtol() {
 }
 
 run_interactive() {
-    setup_dronecan_hitl_config
+    setup_cyphal_hitl_config
     docker container run --rm -it $DOCKER_FLAGS $DOCKER_CONTAINER_NAME /bin/bash
 }
 
