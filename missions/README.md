@@ -15,3 +15,29 @@ Log example: [log10](https://review.px4.io/plot_app?log=9aeb4932-991a-4856-b292-
 This is the longest test scenario. It takes ~ 60 minutes. It is dedicated for testing the stability of the Cyphal HITL communication.
 
 Log example: [log5](https://review.px4.io/plot_app?log=8db32ee4-cae0-4594-acc1-902cab07cd94).
+
+## 3D part test scenarios
+
+### 1. Last Mile Aerologistics Test Scenario
+
+Testing and optimization of cargo delivery processes using unmanned aerial vehicles
+
+<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/delivery.png" alt="drawing"/>
+
+### 2. Construction Inspection Detection Scenario
+
+Development of the process of automatic regular inspection of construction sites using unmanned aerial vehicles
+
+<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/inspection.png" alt="drawing"/>
+
+## Additional scenarios
+
+### 1. Ground infrastructure testing scenario:
+
+Checking the interaction of unmanned aerial vehicles with ground infrastructure within the framework of air logistics tasks.
+
+<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/landing_station.png" alt="drawing"/>
+
+### 2. Fault Test Scenario
+
+Evaluation of the behavior and response of unmanned aerial vehicles to various types of failures during flight.
