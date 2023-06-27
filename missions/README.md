@@ -24,26 +24,34 @@ This is the longest test scenario. It takes ~ 60 minutes. It is dedicated for te
 
 ### 1. Last Mile Aerologistics Test Scenario
 
-Testing and optimization of cargo delivery processes using unmanned aerial vehicles
+Testing and optimization of cargo delivery processes using unmanned aerial vehicles.
+
+| Plan | Flight log example | Approximate execution time |
+|-|-|-|
+| [Deliver from KazanExpress to the Yard, come back and land](delivery_from_kazanexpress_to_yard.plan) | [log16](https://review.px4.io/plot_app?log=c63a3a10-5f1f-4d51-97a9-cfa0970b9f3c) | 7 minutes |
+| [Deliver from KazanExpress to the Technopark, come back and land](delivery_from_kazanexpress_to_technopark.plan) | [log22](https://review.px4.io/plot_app?log=3bea8e60-9f15-47ef-8954-be7cf0ae5e65) | 6 minutes |
+
+An illustration of the flight:
 
 <img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/delivery.png" alt="drawing"/>
 
-| Plan | Flight log example | Approximate execution time |
-|-|-|-|
-| [delivery_from_kazanexpress_to_yard.plan](delivery_from_kazanexpress_to_yard.plan) (takeoff from KazanExpress, deliver package to the yard, come back and land) | [log16](https://review.px4.io/plot_app?log=c63a3a10-5f1f-4d51-97a9-cfa0970b9f3c) | 7 minutes |
 
 ### 2. Construction Inspection Detection Scenario
 
-Development of the process of automatic regular inspection of construction sites using unmanned aerial vehicles
-
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/inspection.png" alt="drawing"/>
+Development of the process of automatic regular inspection of construction sites using unmanned aerial vehicles.
 
 | Plan | Flight log example | Approximate execution time |
 |-|-|-|
-| [inspection_technopark.plan](inspection_technopark.plan) (takeoff from technopark landing station, inspect the building process, come back and land) | [log18](https://review.px4.io/plot_app?log=2087803f-a0ea-41c6-b322-eb8ef06ad82d) | 4 minutes |
+| [inspection_technopark.plan](inspection_technopark.plan) (takeoff from technopark landing station, inspect the building process, come back and land) | [log18](https://review.px4.io/plot_app?log=2087803f-a0ea-41c6-b322-eb8ef06ad82d), [log19](https://review.px4.io/plot_app?log=03ceb5fd-3eb6-4f11-a743-4a65a1246c71) | 4 minutes |
+
+An illustration of the flight:
+
+<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/inspection.png" alt="drawing"/>
 
 
 ## Additional scenarios
+
+The following scenarios might be a part of the previous scenarios.
 
 ### 1. Ground infrastructure testing scenario:
 
@@ -52,6 +60,7 @@ Checking the interaction of unmanned aerial vehicles with ground infrastructure 
 ### 2. Fault Test Scenario
 
 Evaluation of the behavior and response of unmanned aerial vehicles to various types of failures during flight.
+
 
 ## Key points
 
