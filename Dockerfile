@@ -30,7 +30,7 @@ COPY uav_dynamics/inno_vtol_dynamics/install_requirements.sh    uav_dynamics/inn
 COPY uav_dynamics/inno_vtol_dynamics/requirements.txt           uav_dynamics/inno_vtol_dynamics/requirements.txt
 RUN uav_dynamics/inno_vtol_dynamics/install_requirements.sh
 
-# 2.3 uavcan_tools
+# 2.3 tools/can
 RUN sudo apt-get install -y udev
 
 # 2.5. communicators
