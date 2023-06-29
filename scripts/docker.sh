@@ -3,7 +3,7 @@
 print_help() {
    echo "Wrapper under docker API for Innopolis VTOL Dynamics simulator.
 It encapsulates all necessary docker flags and properly handles image versions.
-https://github.com/InnopolisAero/innopolis_vtol_dynamics
+https://github.com/RaccoonlabDev/innopolis_vtol_dynamics
 
 usage: docker.sh [command]
 
@@ -11,12 +11,12 @@ Commands:
 build (b)                       Build docker image.
 pull                            Pull docker image.
 push                            Push docker image.
-dronecan_vtol (dv)              Run dynamics simulator in DroneCan HITL mode for inno_vtol airframe
-dronecan_iris                   Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
+dronecan_vtol (dv)              Run dynamics simulator in DroneCAN HITL mode for inno_vtol airframe
+dronecan_iris                   Run dynamics simulator in DroneCAN HITL mode for flight_goggles airframe
 sitl_inno_vtol                  Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe
 sitl_flight_goggles             Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
 cyphal_inno_vtol (cv)           Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
-cyphal_and_dronecan_inno_vtol   Run dynamics simulator in DroneCan + Cyphal HITL mode for inno_vtol airframe.
+cyphal_and_dronecan_inno_vtol   Run dynamics simulator in DroneCAN + Cyphal HITL mode for inno_vtol airframe.
 interactive (i)                 Run container in interactive mode.
 test                            Run tests.
 kill                            Kill all containers.
@@ -32,14 +32,13 @@ setup_image_name_and_version() {
     elif uname -m | grep -q 'x86_64'; then
         TAG_NAME="$TAG_NAME""amd64"
     else
-        echo "unknown architecture"
+        echo "Unknown architecture"
         exit
     fi
-    DOCKER_CONTAINER_NAME=$DOCKERHUB_REPOSITOTY:$TAG_NAME
+    IMAGE_NAME=$DOCKERHUB_REPOSITOTY:$TAG_NAME
 }
 
 setup_mavlink_sitl_config() {
-    setup_image_name_and_version
     DOCKER_FLAGS="--net=host"
     DOCKER_FLAGS="$DOCKER_FLAGS -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1)"
 }
@@ -55,7 +54,7 @@ setup_dronecan_hitl_config() {
     fi
 
     echo "Docker Dronecan HITL settings:"
-    echo "- DOCKER_CONTAINER_NAME is" $DOCKER_CONTAINER_NAME
+    echo "- IMAGE_NAME is" $IMAGE_NAME
     echo "- DRONECAN_DEV_PATH_SYMLINK is" $DRONECAN_DEV_PATH_SYMLINK
 }
 
@@ -70,7 +69,7 @@ setup_cyphal_hitl_config() {
     fi
 
     echo "Docker Cyphal HITL settings:"
-    echo "- DOCKER_CONTAINER_NAME is" $DOCKER_CONTAINER_NAME
+    echo "- IMAGE_NAME is" $IMAGE_NAME
     echo "- CYPHAL_DEV_PATH_SYMLINK is" $CYPHAL_DEV_PATH_SYMLINK
 }
 
@@ -90,71 +89,80 @@ setup_cyphal_and_dronecan_hitl_config() {
     fi
 
     echo "Docker Cyphal and Dronecan HITL settings:"
-    echo "- DOCKER_CONTAINER_NAME is" $DOCKER_CONTAINER_NAME
+    echo "- IMAGE_NAME is" $IMAGE_NAME
     echo "- DRONECAN_DEV_PATH_SYMLINK is" $DRONECAN_DEV_PATH_SYMLINK
     echo "- CYPHAL_DEV_PATH_SYMLINK is" $CYPHAL_DEV_PATH_SYMLINK
 }
 
 build_docker_image() {
-    setup_image_name_and_version
-    docker build -t $DOCKER_CONTAINER_NAME ..
+    docker build -t $IMAGE_NAME ..
 }
 
 pull_docker_image() {
-    setup_image_name_and_version
-    docker pull $DOCKER_CONTAINER_NAME
+    docker pull $IMAGE_NAME
 }
 
 push_docker_image() {
-    setup_image_name_and_version
-    docker push $DOCKER_CONTAINER_NAME
+    docker push $IMAGE_NAME
 }
 
 dronecan_vtol() {
+    kill_all_related_containers
     setup_dronecan_hitl_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh dronecan_inno_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh dronecan_inno_vtol
 }
 
 dronecan_iris() {
+    kill_all_related_containers
     setup_dronecan_hitl_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh dronecan_flight_goggles
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh dronecan_flight_goggles
 }
 
 sitl_inno_vtol() {
+    kill_all_related_containers
     setup_mavlink_sitl_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh sitl_inno_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh sitl_inno_vtol
 }
 
 sitl_flight_goggles() {
+    kill_all_related_containers
     setup_mavlink_sitl_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh sitl_flight_goggles
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh sitl_flight_goggles
 }
 
 cyphal_inno_vtol() {
+    kill_all_related_containers
     setup_cyphal_hitl_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh cyphal_inno_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_inno_vtol
 }
 
 cyphal_and_dronecan_inno_vtol() {
+    kill_all_related_containers
     setup_cyphal_and_dronecan_hitl_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./scripts/run_sim.sh cyphal_and_dronecan_inno_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_and_dronecan_inno_vtol
 }
 
 run_interactive() {
     setup_cyphal_hitl_config
-    docker container run --rm -it $DOCKER_FLAGS $DOCKER_CONTAINER_NAME /bin/bash
+    docker container run --rm -it $DOCKER_FLAGS $IMAGE_NAME /bin/bash
 }
 
-kill_all_containers() {
-    docker kill $(docker ps -q)
+kill_all_related_containers() {
+    containers=$(docker ps -q --filter ancestor=$IMAGE_NAME)
+    if [ ! -z "${containers}" ]; then
+        printf "Killing the following containers: "
+        docker kill $containers
+    fi
 }
 
 test() {
     setup_mavlink_sitl_config
-    docker container run --rm $DOCKER_FLAGS $DOCKER_CONTAINER_NAME ./uav_dynamics/inno_vtol_dynamics/catkin_test.sh --docker
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./uav_dynamics/inno_vtol_dynamics/catkin_test.sh --docker
 }
 
+## Start from here
 cd "$(dirname "$0")"
+setup_image_name_and_version
 
 if [ "$1" = "build" ] || [ "$1" = "b" ]; then
     build_docker_image
@@ -179,7 +187,7 @@ elif [ "$1" = "interactive" ] || [ "$1" = "i" ]; then
 elif [ "$1" = "test" ]; then
     test
 elif [ "$1" = "kill" ]; then
-    kill_all_containers
+    kill_all_related_containers
 else
     print_help
 fi
