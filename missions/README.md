@@ -61,6 +61,14 @@ Checking the interaction of unmanned aerial vehicles with ground infrastructure 
 
 Evaluation of the behavior and response of unmanned aerial vehicles to various types of failures during flight.
 
+The simulator supports varios of fault test scenarios. Please, refer to the [scenarios.hpp](https://github.com/RaccoonlabDev/inno_vtol_dynamics/blob/main/src/scenarios.hpp).
+
+To run a desired scenario, you should publish the corresponded scenario number to the `/uav/scenario` ROS topic as follows:
+
+```bash
+rostopic pub /uav/scenario std_msgs/UInt8 "data: 0"
+```
+
 
 ## Key points
 
