@@ -45,7 +45,7 @@ setup_mavlink_sitl_config() {
 
 setup_dronecan_hitl_config() {
     setup_mavlink_sitl_config
-    source ./uavcan_tools/scripts/get_sniffer_symlink.sh
+    source ./tools/can/get_sniffer_symlink.sh
     DRONECAN_DEV_PATH_SYMLINK=$DEV_PATH_SYMLINK
 
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
@@ -60,7 +60,7 @@ setup_dronecan_hitl_config() {
 
 setup_cyphal_hitl_config() {
     setup_mavlink_sitl_config
-    source ./uavcan_tools/scripts/get_sniffer_symlink.sh
+    source ./tools/can/get_sniffer_symlink.sh
     CYPHAL_DEV_PATH_SYMLINK=$DEV_PATH_SYMLINK
 
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
