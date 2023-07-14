@@ -44,9 +44,9 @@ The following modes are supported as well, but they are not well-tested:
 
 | № | Autopilot | Communicator | dynamics | Airframe |
 | - | -------- | --------- | ------------ | -------- |
-| 1 | PX4 v1.12| DroneCAN HITL | flightgoggles_multicopter | iris [(10016)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/10016_iris) |
+| 1 | PX4 v1.12| DroneCAN HITL | quadcopter | iris [(10016)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/10016_iris) |
 | 2 | PX4 v1.12 | MAVLink SITL | inno_vtol | innopolis_vtol [(1050)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/1050_innopolis_vtol) |
-| 3 | PX4 v1.12 | MAVLink SITL | flightgoggles_multicopter | iris [(10016)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/10016_iris) |
+| 3 | PX4 v1.12 | MAVLink SITL | quadcopter | iris [(10016)](https://github.com/PonomarevDA/Firmware/blob/px4_v1.12.1_inno_vtol_dynamics/ROMFS/px4fmu_common/init.d-posix/airframes/10016_iris) |
 | 4 | ArduPilot v4.3/v4.4 | DroneCAN HITL | inno_vtol | copter |
 | 5 | ArduPilot v4.3/v4.4 | Cyphal HITL | inno_vtol | copter |
 

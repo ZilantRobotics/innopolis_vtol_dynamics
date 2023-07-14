@@ -10,16 +10,20 @@ https://github.com/InnopolisAero/innopolis_vtol_dynamics
 Usage: run_sim.sh <command>
 
 Commands:
-dronecan_inno_vtol                      Run dynamics simulator in DroneCan HITL mode for inno_vtol airframe
-dronecan_flight_goggles                 Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
-cyphal_inno_vtol                        Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
-cyphal_and_dronecan_inno_vtol           Run dynamics simulator in DroneCan + Cyphal mode for inno_vtol airframe.
-                                        This mode uses 2 serial ports and is in the alpha testing stage yet.
-sitl_inno_vtol                          Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe
-sitl_flight_goggles                     Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
-sitl_inno_vtol_with_flight_stack        Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe (with additional including px4.launch)
-sitl_flight_goggles_with_flight_stack   Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe (with additional including px4.launch)
-help                                    Print this message and exit"
+  dronecan_inno_vtol                      Run dynamics simulator in DroneCan HITL mode for inno_vtol airframe
+  dronecan_flight_goggles                 Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
+  cyphal_quadrotor                        Cyphal HITL PX4 Quadrotor (4001)
+  cyphal_standard_vtol                    Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
+  cyphal_and_dronecan_inno_vtol           Run dynamics simulator in DroneCan + Cyphal mode for inno_vtol airframe.
+                                          This mode uses 2 serial ports and is in the alpha testing stage yet.
+  sitl_inno_vtol                          Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe
+  sitl_flight_goggles                     Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
+  sitl_inno_vtol_with_flight_stack        Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe (with additional including px4.launch)
+  sitl_flight_goggles_with_flight_stack   Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe (with additional including px4.launch)
+
+Auxilliary commands:
+  setup_ros                               Source ROS and catkin_ws setup.bash files
+  help                                    Print this message and exit"
 }
 
 setup_ros() {
@@ -76,7 +80,7 @@ dronecan_inno_vtol() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
         vehicle:=innopolis_vtol                     \
-        airframe:=inno_standard_vtol                \
+        mixer:=inno_vtol_mixer                      \
         dynamics:=inno_vtol
 }
 
@@ -87,18 +91,29 @@ dronecan_flight_goggles() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
         vehicle:=iris                               \
-        airframe:=iris                              \
-        dynamics:=flightgoggles_multicopter
+        mixer:=direct_mixer                         \
+        dynamics:=quadcopter
 }
 
-cyphal_inno_vtol() {
+cyphal_quadrotor() {
     setup_ros
     setup_cyphal_hitl
     ./airframe_printer.sh 4001
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
+        vehicle:=iris                               \
+        mixer:=direct_mixer                         \
+        dynamics:=quadcopter
+}
+
+cyphal_standard_vtol() {
+    setup_ros
+    setup_cyphal_hitl
+    ./airframe_printer.sh 13000
+    roslaunch innopolis_vtol_dynamics hitl.launch   \
+        run_cyphal_communicator:=true               \
         vehicle:=innopolis_vtol                     \
-        airframe:=inno_standard_vtol                \
+        mixer:=inno_vtol_mixer                      \
         dynamics:=inno_vtol
 }
 
@@ -110,7 +125,7 @@ cyphal_and_dronecan_inno_vtol() {
         run_cyphal_communicator:=true               \
         run_dronecan_communicator:=true             \
         vehicle:=innopolis_vtol                     \
-        airframe:=inno_standard_vtol                \
+        mixer:=inno_vtol_mixer                      \
         dynamics:=inno_vtol
 }
 
@@ -118,7 +133,7 @@ sitl_inno_vtol() {
     setup_ros
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=innopolis_vtol                     \
-        airframe:=inno_standard_vtol                \
+        mixer:=inno_vtol_mixer                      \
         dynamics:=inno_vtol                         \
         run_sitl_flight_stack:="false"
 }
@@ -127,8 +142,8 @@ sitl_flight_goggles() {
     setup_ros
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=iris                               \
-        airframe:=iris                              \
-        dynamics:=flightgoggles_multicopter         \
+        mixer:=direct_mixer                         \
+        dynamics:=quadcopter                        \
         run_sitl_flight_stack:="false"
 }
 
@@ -137,7 +152,7 @@ sitl_inno_vtol_with_flight_stack() {
     setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=innopolis_vtol                     \
-        airframe:=inno_standard_vtol                \
+        mixer:=inno_vtol_mixer                      \
         dynamics:=inno_vtol                         \
         run_sitl_flight_stack:="true"
 }
@@ -147,8 +162,8 @@ sitl_flight_goggles_with_flight_stack() {
     setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=iris                               \
-        airframe:=iris                              \
-        dynamics:=flightgoggles_multicopter         \
+        mixer:=direct_mixer                         \
+        dynamics:=quadcopter                        \
         run_sitl_flight_stack:="true"
 }
 
@@ -161,8 +176,10 @@ if [ "$1" = "dronecan_inno_vtol" ]; then
     dronecan_inno_vtol
 elif [ "$1" = "dronecan_flight_goggles" ]; then
     dronecan_flight_goggles
-elif [ "$1" = "cyphal_inno_vtol" ]; then
-    cyphal_inno_vtol
+elif [ "$1" = "cyphal_quadrotor" ]; then
+    cyphal_quadrotor
+elif [ "$1" = "cyphal_standard_vtol" ]; then
+    cyphal_standard_vtol
 elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
     cyphal_and_dronecan_inno_vtol
 elif [ "$1" = "sitl_inno_vtol" ]; then
@@ -173,6 +190,8 @@ elif [ "$1" = "sitl_inno_vtol_with_flight_stack" ]; then
     sitl_inno_vtol_with_flight_stack
 elif [ "$1" = "sitl_flight_goggles_with_flight_stack" ]; then
     sitl_flight_goggles_with_flight_stack
+elif [ "$1" = "setup_ros" ]; then
+    setup_ros
 else
     print_help
 fi

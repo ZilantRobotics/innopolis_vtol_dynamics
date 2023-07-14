@@ -23,9 +23,16 @@ px4_v1_14_cyphal_quadcopter_configs = [
     "px4_common.yaml"
 ]
 
+px4_v1_14_cyphal_inno_quadcopter_configs = [
+    "px4_v1.14_inno_quadcopter_airframe.yaml",
+    "px4_cyphal.yaml",
+    "px4_common.yaml"
+]
+
 supported_modes = {
-    "px4_v1_13_dronecan_inno_vtol_configs" : px4_v1_13_dronecan_inno_vtol_configs,
-    "px4_v1_14_cyphal_quadcopter_configs"  : px4_v1_14_cyphal_quadcopter_configs,
+    "px4_v1_13_dronecan_inno_vtol_configs"      : px4_v1_13_dronecan_inno_vtol_configs,
+    "px4_v1_14_cyphal_quadcopter_configs"       : px4_v1_14_cyphal_quadcopter_configs,
+    "px4_v1_14_cyphal_inno_quadcopter_configs"  : px4_v1_14_cyphal_inno_quadcopter_configs,
 }
 
 def print_help():

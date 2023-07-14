@@ -147,7 +147,7 @@ cyphal_quadrotor() {
     if [[ $OPTIONS == "--force" ]]; then
         ./autopilot_configuration.sh
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_inno_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_quadrotor
 }
 
 cyphal_octorotor() {
@@ -156,7 +156,7 @@ cyphal_octorotor() {
     if [[ $OPTIONS == "--force" ]]; then
         ./autopilot_configuration.sh
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_inno_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_standard_vtol
 }
 
 cyphal_standard_vtol() {
@@ -165,7 +165,7 @@ cyphal_standard_vtol() {
     if [[ $OPTIONS == "--force" ]]; then
         ./autopilot_configuration.sh
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_inno_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_standard_vtol
 }
 
 cyphal_and_dronecan_inno_vtol() {
