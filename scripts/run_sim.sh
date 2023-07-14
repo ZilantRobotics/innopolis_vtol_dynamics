@@ -72,6 +72,7 @@ setup_combined_hitl() {
 dronecan_inno_vtol() {
     setup_ros
     setup_dronecan_hitl
+    ./airframe_printer.sh 13000
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
         vehicle:=innopolis_vtol                     \
@@ -82,6 +83,7 @@ dronecan_inno_vtol() {
 dronecan_flight_goggles() {
     setup_ros
     setup_dronecan_hitl
+    ./airframe_printer.sh 4001
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
         vehicle:=iris                               \
@@ -92,6 +94,7 @@ dronecan_flight_goggles() {
 cyphal_inno_vtol() {
     setup_ros
     setup_cyphal_hitl
+    ./airframe_printer.sh 4001
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         vehicle:=innopolis_vtol                     \
@@ -102,6 +105,7 @@ cyphal_inno_vtol() {
 cyphal_and_dronecan_inno_vtol() {
     setup_ros
     setup_combined_hitl
+    ./airframe_printer.sh 4001
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         run_dronecan_communicator:=true             \
@@ -149,6 +153,7 @@ sitl_flight_goggles_with_flight_stack() {
 }
 
 
+# Entry point
 cd "$(dirname "$0")"
 set -e
 

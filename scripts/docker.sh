@@ -1,26 +1,37 @@
 #!/bin/bash
 
 print_help() {
-   echo "Wrapper under docker API for Innopolis VTOL Dynamics simulator.
+   echo "usage: docker.sh COMMAND [OPTIONS]
+
+Wrapper under docker API for Innopolis VTOL Dynamics simulator.
 It encapsulates all necessary docker flags and properly handles image versions.
 https://github.com/RaccoonlabDev/innopolis_vtol_dynamics
 
-usage: docker.sh [command]
+Options:
+  --force                         Upload the required firmware and update parameters.
+                                  This option has effect only in HITL mode.
 
-Commands:
-build (b)                       Build docker image.
-pull                            Pull docker image.
-push                            Push docker image.
-dronecan_vtol (dv)              Run dynamics simulator in DroneCAN HITL mode for inno_vtol airframe
-dronecan_iris                   Run dynamics simulator in DroneCAN HITL mode for flight_goggles airframe
-sitl_inno_vtol                  Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe
-sitl_flight_goggles             Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
-cyphal_inno_vtol (cv)           Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
-cyphal_and_dronecan_inno_vtol   Run dynamics simulator in DroneCAN + Cyphal HITL mode for inno_vtol airframe.
-interactive (i)                 Run container in interactive mode.
-test                            Run tests.
-kill                            Kill all containers.
-help                            Print this message and exit"
+Commands to run the simulator (with aliases):
+  cyphal_quadrotor,cq             Cyphal HITL PX4 Quadrotor (4001)
+  cyphal_standard_vtol,csv        Cyphal HITL PX4 Standard VTOL (12001)
+  dronecan_vtol,dv                DroneCAN HITL mode for inno_vtol airframe
+  dronecan_iris                   DroneCAN HITL mode for flight_goggles airframe
+  sitl_inno_vtol                  MAVLink SITL mode for inno_vtol airframe
+  sitl_flight_goggles             MAVLink SITL mode for flight_goggles airframe
+  cyphal_and_dronecan_inno_vtol   DroneCAN + Cyphal HITL mode for inno_vtol airframe
+
+Not ready yet:
+  cyphal_octorotor,co             Cyphal HITL PX4 Octorotor Coaxial (12001)
+  cyphal_vtol_octoplane,cvo       Cyphal HITL PX4 VTOL Octoplane (13050)
+
+Auxilliary commands (with aliases):
+  build,b                         Build docker image
+  pull                            Pull docker image
+  push                            Push docker image
+  interactive,i                   Run container in interactive mode
+  test                            Run tests
+  kill                            Kill all containers
+  help                            Print this message and exit"
 }
 
 setup_image_name_and_version() {
@@ -76,8 +87,8 @@ setup_cyphal_hitl_config() {
 setup_cyphal_and_dronecan_hitl_config() {
     setup_mavlink_sitl_config
 
-    DRONECAN_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0669FF535151726687231340-if02"
-    CYPHAL_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066FFF575654888667251342-if02"
+    DRONECAN_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0670FF575654888667251042-if02"
+    CYPHAL_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0674FF524957778667133858-if02"
     
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
         DOCKER_FLAGS="$DOCKER_FLAGS --privileged -v $DRONECAN_DEV_PATH_SYMLINK:$DRONECAN_DEV_PATH_SYMLINK"
@@ -130,13 +141,37 @@ sitl_flight_goggles() {
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh sitl_flight_goggles
 }
 
-cyphal_inno_vtol() {
+cyphal_quadrotor() {
     kill_all_related_containers
     setup_cyphal_hitl_config
+    if [[ $OPTIONS == "--force" ]]; then
+        ./autopilot_configuration.sh
+    fi
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_inno_vtol
+}
+
+cyphal_octorotor() {
+    kill_all_related_containers
+    setup_cyphal_hitl_config
+    if [[ $OPTIONS == "--force" ]]; then
+        ./autopilot_configuration.sh
+    fi
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_inno_vtol
+}
+
+cyphal_standard_vtol() {
+    kill_all_related_containers
+    setup_cyphal_hitl_config
+    if [[ $OPTIONS == "--force" ]]; then
+        ./autopilot_configuration.sh
+    fi
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_inno_vtol
 }
 
 cyphal_and_dronecan_inno_vtol() {
+    echo "Cyphal and DroneCAN mode is a special mode that uses:"
+    echo "- slcan0 based on the 1-st sniffer for DroneCAN communication (sensors)"
+    echo "- slcan1 based on the 2-nd sniffer for Cyphal   communication (Actuators only)"
     kill_all_related_containers
     setup_cyphal_and_dronecan_hitl_config
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_and_dronecan_inno_vtol
@@ -163,6 +198,7 @@ test() {
 ## Start from here
 cd "$(dirname "$0")"
 setup_image_name_and_version
+OPTIONS=$2
 
 if [ "$1" = "build" ] || [ "$1" = "b" ]; then
     build_docker_image
@@ -178,8 +214,14 @@ elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then
     sitl_flight_goggles
-elif [ "$1" = "cyphal_inno_vtol" ] || [ "$1" = "cv" ]; then
-    cyphal_inno_vtol
+elif [ "$1" = "cyphal_quadrotor" ] || [ "$1" = "cq" ]; then
+    cyphal_quadrotor
+elif [ "$1" = "cyphal_octorotor" ] || [ "$1" = "co" ]; then
+    cyphal_octorotor
+elif [ "$1" = "cyphal_standard_vtol" ] || [ "$1" = "csv" ]; then
+    cyphal_standard_vtol
+elif [ "$1" = "cyphal_vtol_octoplane" ] || [ "$1" = "cvo" ]; then
+    echo "Not ready yet" # cyphal_vtol_octoplane
 elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
     cyphal_and_dronecan_inno_vtol
 elif [ "$1" = "interactive" ] || [ "$1" = "i" ]; then
