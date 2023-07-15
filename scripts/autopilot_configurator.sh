@@ -6,6 +6,7 @@ echo "1. Download firmware"
 echo "2. Upload firmware to the autopilot"
 echo "3. Configure parameters"
 
+wget https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.3.0-beta1/px4_fmu-v5_cyphal.px4
 ./px4/upload.sh px4_fmu-v5_cyphal.px4
 
 if [[ $1 == 4001 ]]; then
