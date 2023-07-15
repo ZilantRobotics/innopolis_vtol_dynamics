@@ -12,26 +12,26 @@ Options:
                                   This option has effect only in HITL mode.
 
 Commands to run the simulator (with aliases):
-  cyphal_quadrotor,cq             Cyphal HITL PX4 Quadrotor (4001)
-  cyphal_standard_vtol,csv        Cyphal HITL PX4 Standard VTOL (12001)
-  dronecan_vtol,dv                DroneCAN HITL mode for inno_vtol airframe
-  dronecan_iris                   DroneCAN HITL mode for flight_goggles airframe
-  sitl_inno_vtol                  MAVLink SITL mode for inno_vtol airframe
-  sitl_flight_goggles             MAVLink SITL mode for flight_goggles airframe
-  cyphal_and_dronecan_inno_vtol   DroneCAN + Cyphal HITL mode for inno_vtol airframe
+  cyphal_quadrotor,cq           Cyphal HITL     PX4 Quadrotor (4001)
+  cyphal_octorotor,co           Cyphal HITL     PX4 Octorotor Coaxial (12001)
+  cyphal_standard_vtol,csv      Cyphal HITL     PX4 Standard VTOL (12001) (quadcopter only)
+  dronecan_vtol,dv              DroneCAN HITL   PX4 inno_vtol
+  dronecan_iris                 DroneCAN HITL   PX4 Quadrotor (4001)
+  sitl_inno_vtol                MAVLink SITL    PX4 inno_vtol
+  sitl_flight_goggles           MAVLink SITL    PX4 Quadrotor (4001)
+  cyphal_and_dronecan           2 CAN HITL      ArduPilot quadrotor
 
 Not ready yet:
-  cyphal_octorotor,co             Cyphal HITL PX4 Octorotor Coaxial (12001)
-  cyphal_vtol_octoplane,cvo       Cyphal HITL PX4 VTOL Octoplane (13050)
+  cyphal_vtol_octoplane,cvo     Cyphal HITL     PX4 VTOL Octoplane (13050)
 
 Auxilliary commands (with aliases):
-  build,b                         Build docker image
-  pull                            Pull docker image
-  push                            Push docker image
-  interactive,i                   Run container in interactive mode
-  test                            Run tests
-  kill                            Kill all containers
-  help                            Print this message and exit"
+  build,b                       Build docker image
+  pull                          Pull docker image
+  push                          Push docker image
+  interactive,i                 Run container in interactive mode
+  test                          Run tests
+  kill                          Kill all containers
+  help                          Print this message and exit"
 }
 
 setup_image_name_and_version() {
@@ -145,7 +145,7 @@ cyphal_quadrotor() {
     kill_all_related_containers
     setup_cyphal_hitl_config
     if [[ $OPTIONS == "--force" ]]; then
-        ./autopilot_configuration.sh
+        ./autopilot_configurator.sh 4001
     fi
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_quadrotor
 }
@@ -154,16 +154,16 @@ cyphal_octorotor() {
     kill_all_related_containers
     setup_cyphal_hitl_config
     if [[ $OPTIONS == "--force" ]]; then
-        ./autopilot_configuration.sh
+        ./autopilot_configurator.sh 12001
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_standard_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_octorotor
 }
 
 cyphal_standard_vtol() {
     kill_all_related_containers
     setup_cyphal_hitl_config
     if [[ $OPTIONS == "--force" ]]; then
-        ./autopilot_configuration.sh
+        ./autopilot_configurator.sh 13000
     fi
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_standard_vtol
 }

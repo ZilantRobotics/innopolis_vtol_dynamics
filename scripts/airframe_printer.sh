@@ -84,9 +84,3 @@ elif [[ $1 == 13050 ]]; then
      PX4 VTOL Octoplane
           (13050)$PX4_VTOL_OCTOPLANE_13050"""
 fi
-
-
-
-
-
-
