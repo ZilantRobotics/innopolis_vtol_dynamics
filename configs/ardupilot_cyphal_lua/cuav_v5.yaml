@@ -1,0 +1,68 @@
+FRAME_CLASS         : 1.0         # Quadcopter
+CAN_D1_PROTOCOL     : 1.0         # UAVCAN
+CAN_D2_PROTOCOL     : 10.0        # Scripting
+CAN_P1_DRIVER       : 1.0         # First driver
+CAN_P2_DRIVER       : 2.0         # Second driver
+CAN_P1_BITRATE      : 1000000.0
+CAN_P2_BITRATE      : 1000000.0
+BRD_SAFETY_DEFLT    : 0.0         # Disabled
+FS_THR_ENABLE       : 0.0         # Disabled
+GPS_TYPE            : 9.0         # UAVCAN
+ATC_RAT_RLL_P       : 0.08
+
+# Disable board sensors
+EK3_IMU_MASK        : 1.0
+INS_ENABLE_MASK     : 1.0
+INS_USE             : 1.0        # Enabled
+INS_USE2            : 0.0        # Disabled
+INS_USE3            : 0.0        # Disabled
+
+# Use Cyphal Compass
+# AP_HAL::Device::make_bus_id: 3 + (0 * 8) + (NODE_ID * 2^8) + (1 * 2^16)
+COMPASS_TYPEMASK    : 513023.0    # Disable everything except UAVCAN
+COMPASS_DEV_ID      : 76291.0     # UAVCAN magnetometer
+COMPASS_PRIO1_ID    : 76291.0
+COMPASS_USE         : 1.0
+COMPASS_USE2        : 0.0
+COMPASS_USE3        : 0.0
+COMPASS_EXTERNAL    : 1.0
+COMPASS_EXTERN2     : 0.0
+COMPASS_EXTERN3     : 0.0
+COMPASS_USE         : 1.0
+COMPASS_USE2        : 0.0
+COMPASS_USE3        : 0.0
+COMPASS_DEC         : 0.0
+
+COMPASS_DIA_X       : 0.999
+COMPASS_DIA_Y       : 0.999
+COMPASS_DIA_Z       : 0.999
+
+COMPASS_ODI_X       : 0.001
+COMPASS_ODI_Y       : 0.001
+COMPASS_ODI_Z       : 0.001
+
+COMPASS_OFS_X       : 0.001
+COMPASS_OFS_Y       : 0.001
+COMPASS_OFS_Z       : 0.001
+
+# Use Cyphal IMU
+AHRS_TRIM_X         : 0.000214698069612496
+AHRS_TRIM_Y         : 0.000064728621509857
+AHRS_TRIM_Z         : 0.000000000000000000
+
+INS_ACC1_CALTEMP    : 0.000
+INS_ACCOFFS_X       : 0.001
+INS_ACCOFFS_Y       : 0.001
+INS_ACCOFFS_Z       : 0.001
+INS_ACCSCAL_X       : 0.999
+INS_ACCSCAL_Y       : 0.999
+INS_ACCSCAL_Z       : 0.999
+
+INS_GYR1_CALTEMP    : 0.000
+INS_GYROFFS_X       : 0.001
+INS_GYROFFS_Y       : 0.001
+INS_GYROFFS_Z       : 0.001
+
+# Lua
+SCR_ENABLE          : 1.0         # means scripting is enabled
+LOG_FILE_BUF_SIZE   : 8.0         # https://discuss.ardupilot.org/t/lua-script-pre-arm-error/86834
