@@ -1,0 +1,6 @@
+CYP_ENABLE          : 1.0       # means Cyphal is enabled
+CYP_NODE_ID         : 42.0      # Node identifier in Cyphal-network
+CYP_FB              : 2500.0    # ESC Feedback port id. Enabled if less then 8191, otherwise disabled.
+CYP_RD              : 2343.0    # Readiness port id. Enabled if less then 8191, otherwise disabled.
+CYP_SP              : 2342.0    # Setpoint port id. Enabled if less then 8191, otherwise disabled.
+CYP_TESTS           : 1.0       # If set to 1, self tests will be runned at the beginning of the application.
