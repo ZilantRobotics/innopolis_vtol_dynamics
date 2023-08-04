@@ -23,7 +23,7 @@ Commands:
   sitl_flight_goggles_with_flight_stack   Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe (with additional including px4.launch)
 
 Auxilliary commands:
-  setup_ros                               Source ROS and catkin_ws setup.bash files
+  ros                                     Source ROS and catkin_ws setup.bash files
   help                                    Print this message and exit"
 }
 
@@ -141,10 +141,10 @@ cyphal_and_dronecan_inno_vtol() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         run_dronecan_communicator:=true             \
-        vehicle:=innopolis_vtol                     \
-        vehicle_params:=vtol_params                 \
-        mixer:=inno_vtol_mixer                      \
-        dynamics:=inno_vtol
+        vehicle:=iris                               \
+        vehicle_params:=quadrotor_params_ardupilot  \
+        mixer:=direct_mixer                         \
+        dynamics:=quadcopter
 }
 
 sitl_inno_vtol() {
@@ -216,7 +216,7 @@ elif [ "$1" = "sitl_inno_vtol_with_flight_stack" ]; then
     sitl_inno_vtol_with_flight_stack
 elif [ "$1" = "sitl_flight_goggles_with_flight_stack" ]; then
     sitl_flight_goggles_with_flight_stack
-elif [ "$1" = "setup_ros" ]; then
+elif [ "$1" = "ros" ]; then
     setup_ros
 else
     print_help

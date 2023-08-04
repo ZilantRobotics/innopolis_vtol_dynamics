@@ -87,8 +87,8 @@ setup_cyphal_hitl_config() {
 setup_cyphal_and_dronecan_hitl_config() {
     setup_mavlink_sitl_config
 
-    DRONECAN_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0670FF575654888667251042-if02"
-    CYPHAL_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0674FF524957778667133858-if02"
+    DRONECAN_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0674FF524957778667133858-if02"
+    CYPHAL_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066AFF524957778667134207-if02"
     
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
         DOCKER_FLAGS="$DOCKER_FLAGS --privileged -v $DRONECAN_DEV_PATH_SYMLINK:$DRONECAN_DEV_PATH_SYMLINK"
@@ -222,7 +222,7 @@ elif [ "$1" = "cyphal_standard_vtol" ] || [ "$1" = "csv" ]; then
     cyphal_standard_vtol
 elif [ "$1" = "cyphal_vtol_octoplane" ] || [ "$1" = "cvo" ]; then
     echo "Not ready yet" # cyphal_vtol_octoplane
-elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
+elif [ "$1" = "cyphal_and_dronecan" ]; then
     cyphal_and_dronecan_inno_vtol
 elif [ "$1" = "interactive" ] || [ "$1" = "i" ]; then
     run_interactive
