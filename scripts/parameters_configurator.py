@@ -2,9 +2,12 @@
 import sys
 import time
 from os.path import dirname, abspath
+from pathlib import Path
 
-import mavlink_tools
-from mavlink_tools.configurator.vehicle import Vehicle
+SCRIPT_DIR = Path(dirname(abspath(__file__)))
+SRC_DIR = SCRIPT_DIR.parent.parent / "autopilot_tools" / "src"
+sys.path.append(SRC_DIR.absolute().as_posix())
+from autopilot_tools.vehicle import Vehicle
 
 ardupilot_cyphal_quadcopter_configs = [
     "ardupilot_cyphal_common_params.yaml",
@@ -51,7 +54,8 @@ if __name__ == '__main__':
         print_help()
         exit()
 
-    configs = supported_modes[sys.argv[1]]
+    mode = sys.argv[1]
+    configs = supported_modes[mode]
     path = dirname(dirname(abspath(__file__))) + "/configs/"
 
     vehicle = Vehicle()
@@ -62,7 +66,7 @@ if __name__ == '__main__':
         print(f"Config {config}:")
         vehicle.configure(path + config, reboot=True)
 
-    # Reserved for ardupilot:
-    # time.sleep(5)
-    # vehicle.force_calibrate()
-    # vehicle.reboot()
+    if mode == "ardupilot_lua_configs":
+        time.sleep(5)
+        vehicle.force_calibrate()
+        vehicle.reboot()
