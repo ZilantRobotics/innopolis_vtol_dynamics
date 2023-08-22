@@ -52,12 +52,20 @@ setup_dronecan_hitl() {
         echo "Trying to create slcan0 for dronecan..."
         $SCRIPT_DIR/tools/can/create_slcan_from_serial.sh $DRONECAN_DEV_PATH_SYMLINK slcan0
     fi
+    if [[ -z $(ifconfig | grep slcan0) ]]; then
+        echo "HITL can't be started without CAN interface!"
+        exit 0
+    fi
 }
 
 setup_cyphal_hitl() {
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan0 for cyphal/serial..."
         $SCRIPT_DIR/tools/can/create_slcan_from_serial.sh $CYPHAL_DEV_PATH_SYMLINK slcan0
+    fi
+    if [[ -z $(ifconfig | grep slcan0) ]]; then
+        echo "HITL can't be started without CAN interface!"
+        exit 0
     fi
     source $SCRIPT_DIR/cyphal_config_slcan0.sh
 }
