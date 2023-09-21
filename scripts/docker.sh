@@ -16,7 +16,7 @@ Commands to run the simulator (with aliases):
   cyphal_octorotor,co           Cyphal HITL     PX4 Octorotor Coaxial (12001)
   cyphal_standard_vtol,csv      Cyphal HITL     PX4 Standard VTOL (12001) (quadcopter only)
   dronecan_vtol,dv              DroneCAN HITL   PX4 inno_vtol
-  dronecan_iris                 DroneCAN HITL   PX4 Quadrotor (4001)
+  dronecan_quadrotor            DroneCAN HITL   PX4 Quadrotor (4001)
   sitl_inno_vtol                MAVLink SITL    PX4 inno_vtol
   sitl_flight_goggles           MAVLink SITL    PX4 Quadrotor (4001)
   cyphal_and_dronecan           2 CAN HITL      ArduPilot quadrotor
@@ -123,7 +123,7 @@ dronecan_vtol() {
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh dronecan_inno_vtol
 }
 
-dronecan_iris() {
+dronecan_quadrotor() {
     kill_all_related_containers
     setup_dronecan_hitl_config
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh dronecan_flight_goggles
@@ -208,8 +208,8 @@ elif [ "$1" = "push" ]; then
     push_docker_image
 elif [ "$1" = "dronecan_vtol" ] || [ "$1" = "dv" ]; then
     dronecan_vtol
-elif [ "$1" = "dronecan_iris" ]; then
-    dronecan_iris
+elif [ "$1" = "dronecan_quadrotor" ] || [ "$1" = "dq" ]; then
+    dronecan_quadrotor
 elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then
