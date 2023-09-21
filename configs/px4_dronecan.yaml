@@ -10,8 +10,10 @@ UAVCAN_SUB_MAG:      1
 UAVCAN_SUB_RNG:      1
 
 # 2. Sensor calibration
+# bus=ID%8, node_id=((ID/256)%256), devtype=ID/65536
+
 # 2.1. Gyro
-CAL_GYRO0_ID:     8793603
+CAL_GYRO0_ID:     8793603  # node_id=46
 CAL_GYRO0_PRIO:   50
 CAL_GYRO0_ROT:    0
 CAL_GYRO0_XOFF:   -0.001928219571709633
@@ -19,12 +21,12 @@ CAL_GYRO0_YOFF:   0.001404458540491760
 CAL_GYRO0_ZOFF:   -0.000455024652183056
 
 # 2.2. Accelerometer
-CAL_ACC0_ID:      8400387
+CAL_ACC0_ID:      8400387  # node_id=46
 CAL_ACC0_PRIO:    50
 CAL_ACC0_ROT:     0
 
 # 2.3. Magnetometer
-CAL_MAG0_ID:      8924163
+CAL_MAG0_ID:      8923651  # bus=3 (uavcan), node_id=42, devtype=136
 CAL_MAG0_PRIO:    50
 CAL_MAG0_ROT:     0
 
