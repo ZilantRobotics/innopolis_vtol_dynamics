@@ -8,23 +8,27 @@ It encapsulates all necessary docker flags and properly handles image versions.
 https://github.com/RaccoonlabDev/innopolis_vtol_dynamics
 
 Options:
-  --force                         Upload the required firmware and update parameters.
-                                  This option has effect only in HITL mode.
+  --force                       Upload the required firmware and update parameters.
+                                This option has effect only in HITL mode.
 
-Commands to run the simulator (with aliases):
-  cyphal_quadrotor,cq           Cyphal HITL     PX4 Quadrotor (4001)
-  cyphal_octorotor,co           Cyphal HITL     PX4 Octorotor Coaxial (12001)
-  cyphal_standard_vtol,csv      Cyphal HITL     PX4 Standard VTOL (12001) (quadcopter only)
-  dronecan_vtol,dv              DroneCAN HITL   PX4 inno_vtol
-  dronecan_quadrotor            DroneCAN HITL   PX4 Quadrotor (4001)
-  sitl_inno_vtol                MAVLink SITL    PX4 inno_vtol
-  sitl_flight_goggles           MAVLink SITL    PX4 Quadrotor (4001)
-  cyphal_and_dronecan           2 CAN HITL      ArduPilot quadrotor
+Supported modes (with aliases):
+-------------------------------------------------------------------------------
+  Command                     | Protocol    Autopilot SW    Airframe
+-------------------------------------------------------------------------------
+  cyphal_quadrotor,cq         | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
+  dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
+  dronecan_vtol,dv            | DroneCAN    PX4 v1.12       inno_vtol
+-------------------------------------------------------------------------------
+  cyphal_standard_vtol,csv    | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
+  cyphal_octorotor,co         | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
+  sitl_inno_vtol              | MAVLink     PX4 v1.12       inno_vtol
+  sitl_flight_goggles         | MAVLink     PX4 v1.12       Quadrotor (4001)
+  cyphal_and_dronecan         | 2 CAN       AP  v4.4.0      Copter
+-------------------------------------------------------------------------------
+  cyphal_vtol_octoplane,cvo   | Cyphal      PX4 v1.14-beta  VTOL Octoplane (13050)
+-------------------------------------------------------------------------------
 
-Not ready yet:
-  cyphal_vtol_octoplane,cvo     Cyphal HITL     PX4 VTOL Octoplane (13050)
-
-Auxilliary commands (with aliases):
+Commands (with aliases):
   build,b                       Build docker image
   pull                          Pull docker image
   push                          Push docker image
@@ -120,12 +124,18 @@ push_docker_image() {
 dronecan_vtol() {
     kill_all_related_containers
     setup_dronecan_hitl_config
+    if [[ $OPTIONS == "--force" ]]; then
+        ./configure.sh dronecan_vtol
+    fi
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh dronecan_inno_vtol
 }
 
 dronecan_quadrotor() {
     kill_all_related_containers
     setup_dronecan_hitl_config
+    if [[ $OPTIONS == "--force" ]]; then
+        ./configure.sh dronecan_quadrotor
+    fi
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh dronecan_flight_goggles
 }
 
@@ -145,7 +155,7 @@ cyphal_quadrotor() {
     kill_all_related_containers
     setup_cyphal_hitl_config
     if [[ $OPTIONS == "--force" ]]; then
-        ./autopilot_configurator.sh 4001
+        ./configure.sh cyphal_quadrotor
     fi
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_quadrotor
 }
@@ -154,7 +164,7 @@ cyphal_octorotor() {
     kill_all_related_containers
     setup_cyphal_hitl_config
     if [[ $OPTIONS == "--force" ]]; then
-        ./autopilot_configurator.sh 12001
+        ./configure.sh cyphal_octorotor
     fi
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_octorotor
 }
@@ -162,9 +172,6 @@ cyphal_octorotor() {
 cyphal_standard_vtol() {
     kill_all_related_containers
     setup_cyphal_hitl_config
-    if [[ $OPTIONS == "--force" ]]; then
-        ./autopilot_configurator.sh 13000
-    fi
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_standard_vtol
 }
 
@@ -196,6 +203,7 @@ test() {
 }
 
 ## Start from here
+set -e
 cd "$(dirname "$0")"
 setup_image_name_and_version
 OPTIONS=$2
