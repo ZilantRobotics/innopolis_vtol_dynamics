@@ -10,15 +10,20 @@ https://github.com/RaccoonlabDev/innopolis_vtol_dynamics
 Options:
   --force                         Upload the required firmware and update parameters.
                                   This option has effect only in HITL mode.
+  --with_flight_stack             If this option is provided, build process
+                                  will include px4 flight stack for SITL simulations.
+                                  Only applicable to build subcommand
 
 Commands to run the simulator (with aliases):
-  cyphal_quadrotor,cq           Cyphal HITL     PX4 Quadrotor (4001)
-  cyphal_octorotor,co           Cyphal HITL     PX4 Octorotor Coaxial (12001)
-  cyphal_standard_vtol,csv      Cyphal HITL     PX4 Standard VTOL (12001) (quadcopter only)
-  dronecan_vtol,dv              DroneCAN HITL   PX4 inno_vtol
-  dronecan_iris                 DroneCAN HITL   PX4 Quadrotor (4001)
-  sitl_inno_vtol                MAVLink SITL    PX4 inno_vtol
-  sitl_flight_goggles           MAVLink SITL    PX4 Quadrotor (4001)
+  cyphal_quadrotor,cq                     Cyphal HITL     PX4 Quadrotor (4001)
+  cyphal_octorotor,co                     Cyphal HITL     PX4 Octorotor Coaxial (12001)
+  cyphal_standard_vtol,csv                Cyphal HITL     PX4 Standard VTOL (12001) (quadcopter only)
+  dronecan_vtol,dv                        DroneCAN HITL   PX4 inno_vtol
+  dronecan_iris                           DroneCAN HITL   PX4 Quadrotor (4001)
+  sitl_inno_vtol                          MAVLink SITL    PX4 inno_vtol
+  sitl_flight_goggles                     MAVLink SITL    PX4 Quadrotor (4001)
+  sitl_inno_vtol_with_flight_stack        MAVLink SITL    PX4 inno_vtol with PX4 flight stack
+  sitl_flight_goggles_with_flight_stack   MAVLink SITL    PX4 Quadrotor (4001) with PX4 flight stack
   cyphal_and_dronecan           2 CAN HITL      ArduPilot quadrotor
 
 Not ready yet:
@@ -106,7 +111,11 @@ setup_cyphal_and_dronecan_hitl_config() {
 }
 
 build_docker_image() {
-    docker build -t $IMAGE_NAME ..
+  SIM_SOURCE=ros
+  if [[ $OPTIONS == "--with_flight_stack" ]]; then
+    SIM_SOURCE=px4
+  fi
+  docker build --build-arg SIM_SOURCE=$SIM_SOURCE -t $IMAGE_NAME --target sim ..
 }
 
 pull_docker_image() {
@@ -214,6 +223,10 @@ elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then
     sitl_flight_goggles
+elif [ "$1" = "sitl_inno_vtol_with_flight_stack" ]; then
+    sitl_inno_vtol_with_flight_stack
+elif [ "$1" = "sitl_flight_goggles_with_flight_stack" ]; then
+    sitl_flight_goggles_with_flight_stack
 elif [ "$1" = "cyphal_quadrotor" ] || [ "$1" = "cq" ]; then
     cyphal_quadrotor
 elif [ "$1" = "cyphal_octorotor" ] || [ "$1" = "co" ]; then

@@ -171,13 +171,12 @@ sitl_flight_goggles() {
         vehicle:=iris                               \
         vehicle_params:=quadrotor_params            \
         mixer:=direct_mixer                         \
-        dynamics:=quadcopter                        \
+        dynamics:=flightgoggles_multicopter         \
         run_sitl_flight_stack:="false"
 }
 
 sitl_inno_vtol_with_flight_stack() {
     setup_ros
-    setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=innopolis_vtol                     \
         vehicle_params:=quadrotor_params            \
@@ -188,12 +187,11 @@ sitl_inno_vtol_with_flight_stack() {
 
 sitl_flight_goggles_with_flight_stack() {
     setup_ros
-    setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=iris                               \
         vehicle_params:=quadrotor_params            \
         mixer:=direct_mixer                         \
-        dynamics:=quadcopter                        \
+        dynamics:=flightgoggles_multicopter                        \
         run_sitl_flight_stack:="true"
 }
 
@@ -216,14 +214,15 @@ elif [ "$1" = "cyphal_standard_vtol" ]; then
     cyphal_standard_vtol
 elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
     cyphal_and_dronecan_inno_vtol
-elif [ "$1" = "sitl_inno_vtol" ]; then
-    sitl_inno_vtol
-elif [ "$1" = "sitl_flight_goggles" ]; then
-    sitl_flight_goggles
 elif [ "$1" = "sitl_inno_vtol_with_flight_stack" ]; then
     sitl_inno_vtol_with_flight_stack
 elif [ "$1" = "sitl_flight_goggles_with_flight_stack" ]; then
     sitl_flight_goggles_with_flight_stack
+elif [ "$1" = "sitl_inno_vtol" ]; then
+    sitl_inno_vtol
+elif [ "$1" = "sitl_flight_goggles" ]; then
+    echo "no fs"
+    sitl_flight_goggles
 elif [ "$1" = "ros" ]; then
     setup_ros
 else

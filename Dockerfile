@@ -1,6 +1,30 @@
+ARG SIM_SOURCE=ros
 ARG ROS_DISTRO=noetic
 
-FROM ros:$ROS_DISTRO
+FROM ros:$ROS_DISTRO as ros
+
+FROM ros:$ROS_DISTRO as px4
+ARG PX4_VERSION=latest
+ENV FIRMWARE_PATH ./PX4-Autopilot
+WORKDIR /
+
+RUN apt-get update
+RUN apt-get install -y python3-pip git
+
+RUN pip install kconfiglib jinja2 pyros-genmsg jsonschema future
+WORKDIR /catkin_ws/src/
+RUN git clone https://github.com/PX4/PX4-Autopilot.git --recursive $FIRMWARE_PATH && \
+    if [$PX4_VERSION != latest]; then git checkout -C $FIRMWARE_PATH $PX4_VERSION; fi
+
+
+RUN cd $FIRMWARE_PATH && \
+    DONT_RUN=1 make px4_sitl
+
+RUN git clone https://github.com/MoriKen254/timed_roslaunch
+
+#TODO add builder pattern to shrink the resulting image size
+
+FROM ${SIM_SOURCE} as sim
 LABEL description="UAV simulator"
 SHELL ["/bin/bash", "-c"]
 WORKDIR /catkin_ws/src/uav_hitl_simulator
@@ -71,7 +95,6 @@ COPY uav_dynamics/inno_vtol_dynamics/config/            uav_dynamics/inno_vtol_d
 COPY uav_dynamics/inno_vtol_dynamics/catkin_test.sh     uav_dynamics/inno_vtol_dynamics/catkin_test.sh
 COPY scripts/ scripts/
 COPY communicators/cyphal_communicator/                 communicators/cyphal_communicator/
-
 
 CMD echo "main process has been started"                                        &&  \
     source /opt/ros/$ROS_DISTRO/setup.bash && source /catkin_ws/devel/setup.bash &&  \
