@@ -8,6 +8,7 @@ UAVCAN_SUB_ICE:      1
 UAVCAN_SUB_IMU:      1
 UAVCAN_SUB_MAG:      1
 UAVCAN_SUB_RNG:      1
+UAVCAN_PUB_ARM:      1
 
 # 2. Sensor calibration
 # bus=ID%8, node_id=((ID/256)%256), devtype=ID/65536

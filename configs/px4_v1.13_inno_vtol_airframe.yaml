@@ -1,8 +1,9 @@
 SYS_AUTOSTART:    13070
-SYS_CTRL_ALLOC:   0
+SYS_CTRL_ALLOC:   0       # Deprecated since v1.14
 
-FW_AIRSPD_MAX: 35.0
-FW_AIRSPD_MIN: 20.0
-FW_AIRSPD_STALL: 15.0
-NAV_LOITER_RAD: 150.0
-FW_YR_P: 0.5
+FW_AIRSPD_MAX: 35.0       # Max Airspeed (CAS)
+FW_AIRSPD_TRIM: 25.0      # Trim (Cruise) Airspeed (CAS)
+FW_AIRSPD_MIN: 20.0       # Minimum Airspeed (CAS)
+FW_AIRSPD_STALL: 15.0     # Stall Airspeed (CAS)
+NAV_LOITER_RAD: 150.0     # Loiter radius (FW only)
+FW_YR_P: 0.5              # Yaw rate proportional rate
