@@ -53,6 +53,7 @@ COPY catkin_build.sh catkin_build.sh
 COPY uav_dynamics/inno_vtol_dynamics/libs               uav_dynamics/inno_vtol_dynamics/libs
 COPY uav_dynamics/inno_vtol_dynamics/meshes             uav_dynamics/inno_vtol_dynamics/meshes
 COPY uav_dynamics/inno_vtol_dynamics/src                uav_dynamics/inno_vtol_dynamics/src
+COPY uav_dynamics/inno_vtol_dynamics/tests              uav_dynamics/inno_vtol_dynamics/tests
 COPY uav_dynamics/inno_vtol_dynamics/urdf               uav_dynamics/inno_vtol_dynamics/urdf
 COPY uav_dynamics/inno_vtol_dynamics/CMakeLists.txt     uav_dynamics/inno_vtol_dynamics/CMakeLists.txt
 COPY uav_dynamics/inno_vtol_dynamics/package.xml        uav_dynamics/inno_vtol_dynamics/package.xml

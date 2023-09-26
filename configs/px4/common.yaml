@@ -4,4 +4,4 @@ COM_ARM_CHK_ESCS: 0
 CBRK_IO_SAFETY:   22027
 SYS_BOARD_SENS:   0
 COM_RC_IN_MODE:   1
-FD_ACT_EN:        1       # Enable Actuator Failure check
+FD_ACT_EN:        0       # Enable Actuator Failure check

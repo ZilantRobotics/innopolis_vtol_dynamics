@@ -17,11 +17,12 @@ Supported modes (with aliases):
 -------------------------------------------------------------------------------
   cyphal_quadrotor,cq         | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
   dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
-  dronecan_vtol,dv            | DroneCAN    PX4 v1.12       inno_vtol
+  dronecan_vtol_v1_14_0,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
+  dronecan_vtol_v1_12_1,dvo   | DroneCAN    PX4 v1.12       vtol 13070
 -------------------------------------------------------------------------------
   cyphal_standard_vtol,csv    | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
   cyphal_octorotor,co         | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
-  sitl_inno_vtol              | MAVLink     PX4 v1.12       inno_vtol
+  sitl_inno_vtol              | MAVLink     PX4 v1.12       vtol 13070
   sitl_flight_goggles         | MAVLink     PX4 v1.12       Quadrotor (4001)
   cyphal_and_dronecan         | 2 CAN       AP  v4.4.0      Copter
 -------------------------------------------------------------------------------
@@ -121,13 +122,22 @@ push_docker_image() {
     docker push $IMAGE_NAME
 }
 
-dronecan_vtol() {
+dronecan_vtol_v1_12_1() {
     kill_all_related_containers
     setup_dronecan_hitl_config
     if [[ $OPTIONS == "--force" ]]; then
-        ./configure.sh dronecan_vtol
+        ./configure.sh px4_v1_12_1_dronecan_vtol
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh dronecan_inno_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh px4_v1_12_1_dronecan_vtol
+}
+
+dronecan_vtol_v1_14_0() {
+    kill_all_related_containers
+    setup_dronecan_hitl_config
+    if [[ $OPTIONS == "--force" ]]; then
+        ./configure.sh px4_v1_14_0_beta_dronecan_vtol
+    fi
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh px4_v1_14_0_beta_dronecan_vtol
 }
 
 dronecan_quadrotor() {
@@ -214,8 +224,10 @@ elif [ "$1" = "pull" ]; then
     pull_docker_image
 elif [ "$1" = "push" ]; then
     push_docker_image
-elif [ "$1" = "dronecan_vtol" ] || [ "$1" = "dv" ]; then
-    dronecan_vtol
+elif [ "$1" = "dronecan_vtol_v1_12_1" ] || [ "$1" = "dvo" ]; then
+    dronecan_vtol_v1_12_1
+elif [ "$1" = "dronecan_vtol_v1_14_0" ] || [ "$1" = "dv" ]; then
+    dronecan_vtol_v1_14_0
 elif [ "$1" = "dronecan_quadrotor" ] || [ "$1" = "dq" ]; then
     dronecan_quadrotor
 elif [ "$1" = "sitl_inno_vtol" ]; then

@@ -1,4 +1,4 @@
-# Configs
+# Generic Standard VTOL (13000)
 
 ## Airframe
 
