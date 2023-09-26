@@ -5,12 +5,13 @@ print_help() {
 It automatically run all auxilliary scripts required to each specific mode and source necessary setup.bash files.
 It supports all possible simulator modes.
 
-https://github.com/InnopolisAero/innopolis_vtol_dynamics
+https://github.com/RaccoonlabDev/innopolis_vtol_dynamics
 
 Usage: run_sim.sh <command>
 
 Commands:
-  dronecan_inno_vtol                      Run dynamics simulator in DroneCan HITL mode for inno_vtol airframe
+  px4_v1_14_0_beta_dronecan_vtol          Run dynamics simulator in DroneCan HITL mode for px4 vtol 13000 airframe
+  px4_v1_12_1_dronecan_vtol               Run dynamics simulator in DroneCan HITL mode for px4 vtol 13070 airframe
   dronecan_flight_goggles                 Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
   cyphal_quadrotor                        Cyphal HITL PX4 Quadrotor (4001)
   cyphal_octorotor                        Cyphal HITL PX4 Octorotor (12001)
@@ -82,7 +83,7 @@ setup_combined_hitl() {
     fi
 }
 
-dronecan_inno_vtol() {
+px4_v1_14_0_beta_dronecan_vtol() {
     setup_ros
     setup_dronecan_hitl
     $SCRIPT_DIR/airframe_printer.sh 13000
@@ -90,8 +91,20 @@ dronecan_inno_vtol() {
         run_dronecan_communicator:=true             \
         vehicle:=innopolis_vtol                     \
         vehicle_params:=vtol_params                 \
-        mixer:=inno_vtol_mixer                      \
-        dynamics:=inno_vtol
+        mixer:=px4_v1_14_0_vtol_13000_mixer         \
+        dynamics:=vtol_dynamics
+}
+
+px4_v1_12_1_dronecan_vtol() {
+    setup_ros
+    setup_dronecan_hitl
+    $SCRIPT_DIR/airframe_printer.sh 13000
+    roslaunch innopolis_vtol_dynamics hitl.launch   \
+        run_dronecan_communicator:=true             \
+        vehicle:=innopolis_vtol                     \
+        vehicle_params:=vtol_params                 \
+        mixer:=vtol_13070_mixer                     \
+        dynamics:=vtol_dynamics
 }
 
 dronecan_flight_goggles() {
@@ -139,7 +152,7 @@ cyphal_standard_vtol() {
         vehicle:=innopolis_vtol                     \
         vehicle_params:=vtol_params                 \
         mixer:=direct_mixer                         \
-        dynamics:=inno_vtol
+        dynamics:=vtol_dynamics
 }
 
 cyphal_and_dronecan_inno_vtol() {
@@ -160,8 +173,8 @@ sitl_inno_vtol() {
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=innopolis_vtol                     \
         vehicle_params:=vtol_params                 \
-        mixer:=inno_vtol_mixer                      \
-        dynamics:=inno_vtol                         \
+        mixer:=vtol_13070_mixer                     \
+        dynamics:=vtol_dynamics                     \
         run_sitl_flight_stack:="false"
 }
 
@@ -181,8 +194,8 @@ sitl_inno_vtol_with_flight_stack() {
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         vehicle:=innopolis_vtol                     \
         vehicle_params:=quadrotor_params            \
-        mixer:=inno_vtol_mixer                      \
-        dynamics:=inno_vtol                         \
+        mixer:=vtol_13070_mixer                     \
+        dynamics:=vtol_dynamics                     \
         run_sitl_flight_stack:="true"
 }
 
@@ -204,8 +217,10 @@ if [ "${BASH_SOURCE[0]}" -ef "$0" ]; then
 fi
 SCRIPT_DIR="$(dirname "$0")"
 
-if [ "$1" = "dronecan_inno_vtol" ]; then
-    dronecan_inno_vtol
+if [ "$1" = "px4_v1_14_0_beta_dronecan_vtol" ]; then
+    px4_v1_14_0_beta_dronecan_vtol
+elif [ "$1" = "px4_v1_12_1_dronecan_vtol" ]; then
+    px4_v1_12_1_dronecan_vtol
 elif [ "$1" = "dronecan_flight_goggles" ]; then
     dronecan_flight_goggles
 elif [ "$1" = "cyphal_quadrotor" ]; then

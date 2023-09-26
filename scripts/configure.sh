@@ -17,33 +17,41 @@ Automatical configuration:
 configure_px4_v1_14_cyphal_quadcopter() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_CYPHAL_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
-        ${REPOSITORY_DIR}/configs/px4_v1.14_quadcopter_airframe.yaml \
-        ${REPOSITORY_DIR}/configs/px4_cyphal.yaml \
-        ${REPOSITORY_DIR}/configs/px4_common.yaml
+        ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
+        ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
 
 configure_px4_v1_14_cyphal_octorotor() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_CYPHAL_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
-        ${REPOSITORY_DIR}/configs/px4_v1.14_octorotor_airframe.yaml \
-        ${REPOSITORY_DIR}/configs/px4_cyphal.yaml \
-        ${REPOSITORY_DIR}/configs/px4_common.yaml
+        ${REPOSITORY_DIR}/configs/px4/v1.14/octorotor/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
+        ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
 
 configure_px4_v1_14_dronecan_quadrotor() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_DRONECAN_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
-        ${REPOSITORY_DIR}/configs/px4_v1.14_quadcopter_airframe.yaml \
-        ${REPOSITORY_DIR}/configs/px4_dronecan.yaml \
-        ${REPOSITORY_DIR}/configs/px4_common.yaml
+        ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/dronecan.yaml \
+        ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
 
-configure_px4_v1_12_dronecan_vtol() {
+px4_v1_12_1_dronecan_vtol() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_12_1_DRONECAN_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
-        ${REPOSITORY_DIR}/configs/px4_v1.13_inno_vtol_airframe.yaml \
-        ${REPOSITORY_DIR}/configs/px4_dronecan.yaml \
-        ${REPOSITORY_DIR}/configs/px4_common.yaml
+        ${REPOSITORY_DIR}/configs/px4/v1.13/vtol_13070/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/dronecan.yaml \
+        ${REPOSITORY_DIR}/configs/px4/common.yaml
+}
+
+px4_v1_14_0_beta_dronecan_vtol() {
+    wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_DRONECAN_URL
+    autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
+        ${REPOSITORY_DIR}/configs/px4/v1.14/standard_vtol/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/dronecan.yaml \
+        ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
 
 if [ -z $1 ]; then
@@ -83,8 +91,10 @@ elif [[ $1 == "cyphal_octorotor" ]]; then
     configure_px4_v1_14_cyphal_octorotor
 elif [[ $1 == "dronecan_quadrotor" ]]; then
     configure_px4_v1_14_dronecan_quadrotor
-elif [[ $1 == "dronecan_vtol" ]]; then
-    configure_px4_v1_12_dronecan_vtol
+elif [[ $1 == "px4_v1_12_1_dronecan_vtol" ]]; then
+    px4_v1_12_1_dronecan_vtol
+elif [[ $1 == "px4_v1_14_0_beta_dronecan_vtol" ]]; then
+    px4_v1_14_0_beta_dronecan_vtol
 else
     printf "$RED$SCRIPT_NAME ERROR (line ${LINENO}): Unknown argument: '$1' $NC\n"
     exit 1
