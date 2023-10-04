@@ -6,6 +6,7 @@ FW_AIRSPD_MIN: 20.0       # Minimum Airspeed (CAS)
 FW_AIRSPD_STALL: 15.0     # Stall Airspeed (CAS)
 NAV_LOITER_RAD: 150.0     # Loiter radius (FW only)
 FW_YR_P: 0.5              # Yaw rate proportional rate
+FW_THR_TRIM: 38           # Trim throttle
 
 # For DroneCAN
 UAVCAN_EC_FUNC1:  101 # motor 1
