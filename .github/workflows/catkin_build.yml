@@ -10,19 +10,11 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 8
     container:
-      image: ros:melodic
+      image: ros:noetic
     steps:
       # 1. Install basic requirements
-      - name: Force Install GIT latest since actions/checkout@v2 has some problems on ubuntu-18.04
-        run: |
-          apt-get update                                                                            &&  \
-          apt-get upgrade -y                                                                        &&  \
-          apt-get install -y software-properties-common                                             &&  \
-          add-apt-repository -y ppa:git-core/ppa                                                    &&  \
-          apt-get update                                                                            &&  \
-          apt-get install -y git
-      - run: apt-get install -y python-catkin-tools python-pip python3-pip
-      - run: apt-get install -y python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential python-catkin-tools
+      - run: apt-get update && apt-get install -y git
+      - run: if [[ "$ROS_DISTRO" = "noetic" ]] ;  then apt-get install -y python3-pip ros-noetic-catkin python3-catkin-tools ; fi
 
       # 2. Checkout repo with submodules
       - uses: actions/checkout@v2
@@ -40,15 +32,18 @@ jobs:
           cd catkin_ws/src/innopolis_vtol_dynamics/communicators/uavcan_communicator                &&  \
           ./scripts/install_requirements.sh                                                         &&  \
           ./scripts/install_libuavcan.sh
+      - name: Install cyphal_communicator requirements
+        run: ./catkin_ws/src/innopolis_vtol_dynamics/communicators/cyphal_communicator/install_requirements.sh
+
       - name: Install inno-sim-interface requirements
         run: |
-          sudo apt-get install -y ros-melodic-rosauth                                               &&  \
+          sudo apt-get install -y ros-noetic-rosauth                                               &&  \
           sudo apt-get install -y python-protobuf                                                   &&  \
           pip install bson pymongo Pillow twisted
 
       # 4. Build
       - name: catkin build
         run: |
-          source /opt/ros/melodic/setup.bash                                                        &&  \
+          source /opt/ros/noetic/setup.bash                                                        &&  \
           cd catkin_ws                                                                              &&  \
           catkin build
