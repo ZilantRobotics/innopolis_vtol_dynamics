@@ -57,6 +57,8 @@ COPY uav_dynamics/inno_vtol_dynamics/tests              uav_dynamics/inno_vtol_d
 COPY uav_dynamics/inno_vtol_dynamics/urdf               uav_dynamics/inno_vtol_dynamics/urdf
 COPY uav_dynamics/inno_vtol_dynamics/CMakeLists.txt     uav_dynamics/inno_vtol_dynamics/CMakeLists.txt
 COPY uav_dynamics/inno_vtol_dynamics/package.xml        uav_dynamics/inno_vtol_dynamics/package.xml
+COPY communicators/cyphal_communicator/src              communicators/cyphal_communicator/src
+COPY communicators/cyphal_communicator/Libs             communicators/cyphal_communicator/Libs
 COPY communicators/cyphal_communicator/CMakeLists.txt   communicators/cyphal_communicator/CMakeLists.txt
 COPY communicators/cyphal_communicator/package.xml      communicators/cyphal_communicator/package.xml
 
