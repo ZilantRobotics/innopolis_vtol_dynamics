@@ -61,8 +61,8 @@ setup_mavlink_sitl_config() {
 
 setup_dronecan_hitl_config() {
     setup_mavlink_sitl_config
-    source ./tools/can/get_sniffer_symlink.sh
-    DRONECAN_DEV_PATH_SYMLINK=$DEV_PATH_SYMLINK
+    source ./tools/can/create_slcan.sh --only-find
+    DRONECAN_DEV_PATH_SYMLINK=$DEV_PATH
 
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
         DOCKER_FLAGS="$DOCKER_FLAGS --privileged -v $DRONECAN_DEV_PATH_SYMLINK:$DRONECAN_DEV_PATH_SYMLINK"
@@ -76,8 +76,8 @@ setup_dronecan_hitl_config() {
 
 setup_cyphal_hitl_config() {
     setup_mavlink_sitl_config
-    source ./tools/can/get_sniffer_symlink.sh
-    CYPHAL_DEV_PATH_SYMLINK=$DEV_PATH_SYMLINK
+    source ./tools/can/create_slcan.sh --only-find
+    CYPHAL_DEV_PATH_SYMLINK=$DEV_PATH
 
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
         DOCKER_FLAGS="$DOCKER_FLAGS --privileged -v $CYPHAL_DEV_PATH_SYMLINK:$CYPHAL_DEV_PATH_SYMLINK"
