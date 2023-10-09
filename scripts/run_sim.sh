@@ -151,7 +151,7 @@ cyphal_standard_vtol() {
         run_cyphal_communicator:=true               \
         vehicle:=innopolis_vtol                     \
         vehicle_params:=vtol_params                 \
-        mixer:=direct_mixer                         \
+        mixer:=px4_v1_14_0_vtol_13000_mixer         \
         dynamics:=vtol_dynamics
 }
 
