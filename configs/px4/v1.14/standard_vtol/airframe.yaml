@@ -1,12 +1,14 @@
 SYS_AUTOSTART:    13000
 
-FW_AIRSPD_MAX: 35.0       # Max Airspeed (CAS)
+FW_AIRSPD_MAX: 30.0       # Max Airspeed (CAS)
 FW_AIRSPD_TRIM: 25.0      # Trim (Cruise) Airspeed (CAS)
 FW_AIRSPD_MIN: 20.0       # Minimum Airspeed (CAS)
-FW_AIRSPD_STALL: 15.0     # Stall Airspeed (CAS)
+FW_AIRSPD_STALL: 18.0     # Stall Airspeed (CAS)
 NAV_LOITER_RAD: 150.0     # Loiter radius (FW only)
 FW_YR_P: 0.5              # Yaw rate proportional rate
 FW_THR_TRIM: 38           # Trim throttle
+
+SENS_DPRES_OFF:   1.0
 
 # For DroneCAN
 UAVCAN_EC_FUNC1:  101 # motor 1
@@ -21,3 +23,17 @@ UAVCAN_SV_FUNC1:  201 # servo 1 (left aileron)
 UAVCAN_SV_FUNC2:  202 # servo 2 (right aileron)
 UAVCAN_SV_FUNC3:  203 # servo 3 (elevators)
 UAVCAN_SV_FUNC4:  204 # servo 4 (rudders)
+
+# For Cyphal
+UCAN1_ESC_FUNC1:  101 # motor 1
+UCAN1_ESC_FUNC2:  102 # motor 2
+UCAN1_ESC_FUNC3:  103 # motor 3
+UCAN1_ESC_FUNC4:  104 # motor 4
+
+UCAN1_ESC_FUNC5:  105 # motor 5
+UCAN1_ESC_MAX5:  4096 # motor 5
+
+UCAN1_ESC_FUNC6:  201 # servo 1 (left aileron)
+UCAN1_ESC_FUNC7:  202 # servo 2 (right aileron)
+UCAN1_ESC_FUNC8:  203 # servo 3 (elevators)
+UCAN1_ESC_FUNC9:  204 # servo 4 (rudders)

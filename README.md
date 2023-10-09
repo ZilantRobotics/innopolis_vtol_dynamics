@@ -105,17 +105,19 @@ You can obrain the actual list of the suported modes by typing `./scripts/docker
 Well, here is the output of the command:
 
 ```bash
-Primary well-supported modes (with aliases):
-  cyphal_quadrotor,cq           Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
-  dronecan_quadrotor,dq         DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
-  dronecan_vtol,dv              DroneCAN    PX4 v1.12       inno_vtol
+Primary supported modes (with aliases):
+  cyphal_quadrotor,cq         | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
+  cyphal_standard_vtol,csv    | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
+  dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
+  dronecan_vtol_v1_14_0,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
+  dronecan_vtol_v1_12_1,dvo   | DroneCAN    PX4 v1.12       vtol 13070
 
 Other modes:
-  cyphal_standard_vtol,csv      Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
-  cyphal_octorotor,co           Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
-  sitl_inno_vtol                MAVLink     PX4 v1.12       inno_vtol
-  sitl_flight_goggles           MAVLink     PX4 v1.12       Quadrotor (4001)
-  cyphal_and_dronecan           2 CAN       AP  v4.4.0      Copter
+  sitl_inno_vtol              | MAVLink     PX4 v1.12       vtol 13070
+  sitl_flight_goggles         | MAVLink     PX4 v1.12       Quadrotor (4001)
+  cyphal_and_dronecan         | 2 CAN       AP  v4.4.0      Copter
+  cyphal_octorotor,co         | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
+
 ```
 
 New modes will be extended step by step.
