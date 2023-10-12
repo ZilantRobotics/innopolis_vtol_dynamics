@@ -38,16 +38,7 @@ An illustration of the flight:
 
 ### 2. Construction Inspection Detection Scenario
 
-Development of the process of automatic regular inspection of construction sites using unmanned aerial vehicles.
-
-| Plan | Flight log example | Approximate execution time |
-|-|-|-|
-| [inspection_technopark.plan](inspection_technopark.plan) (takeoff from technopark landing station, inspect the building process, come back and land) | [log18](https://review.px4.io/plot_app?log=2087803f-a0ea-41c6-b322-eb8ef06ad82d), [log19](https://review.px4.io/plot_app?log=03ceb5fd-3eb6-4f11-a743-4a65a1246c71) | 4 minutes |
-
-An illustration of the flight:
-
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/inspection.png" alt="drawing"/>
-
+> more details here: [inspection](inspection/README.md)
 
 ## Additional scenarios
 
