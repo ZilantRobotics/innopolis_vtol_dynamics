@@ -24,17 +24,7 @@ This is the longest test scenario. It takes ~ 60 minutes. It is dedicated for te
 
 ### 1. Last Mile Aerologistics Test Scenario
 
-Testing and optimization of cargo delivery processes using unmanned aerial vehicles.
-
-| Plan | Flight log example | Approximate execution time |
-|-|-|-|
-| [Deliver from KazanExpress to the Yard, come back and land](delivery_from_kazanexpress_to_yard.plan) | [log16](https://review.px4.io/plot_app?log=c63a3a10-5f1f-4d51-97a9-cfa0970b9f3c) | 7 minutes |
-| [Deliver from KazanExpress to the Technopark, come back and land](delivery_from_kazanexpress_to_technopark.plan) | [log22](https://review.px4.io/plot_app?log=3bea8e60-9f15-47ef-8954-be7cf0ae5e65) | 6 minutes |
-
-An illustration of the flight:
-
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/delivery.png" alt="drawing"/>
-
+> more details here: [delivery](delivery/README.md)
 
 ### 2. Construction Inspection Detection Scenario
 
