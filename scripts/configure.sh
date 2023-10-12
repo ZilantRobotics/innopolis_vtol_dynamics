@@ -14,12 +14,18 @@ Automatical configuration:
 3. Configure parameters"
 }
 
-configure_px4_v1_14_cyphal_quadcopter() {
+function please_upload_firmware_manually() {
     echo ""
     echo "It is expected to build and upload the firmware manually:"
     echo "https://github.com/PonomarevDA/PX4-Autopilot/tree/ceee7762ed6d9bf8a2eeab34198dc59ba56c58c8"
-    sleep 5
+    for i in {5..1}; do
+        echo -ne "$i..."\\r
+        sleep 1
+    done
+}
 
+configure_px4_v1_14_cyphal_quadcopter() {
+    please_upload_firmware_manually
     autopilot-configurator -v -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/airframe.yaml \
         ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
@@ -59,11 +65,7 @@ px4_v1_14_0_beta_dronecan_vtol() {
 }
 
 px4_v1_14_0_beta_cyphal_vtol() {
-    echo ""
-    echo "It is expected to build and upload the firmware manually:"
-    echo "https://github.com/PonomarevDA/PX4-Autopilot/tree/ceee7762ed6d9bf8a2eeab34198dc59ba56c58c8"
-    sleep 5
-
+    please_upload_firmware_manually
     autopilot-configurator -v -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/standard_vtol/airframe.yaml \
         ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
