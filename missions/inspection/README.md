@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/inspection.png" alt="drawing"/>
 
-# Usage
+## Usage
 
 1. Set initial coordinates in [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml):
 
