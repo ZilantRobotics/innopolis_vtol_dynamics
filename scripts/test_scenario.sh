@@ -18,7 +18,7 @@ options:
     -m, --mission MISSION_PATH      Specify mission path
     -h, --help                      Show this help message and exit."
 
-MISSION_PATH=$MISSIONS_DIR/square_2_minutes.plan
+MISSION_PATH=$MISSIONS_DIR/ci/square.plan
 
 function log_error() {
     lineno=($(caller))
@@ -65,4 +65,4 @@ fi
 log=$REPOSITORY_DIR/latest_log.ulg
 
 rm -f $log
-test-scenario $MISSION_PATH --device serial --timeout 500 --output $log --verbose
+test-scenario --verbose $MISSION_PATH --device serial --timeout 500 --output $log --verbose

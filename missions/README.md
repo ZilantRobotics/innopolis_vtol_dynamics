@@ -4,21 +4,7 @@ Here we have a few test scenarios:
 
 ## HITL test scenarios
 
-### 1. The simplest Takeoff And Land scenario
-
-This is the simplest possible test scenario: take off, wait a few seconds, and land. It is the fastest scenario and it is intended to be triggered on every commit as part of CI.
-
-| Plan | Flight log example | Approximate execution time |
-|-|-|-|
-| [takeoff_and_land.plan](takeoff_and_land.plan) | [log10](https://review.px4.io/plot_app?log=9aeb4932-991a-4856-b292-187d6a9f37af) | 30 seconds |
-
-### 2. The longest flight scenario
-
-This is the longest test scenario. It takes ~ 60 minutes. It is dedicated for testing the stability of the Cyphal HITL communication.
-
-| Plan | Flight log example | Approximate execution time |
-|-|-|-|
-| [sviyazhsk_60_minutes.plan](sviyazhsk_60_minutes.plan) | [log5](https://review.px4.io/plot_app?log=651ad2b4-149c-4b6c-8dd5-70a0c92c3617) | 60 minutes |
+> more details here: [ci](ci/README.md)
 
 ## 3D part test scenarios
 
