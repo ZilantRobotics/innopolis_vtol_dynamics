@@ -7,7 +7,9 @@ FW_AIRSPD_STALL: 18.0     # Stall Airspeed (CAS)
 NAV_LOITER_RAD: 150.0     # Loiter radius (FW only)
 FW_YR_P: 0.5              # Yaw rate proportional rate
 FW_THR_TRIM: 38           # Trim throttle
-
+VT_ARSP_TRANS: 18.0       # Airspeed at which we can switch to fw mode
+VT_F_TRANS_DUR: 10.0      # Time in seconds used for a transition. Default 5.0
+VT_F_TRANS_THR: 0.8       # Target throttle value for the transition to fixed-wing flight. Default 1.0
 SENS_DPRES_OFF:   1.0
 
 # For DroneCAN
@@ -15,10 +17,7 @@ UAVCAN_EC_FUNC1:  101 # motor 1
 UAVCAN_EC_FUNC2:  102 # motor 2
 UAVCAN_EC_FUNC3:  103 # motor 3
 UAVCAN_EC_FUNC4:  104 # motor 4
-
 UAVCAN_EC_FUNC5:  105 # motor 5
-UAVCAN_EC_MAX5:  4096 # motor 5
-
 UAVCAN_SV_FUNC1:  201 # servo 1 (left aileron)
 UAVCAN_SV_FUNC2:  202 # servo 2 (right aileron)
 UAVCAN_SV_FUNC3:  203 # servo 3 (elevators)
@@ -29,10 +28,7 @@ UCAN1_ESC_FUNC1:  101 # motor 1
 UCAN1_ESC_FUNC2:  102 # motor 2
 UCAN1_ESC_FUNC3:  103 # motor 3
 UCAN1_ESC_FUNC4:  104 # motor 4
-
 UCAN1_ESC_FUNC5:  105 # motor 5
-UCAN1_ESC_MAX5:  4096 # motor 5
-
 UCAN1_ESC_FUNC6:  201 # servo 1 (left aileron)
 UCAN1_ESC_FUNC7:  202 # servo 2 (right aileron)
 UCAN1_ESC_FUNC8:  203 # servo 3 (elevators)
