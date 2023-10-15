@@ -1,30 +1,32 @@
 # Test scenarios
 
-Here we have a few test scenarios:
+UAV HITL simulator supports multiple types of test scenarios.
 
-## HITL test scenarios
+### 1. Simple CI Scnearios
 
-> more details here: [ci](ci/README.md)
+There are a few simple scenarios intended to be used as part of CI process. They shoud be trigger every commit pushed to the UAV HITL simulator repository.
 
-## 3D part test scenarios
+More details in [ci](ci/README.md) folder.
 
-### 1. Last Mile Aerologistics Test Scenario
+### 2. Last Mile Aerologistics (Delivery) Scenarios
 
-> more details here: [delivery](delivery/README.md)
+This scenrios are indended to be used with 3D-simulator.
 
-### 2. Construction Inspection Detection Scenario
+More details in the [delivery](delivery/README.md) folder.
 
-> more details here: [inspection](inspection/README.md)
+### 3. Construction Inspection Detection Scenarios
 
-## Additional scenarios
+This scenrios are indended to be used with 3D-simulator.
 
-The following scenarios might be a part of the previous scenarios.
+More details in the [inspection](inspection/README.md) folder.
 
-### 1. Ground infrastructure testing scenario:
+### 4. Ground Infrastructure Scenarios
 
 Checking the interaction of unmanned aerial vehicles with ground infrastructure within the framework of air logistics tasks.
 
-### 2. Fault Test Scenario
+These scenarios might be a part of the previous scenarios.
+
+### 5. Fault Scenarios
 
 Evaluation of the behavior and response of UAV to various types of failures during flight.
 
@@ -49,7 +51,10 @@ The following scenarios are currently supported:
 
 An example of flight log with the scenario `Feedback from all ESC: disabled`: [flight_log](https://review.px4.io/plot_app?log=14f6605e-c5c9-47ae-b792-852bb194b71d).
 
-## Key points
+These scenarios might be a part of the previous scenarios.
+
+
+### Key points
 
 There are 4 landing stations:
 
