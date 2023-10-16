@@ -29,6 +29,10 @@ UCAN1_FB5_SUB:    2505
 UCAN1_FB6_SUB:    2506
 UCAN1_FB7_SUB:    2507
 
+UCAN1_BMS_ES_SUB: 2700  # BMS energy_source
+UCAN1_BMS_BS_SUB: 2701  # BMS battery_status
+UCAN1_BMS_BP_SUB: 2702  # BMS battery_parameters
+
 # 3. Sensor calibration
 # 3.1. Gyro
 CAL_GYRO0_ID:     8781824
