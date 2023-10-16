@@ -1,0 +1,9 @@
+UCAN1_ESC_FUNC1:  101 # motor 1
+UCAN1_ESC_FUNC2:  102 # motor 2
+UCAN1_ESC_FUNC3:  103 # motor 3
+UCAN1_ESC_FUNC4:  104 # motor 4
+UCAN1_ESC_FUNC5:  105 # motor 5
+UCAN1_ESC_FUNC6:  201 # servo 1 (left aileron)
+UCAN1_ESC_FUNC7:  202 # servo 2 (right aileron)
+UCAN1_ESC_FUNC8:  203 # servo 3 (elevators)
+UCAN1_ESC_FUNC9:  204 # servo 4 (rudders)
