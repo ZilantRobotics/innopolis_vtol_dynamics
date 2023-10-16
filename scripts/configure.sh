@@ -60,6 +60,7 @@ px4_v1_14_0_beta_dronecan_vtol() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_DRONECAN_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/standard_vtol/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/v1.14/standard_vtol/dronecan.yaml \
         ${REPOSITORY_DIR}/configs/px4/dronecan.yaml \
         ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
@@ -68,6 +69,7 @@ px4_v1_14_0_beta_cyphal_vtol() {
     please_upload_firmware_manually
     autopilot-configurator -v -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/standard_vtol/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/v1.14/standard_vtol/cyphal.yaml \
         ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
         ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
