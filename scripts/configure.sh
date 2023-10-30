@@ -14,20 +14,11 @@ Automatical configuration:
 3. Configure parameters"
 }
 
-function please_upload_firmware_manually() {
-    echo ""
-    echo "It is expected to build and upload the firmware manually:"
-    echo "https://github.com/PonomarevDA/PX4-Autopilot/tree/ceee7762ed6d9bf8a2eeab34198dc59ba56c58c8"
-    for i in {5..1}; do
-        echo -ne "$i..."\\r
-        sleep 1
-    done
-}
-
 configure_px4_v1_14_cyphal_quadcopter() {
-    please_upload_firmware_manually
-    autopilot-configurator -v -f --config \
+    wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_CYPHAL_URL
+    autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/cyphal.yaml \
         ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
         ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
@@ -44,6 +35,7 @@ configure_px4_v1_14_dronecan_quadrotor() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_DRONECAN_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/airframe.yaml \
+        ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/dronecan.yaml \
         ${REPOSITORY_DIR}/configs/px4/dronecan.yaml \
         ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
@@ -66,8 +58,8 @@ px4_v1_14_0_beta_dronecan_vtol() {
 }
 
 px4_v1_14_0_beta_cyphal_vtol() {
-    please_upload_firmware_manually
-    autopilot-configurator -v -f --config \
+    wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_CYPHAL_URL
+    autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/standard_vtol/airframe.yaml \
         ${REPOSITORY_DIR}/configs/px4/v1.14/standard_vtol/cyphal.yaml \
         ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
@@ -98,8 +90,8 @@ fi
 DOWNLOADS_DIR=$REPOSITORY_DIR/downloads
 DOWNLOADED_BINARY_PATH=$DOWNLOADS_DIR/px4_fmu-v5_latest_downloaded_firmware.px4
 PX4_V1_12_1_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.12.1_hitl/px4_fmu-v5_default.px4
-PX4_V1_14_0_BETA_CYPHAL_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.3.0-beta1/px4_fmu-v5_cyphal.px4
-PX4_V1_14_0_BETA_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.3.0-beta1/px4_fmu-v5_default.px4
+PX4_V1_14_0_BETA_CYPHAL_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.0-beta1/px4_fmu-v5_cyphal.px4
+PX4_V1_14_0_BETA_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.0-beta1/px4_fmu-v5_default.px4
 
 
 mkdir -p $DOWNLOADS_DIR
