@@ -16,3 +16,6 @@ FW_R_LIM: 35.0            # Default 50.0 that is out of max angle supported by t
 FW_R_RMAX: 30.0           # Default 70.0
 FW_P_RMAX_NEG: 30.0       # Default 60.0
 FW_P_RMAX_POS: 30.0       # Default 60.0
+
+WV_EN: 0                  # Weather vane. By default Enabled.
+MC_YAWRATE_P: 1.0         # Yaw rate P gain. Default 0.2. Max 0.6.
