@@ -39,6 +39,26 @@ Commands (with aliases):
   help                          Print this message and exit"
 }
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Kill the container if sniffer is disconnected
+slcan_checker() {
+    sleep 5
+    while :; do
+        sleep 1
+
+        containers=$(docker ps -q --filter ancestor=$IMAGE_NAME)
+        if [ -z "${containers}" ]; then
+            exit
+        fi
+
+        if [[ -z $(ifconfig | grep slcan) ]]; then
+            $SCRIPT_DIR/docker.sh kill
+            break
+        fi
+    done
+}
+
 setup_image_name_and_version() {
     TAG_NAME=$(git describe --tags --abbrev=0)
     DOCKERHUB_REPOSITOTY=ponomarevda/uavcan_hitl_dynamics_simulator
@@ -133,6 +153,7 @@ push_docker_image() {
 dronecan_vtol_v1_12_1() {
     kill_all_related_containers
     setup_dronecan_hitl_config
+    slcan_checker&
     if [[ $OPTIONS == "--force" ]]; then
         ./configure.sh px4_v1_12_1_dronecan_vtol
     fi
@@ -142,6 +163,7 @@ dronecan_vtol_v1_12_1() {
 dronecan_vtol_v1_14_0() {
     kill_all_related_containers
     setup_dronecan_hitl_config
+    slcan_checker&
     if [[ $OPTIONS == "--force" ]]; then
         ./configure.sh px4_v1_14_0_beta_dronecan_vtol
     fi
@@ -151,6 +173,7 @@ dronecan_vtol_v1_14_0() {
 dronecan_quadrotor() {
     kill_all_related_containers
     setup_dronecan_hitl_config
+    slcan_checker&
     if [[ $OPTIONS == "--force" ]]; then
         ./configure.sh dronecan_quadrotor
     fi
@@ -172,6 +195,7 @@ sitl_flight_goggles() {
 cyphal_quadrotor() {
     kill_all_related_containers
     setup_cyphal_hitl_config
+    slcan_checker&
     if [[ $OPTIONS == "--force" ]]; then
         ./configure.sh cyphal_quadrotor
     fi
@@ -181,6 +205,7 @@ cyphal_quadrotor() {
 cyphal_octorotor() {
     kill_all_related_containers
     setup_cyphal_hitl_config
+    slcan_checker&
     if [[ $OPTIONS == "--force" ]]; then
         ./configure.sh cyphal_octorotor
     fi
@@ -190,6 +215,7 @@ cyphal_octorotor() {
 cyphal_standard_vtol() {
     kill_all_related_containers
     setup_cyphal_hitl_config
+    slcan_checker&
     if [[ $OPTIONS == "--force" ]]; then
         ./configure.sh px4_v1_14_0_beta_cyphal_vtol
     fi
@@ -202,6 +228,7 @@ cyphal_and_dronecan_inno_vtol() {
     echo "- slcan1 based on the 2-nd sniffer for Cyphal   communication (Actuators only)"
     kill_all_related_containers
     setup_cyphal_and_dronecan_hitl_config
+    slcan_checker&
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_and_dronecan_inno_vtol
 }
 
