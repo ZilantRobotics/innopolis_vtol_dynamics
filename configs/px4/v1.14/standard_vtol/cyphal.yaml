@@ -7,3 +7,8 @@ UCAN1_ESC_FUNC6:  201 # servo 1 (left aileron)
 UCAN1_ESC_FUNC7:  202 # servo 2 (right aileron)
 UCAN1_ESC_FUNC8:  203 # servo 3 (elevators)
 UCAN1_ESC_FUNC9:  204 # servo 4 (rudders)
+
+UCAN1_FB4_SUB:    2504
+UCAN1_FB5_SUB:    2505
+UCAN1_FB6_SUB:    2506
+UCAN1_FB7_SUB:    2507
