@@ -28,7 +28,8 @@ RUN sudo apt-get install -y ros-$ROS_DISTRO-rosauth                             
 # 2.3. innopolis_vtol_dynamics
 COPY uav_dynamics/inno_vtol_dynamics/install_requirements.sh    uav_dynamics/inno_vtol_dynamics/install_requirements.sh
 COPY uav_dynamics/inno_vtol_dynamics/requirements.txt           uav_dynamics/inno_vtol_dynamics/requirements.txt
-RUN uav_dynamics/inno_vtol_dynamics/install_requirements.sh
+RUN apt-get update && \
+    uav_dynamics/inno_vtol_dynamics/install_requirements.sh
 
 # 2.4 tools/can
 COPY scripts/tools scripts/tools
