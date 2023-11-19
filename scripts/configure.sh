@@ -90,8 +90,8 @@ fi
 DOWNLOADS_DIR=$REPOSITORY_DIR/downloads
 DOWNLOADED_BINARY_PATH=$DOWNLOADS_DIR/px4_fmu-v5_latest_downloaded_firmware.px4
 PX4_V1_12_1_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.12.1_hitl/px4_fmu-v5_default.px4
-PX4_V1_14_0_BETA_CYPHAL_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.0-beta1/px4_fmu-v5_cyphal.px4
-PX4_V1_14_0_BETA_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.0-beta1/px4_fmu-v5_default.px4
+PX4_V1_14_0_BETA_CYPHAL_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.1-beta1/px4_fmu-v5_cyphal.px4
+PX4_V1_14_0_BETA_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.1-beta1/px4_fmu-v5_default.px4
 
 
 mkdir -p $DOWNLOADS_DIR
