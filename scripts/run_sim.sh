@@ -89,8 +89,8 @@ px4_v1_14_0_beta_dronecan_vtol() {
     $SCRIPT_DIR/airframe_printer.sh 13000
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
-        vehicle:=innopolis_vtol                     \
-        vehicle_params:=vtol_params                 \
+        logging_type:=standard_vtol                 \
+        vehicle_params:=vtol_7kg                     \
         mixer:=px4_v1_14_0_vtol_13000_mixer         \
         dynamics:=vtol_dynamics
 }
@@ -101,8 +101,8 @@ px4_v1_12_1_dronecan_vtol() {
     $SCRIPT_DIR/airframe_printer.sh 13000
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
-        vehicle:=innopolis_vtol                     \
-        vehicle_params:=vtol_params                 \
+        logging_type:=standard_vtol                 \
+        vehicle_params:=vtol_7kg                    \
         mixer:=vtol_13070_mixer                     \
         dynamics:=vtol_dynamics
 }
@@ -113,8 +113,8 @@ dronecan_flight_goggles() {
     $SCRIPT_DIR/airframe_printer.sh 4001
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
-        vehicle:=iris                               \
-        vehicle_params:=quadrotor_params            \
+        logging_type:=quadcopter                    \
+        vehicle_params:=quadrotor                   \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter
 }
@@ -125,8 +125,8 @@ cyphal_quadrotor() {
     $SCRIPT_DIR/airframe_printer.sh 4001
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
-        vehicle:=iris                               \
-        vehicle_params:=quadrotor_params            \
+        logging_type:=quadcopter                    \
+        vehicle_params:=quadrotor                   \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter
 }
@@ -137,8 +137,8 @@ cyphal_octorotor() {
     $SCRIPT_DIR/airframe_printer.sh 12001
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
-        vehicle:=iris                               \
-        vehicle_params:=octorotor_params            \
+        logging_type:=quadcopter                    \
+        vehicle_params:=octorotor                   \
         mixer:=direct_mixer                         \
         dynamics:=octorotor
 }
@@ -149,8 +149,8 @@ cyphal_standard_vtol() {
     $SCRIPT_DIR/airframe_printer.sh 13000
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
-        vehicle:=innopolis_vtol                     \
-        vehicle_params:=vtol_params                 \
+        logging_type:=standard_vtol                 \
+        vehicle_params:=vtol_7kg                    \
         mixer:=px4_v1_14_0_vtol_13000_mixer         \
         dynamics:=vtol_dynamics
 }
@@ -162,8 +162,8 @@ cyphal_and_dronecan_inno_vtol() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         run_dronecan_communicator:=true             \
-        vehicle:=iris                               \
-        vehicle_params:=quadrotor_params_ardupilot  \
+        logging_type:=quadcopter                    \
+        vehicle_params:=quadrotor_ardupilot         \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter
 }
@@ -171,8 +171,9 @@ cyphal_and_dronecan_inno_vtol() {
 sitl_inno_vtol() {
     setup_ros
     roslaunch innopolis_vtol_dynamics sitl.launch   \
-        vehicle:=innopolis_vtol                     \
-        vehicle_params:=vtol_params                 \
+        logging_type:=standard_vtol                 \
+        sitl_vehicle:=innopolis_vtol                \
+        vehicle_params:=vtol_7kg                    \
         mixer:=vtol_13070_mixer                     \
         dynamics:=vtol_dynamics                     \
         run_sitl_flight_stack:="false"
@@ -181,8 +182,9 @@ sitl_inno_vtol() {
 sitl_flight_goggles() {
     setup_ros
     roslaunch innopolis_vtol_dynamics sitl.launch   \
-        vehicle:=iris                               \
-        vehicle_params:=quadrotor_params            \
+        logging_type:=quadcopter                    \
+        sitl_vehicle:=iris                          \
+        vehicle_params:=quadrotor                   \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter                        \
         run_sitl_flight_stack:="false"
@@ -192,8 +194,9 @@ sitl_inno_vtol_with_flight_stack() {
     setup_ros
     setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
-        vehicle:=innopolis_vtol                     \
-        vehicle_params:=quadrotor_params            \
+        logging_type:=standard_vtol                 \
+        sitl_vehicle:=innopolis_vtol                \
+        vehicle_params:=quadrotor                   \
         mixer:=vtol_13070_mixer                     \
         dynamics:=vtol_dynamics                     \
         run_sitl_flight_stack:="true"
@@ -203,8 +206,9 @@ sitl_flight_goggles_with_flight_stack() {
     setup_ros
     setup_sitl_px4_flight_stack
     roslaunch innopolis_vtol_dynamics sitl.launch   \
-        vehicle:=iris                               \
-        vehicle_params:=quadrotor_params            \
+        logging_type:=quadcopter                    \
+        sitl_vehicle:=iris                          \
+        vehicle_params:=quadrotor                   \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter                        \
         run_sitl_flight_stack:="true"
