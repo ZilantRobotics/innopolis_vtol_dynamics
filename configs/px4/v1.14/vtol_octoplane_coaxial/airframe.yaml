@@ -1,0 +1,22 @@
+SYS_AUTOSTART:    13000
+
+FW_AIRSPD_MAX: 30.0       # Max Airspeed (CAS)
+FW_AIRSPD_TRIM: 25.0      # Trim (Cruise) Airspeed (CAS)
+FW_AIRSPD_MIN: 20.0       # Minimum Airspeed (CAS)
+FW_AIRSPD_STALL: 18.0     # Stall Airspeed (CAS)
+NAV_LOITER_RAD: 150.0     # Loiter radius (FW only)
+FW_YR_P: 0.5              # Yaw rate proportional rate
+FW_THR_TRIM: 0.38         # Trim throttle
+VT_ARSP_TRANS: 18.0       # Airspeed at which we can switch to fw mode
+VT_F_TRANS_DUR: 10.0      # Time in seconds used for a transition. Default 5.0
+VT_F_TRANS_THR: 0.8       # Target throttle value for the transition to fixed-wing flight. Default 1.0
+SENS_DPRES_OFF:   1.0
+
+FW_R_LIM: 35.0            # Default 50.0 that is out of max angle supported by the vtol dynamics
+FW_R_RMAX: 30.0           # Default 70.0
+FW_P_RMAX_NEG: 30.0       # Default 60.0
+FW_P_RMAX_POS: 30.0       # Default 60.0
+
+MC_YAWRATE_P: 1.0         # Yaw rate P gain. Default 0.2. Max 0.6.
+
+VT_B_TRANS_RAMP: 10.0     # Back transition MC motor ramp up time. Default 3.0 sec.

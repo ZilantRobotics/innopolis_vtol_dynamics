@@ -1,7 +1,7 @@
 #!/bin/bash
 
 print_help() {
-   echo "Wrapper under ROS API for Innopolis VTOL Dynamics simulator.
+   echo "Wrapper under ROS API for UAV Dynamics simulator.
 It automatically run all auxilliary scripts required to each specific mode and source necessary setup.bash files.
 It supports all possible simulator modes.
 
@@ -15,12 +15,13 @@ Commands:
   dronecan_flight_goggles                 Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
   cyphal_quadrotor                        Cyphal HITL PX4 Quadrotor (4001)
   cyphal_octorotor                        Cyphal HITL PX4 Octorotor (12001)
-  cyphal_standard_vtol                    Run dynamics simulator in Cyphal HITL mode for inno_vtol airframe.
-  cyphal_and_dronecan_inno_vtol           Run dynamics simulator in DroneCan + Cyphal mode for inno_vtol airframe.
+  cyphal_standard_vtol                    Run dynamics simulator in Cyphal HITL mode for vtol 4 motors airframe.
+  cyphal_vtol_8_motors                    Run dynamics simulator in Cyphal HITL mode for vtol 8 motors airframe.
+  cyphal_and_dronecan_inno_vtol           Run dynamics simulator in DroneCan + Cyphal mode for vtol airframe.
                                           This mode uses 2 serial ports and is in the alpha testing stage yet.
-  sitl_inno_vtol                          Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe
+  sitl_inno_vtol                          Run dynamics simulator in MAVLink SITL mode for vtol airframe
   sitl_flight_goggles                     Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
-  sitl_inno_vtol_with_flight_stack        Run dynamics simulator in MAVLink SITL mode for inno_vtol airframe (with additional including px4.launch)
+  sitl_inno_vtol_with_flight_stack        Run dynamics simulator in MAVLink SITL mode for vtol airframe (with additional including px4.launch)
   sitl_flight_goggles_with_flight_stack   Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe (with additional including px4.launch)
 
 Auxilliary commands:
@@ -155,6 +156,18 @@ cyphal_standard_vtol() {
         dynamics:=vtol_dynamics
 }
 
+cyphal_vtol_8_motors() {
+    setup_ros
+    setup_cyphal_hitl
+    $SCRIPT_DIR/airframe_printer.sh 13000
+    roslaunch innopolis_vtol_dynamics hitl.launch   \
+        run_cyphal_communicator:=true               \
+        logging_type:=vtol_8_motors_logger          \
+        vehicle_params:=vtol_tfm15                  \
+        mixer:=px4_v1_14_0_vtol_13000_8_motors_mixer \
+        dynamics:=vtol_dynamics
+}
+
 cyphal_and_dronecan_inno_vtol() {
     setup_ros
     setup_combined_hitl
@@ -233,6 +246,8 @@ elif [ "$1" = "cyphal_octorotor" ]; then
     cyphal_octorotor
 elif [ "$1" = "cyphal_standard_vtol" ]; then
     cyphal_standard_vtol
+elif [ "$1" = "cyphal_vtol_8_motors" ]; then
+    cyphal_vtol_8_motors
 elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
     cyphal_and_dronecan_inno_vtol
 elif [ "$1" = "sitl_inno_vtol" ]; then

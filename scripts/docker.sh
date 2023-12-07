@@ -17,6 +17,7 @@ Supported modes (with aliases):
 -------------------------------------------------------------------------------
   cyphal_quadrotor,cq         | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
   cyphal_standard_vtol,csv    | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
+  cyphal_vtol_8_motors,cv8    | Cyphal      PX4 v1.14-beta  VTOL 8 motors (13050)
   dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
   dronecan_vtol_v1_14_0,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
   dronecan_vtol_v1_12_1,dvo   | DroneCAN    PX4 v1.12       vtol 13070
@@ -25,8 +26,6 @@ Supported modes (with aliases):
   sitl_inno_vtol              | MAVLink     PX4 v1.12       vtol 13070
   sitl_flight_goggles         | MAVLink     PX4 v1.12       Quadrotor (4001)
   cyphal_and_dronecan         | 2 CAN       AP  v4.4.0      Copter
--------------------------------------------------------------------------------
-  cyphal_vtol_octoplane,cvo   | Cyphal      PX4 v1.14-beta  VTOL Octoplane (13050)
 -------------------------------------------------------------------------------
 
 Commands (with aliases):
@@ -222,6 +221,16 @@ cyphal_standard_vtol() {
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_standard_vtol
 }
 
+cyphal_vtol_8_motors() {
+    kill_all_related_containers
+    setup_cyphal_hitl_config
+    slcan_checker&
+    if [[ $OPTIONS == "--force" ]]; then
+        ./configure.sh px4_v1_14_0_beta_cyphal_vtol_8_motors
+    fi
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_vtol_8_motors
+}
+
 cyphal_and_dronecan_inno_vtol() {
     echo "Cyphal and DroneCAN mode is a special mode that uses:"
     echo "- slcan0 based on the 1-st sniffer for DroneCAN communication (sensors)"
@@ -278,8 +287,8 @@ elif [ "$1" = "cyphal_octorotor" ] || [ "$1" = "co" ]; then
     cyphal_octorotor
 elif [ "$1" = "cyphal_standard_vtol" ] || [ "$1" = "csv" ]; then
     cyphal_standard_vtol
-elif [ "$1" = "cyphal_vtol_octoplane" ] || [ "$1" = "cvo" ]; then
-    echo "Not ready yet" # cyphal_vtol_octoplane
+elif [ "$1" = "cyphal_vtol_8_motors" ] || [ "$1" = "cv8" ]; then
+    cyphal_vtol_8_motors
 elif [ "$1" = "cyphal_and_dronecan" ]; then
     cyphal_and_dronecan_inno_vtol
 elif [ "$1" = "interactive" ] || [ "$1" = "i" ]; then
