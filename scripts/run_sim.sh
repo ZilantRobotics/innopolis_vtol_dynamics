@@ -159,7 +159,7 @@ cyphal_standard_vtol() {
 cyphal_vtol_8_motors() {
     setup_ros
     setup_cyphal_hitl
-    $SCRIPT_DIR/airframe_printer.sh 13000
+    $SCRIPT_DIR/airframe_printer.sh 13050
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         logging_type:=vtol_8_motors_logger          \

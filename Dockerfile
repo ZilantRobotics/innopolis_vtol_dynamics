@@ -77,6 +77,7 @@ COPY uav_dynamics/inno_vtol_dynamics/catkin_test.sh     uav_dynamics/inno_vtol_d
 COPY scripts/ scripts/
 COPY communicators/cyphal_communicator/                 communicators/cyphal_communicator/
 
+RUN echo source scripts/run_sim.sh ros >> ~/.bashrc
 
 CMD echo "main process has been started"                                        &&  \
     source /opt/ros/$ROS_DISTRO/setup.bash && source /catkin_ws/devel/setup.bash &&  \
