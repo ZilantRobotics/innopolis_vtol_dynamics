@@ -6,6 +6,23 @@ UAV HITL Dynamics Simulator is a set of ROS packages proposed full simulation fo
 
 The key feature of this simulation is to run it in such a way that the hardware knows nothing about the simulation. This can be done with Cyphal/DroneCAN. It covers more PX4 modules than standard SITL and HITL.
 
+**Purpose**
+
+- Simulation of UAV onboard systems at a low hardware level
+- Testing and debugging of UAV control systems using a CAN-bus
+- Development and testing of intelligent automatic control systems for UAVs
+- Training in the development and use of drones, including creating datasets and automated testing
+
+**Requirements**
+
+- Operating System: We've tailored the simulator for modern versions of Windows, Linux, and Mac. Choose the build that matches your OS.
+
+- CPU: Aim for an Intel i7 from the 11th or 12th generation. For those using AMD, any equivalent processor will suffice.
+
+- RAM: 16GB is a recommended minimum, but more is always better for performance.
+
+- Hardware: CUAV V5+, CAN-sniffer
+
 ## 1. Design
 
 VTOL HITL Dynamics Simulator is designed to be modular. It is divided into the following main components:
