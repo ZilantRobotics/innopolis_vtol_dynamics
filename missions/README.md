@@ -6,7 +6,7 @@ UAV HITL simulator supports multiple types of test scenarios.
 | -------- | ----------- |
 | 1. Simple HITL CI </br> [ci/README.md](ci/README.md) | The simplest scenarios intended to be used as part of CI process. |
 | 2. Delivery </br> [delivery/README.md](delivery/README.md) | Last Mile Aerologistics Scenarios are indended to be used with 3D-simulator |
-| 3. Inspection </br> [- Quadcopter](inspection/README.md) </br> [- VTOL Quadplane](inspection/README.md) | Construction Inspection Detection Scenarios are indended to be used with 3D-simulator. |
+| 3. Inspection </br> [- Quadcopter](inspection/README.md) </br> [- VTOL Quadplane](inspection_vtol/README.md) | Construction Inspection Detection Scenarios are indended to be used with 3D-simulator. |
 | 4. Cartography | Cartography Scenarios are indended to be used with 3D-simulator. |
 | 5. Ground Infrastructure | Checking the interaction of unmanned aerial vehicles with ground infrastructure within the framework of air logistics tasks. These scenarios might be a part of the previous scenarios. |
 | 6. Fault </br> [fault/README.md](fault/README.md) | Evaluation of the behavior and response of UAV to various types of failures during flight. These scenarios might be a part of the previous scenarios. |
