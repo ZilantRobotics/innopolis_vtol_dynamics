@@ -44,7 +44,7 @@ the simulator.
 **Step 1. Clone repository with submodules**
 
 ```bash
-git clone https://github.com/RaccoonlabDev/innopolis_vtol_dynamics.git --recursive
+git clone https://github.com/ZilantRobotics/innopolis_vtol_dynamics.git --recursive
 ```
 
 Whenever you pull this repository, don't forget to update submodules:

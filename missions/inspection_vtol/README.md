@@ -12,10 +12,10 @@
 
 ## Usage
 
-1. Set initial coordinates in [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml):
+1. Set initial coordinates in [sim_params.yaml](uav_dynamics/uav_hitl_dynamics/config/sim_params.yaml):
 
 ```bash
-code uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml
+code uav_dynamics/uav_hitl_dynamics/config/sim_params.yaml
 ```
 
 ```yaml

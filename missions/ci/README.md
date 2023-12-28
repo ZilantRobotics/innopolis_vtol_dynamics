@@ -1,6 +1,6 @@
 # CI tests (without 3D graphics)
 
-All tests expected that the initial position is configured in [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml) as shown below:
+All tests expected that the initial position is configured in [sim_params.yaml](uav_dynamics/uav_hitl_dynamics/config/sim_params.yaml) as shown below:
 
 ```yaml
 lat_ref : 55.7531869667

@@ -5,7 +5,7 @@ print_help() {
 It automatically run all auxilliary scripts required to each specific mode and source necessary setup.bash files.
 It supports all possible simulator modes.
 
-https://github.com/RaccoonlabDev/innopolis_vtol_dynamics
+https://github.com/ZilantRobotics/innopolis_vtol_dynamics
 
 Usage: run_sim.sh <command>
 

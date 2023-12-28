@@ -6,7 +6,7 @@ Testing and optimization of cargo delivery processes using unmanned aerial vehic
 
 ## Usage
 
-1. Set initial coordinates in [sim_params.yaml](uav_dynamics/inno_vtol_dynamics/config/sim_params.yaml):
+1. Set initial coordinates in [sim_params.yaml](uav_dynamics/uav_hitl_dynamics/config/sim_params.yaml):
 
 ```yaml
 lat_ref : 55.7503992494

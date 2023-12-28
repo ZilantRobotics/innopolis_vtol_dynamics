@@ -5,7 +5,7 @@ print_help() {
 
 Wrapper under docker API for Innopolis VTOL Dynamics simulator.
 It encapsulates all necessary docker flags and properly handles image versions.
-https://github.com/RaccoonlabDev/innopolis_vtol_dynamics
+https://github.com/ZilantRobotics/innopolis_vtol_dynamics
 
 Options:
   --force                       Upload the required firmware and update parameters.
@@ -256,7 +256,7 @@ kill_all_related_containers() {
 
 test() {
     setup_mavlink_sitl_config
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./uav_dynamics/inno_vtol_dynamics/catkin_test.sh --docker
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./uav_dynamics/uav_hitl_dynamics/catkin_test.sh --docker
 }
 
 ## Start from here

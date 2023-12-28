@@ -2,7 +2,7 @@
 
 Evaluation of the behavior and response of UAV to various types of failures during flight.
 
-The simulator supports varios of fault test scenarios. Please, refer to the [scenarios.hpp](https://github.com/RaccoonlabDev/inno_vtol_dynamics/blob/main/src/scenarios.hpp) for details.
+The simulator supports varios of fault test scenarios. Please, refer to the [scenarios.hpp](https://github.com/ZilantRobotics/uav_hitl_dynamics/blob/main/src/scenarios.hpp) for details.
 
 To run a desired scenario, you should publish the corresponded scenario number to the `/uav/scenario` ROS topic as follows:
 

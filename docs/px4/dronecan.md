@@ -5,7 +5,7 @@
 For HITL simulation you need the following hardware:
 
 - Any autopilot that supports PX4 flight stack (tested on [cuav v5+](https://docs.px4.io/main/en/flight_controller/cuav_v5_plus.html))
-- CAN-sniffer (for example [RaccoonLab sniffer](https://raccoonlabdev.github.io/docs/guide/programmer_sniffer/)).
+- CAN-sniffer (for example [RaccoonLab sniffer](https://ZilantRobotics.github.io/docs/guide/programmer_sniffer/)).
 
 An example of connection is shown below:
 
@@ -20,7 +20,7 @@ PX4 doesn't fully support the DroneCAN UAV HITL simulation right now. The follow
 - `inno_vtol` custom airframe (for VTOL simulation only).
 
 It is recommended to use one of the following custom branches:
-- [v1.12.1 + DroneCAN HITL for QuadCopter and VTOL](https://github.com/RaccoonlabDev/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics),
+- [v1.12.1 + DroneCAN HITL for QuadCopter and VTOL](https://github.com/ZilantRobotics/PX4-Autopilot/tree/px4_v1.12.1_inno_vtol_dynamics),
 - [main branch + DroneCAN HITL for QuadCopter](https://github.com/RaccoonlabDev/PX4-Autopilot/tree/pr-disable-board-sensors)
 
 
