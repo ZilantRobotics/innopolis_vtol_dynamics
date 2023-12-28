@@ -1,6 +1,6 @@
 [submodule "inno_sim_interface/inno_sim_interface"]
 	path = inno_sim_interface/inno_sim_interface
-	url = https://github.com/RaccoonLabDev/inno_sim_interface.git
+	url = https://github.com/ZilantRobotics/inno_sim_interface.git
 [submodule "inno_sim_interface/rosbridge_suite"]
 	path = inno_sim_interface/rosbridge_suite
 	url = https://github.com/lgsvl/rosbridge_suite.git
@@ -12,7 +12,7 @@
 	url = https://github.com/RaccoonLabDev/geographiclib_conversions.git
 [submodule "uav_dynamics/inno_vtol_dynamics"]
 	path = uav_dynamics/inno_vtol_dynamics
-	url = https://github.com/RaccoonLabDev/inno_vtol_dynamics.git
+	url = https://github.com/ZilantRobotics/inno_vtol_dynamics.git
 [submodule "communicators/mavlink_communicator"]
 	path = communicators/mavlink_communicator
 	url = https://github.com/RaccoonLabDev/mavlink_communicator.git
@@ -21,7 +21,7 @@
 	url = https://github.com/RaccoonLabDev/uavcan_communicator.git
 [submodule "communicators/cyphal_communicator"]
 	path = communicators/cyphal_communicator
-	url = https://github.com/RaccoonLabDev/cyphal_communicator
+	url = https://github.com/ZilantRobotics/cyphal_communicator
 [submodule "scripts/tools"]
 	path = scripts/tools
 	url = https://github.com/PonomarevDA/tools.git
