@@ -10,9 +10,9 @@
 [submodule "uav_dynamics/geographiclib_conversions"]
 	path = uav_dynamics/geographiclib_conversions
 	url = https://github.com/RaccoonLabDev/geographiclib_conversions.git
-[submodule "uav_dynamics/inno_vtol_dynamics"]
-	path = uav_dynamics/inno_vtol_dynamics
-	url = https://github.com/ZilantRobotics/inno_vtol_dynamics.git
+[submodule "uav_dynamics/uav_hitl_dynamics"]
+	path = uav_dynamics/uav_hitl_dynamics
+	url = https://github.com/ZilantRobotics/uav_hitl_dynamics.git
 [submodule "communicators/mavlink_communicator"]
 	path = communicators/mavlink_communicator
 	url = https://github.com/RaccoonLabDev/mavlink_communicator.git
