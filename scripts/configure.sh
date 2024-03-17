@@ -14,7 +14,7 @@ Automatical configuration:
 3. Configure parameters"
 }
 
-configure_px4_v1_14_cyphal_quadcopter() {
+px4_v1_14_0_cyphal_quadcopter() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_CYPHAL_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/airframe.yaml \
@@ -23,7 +23,7 @@ configure_px4_v1_14_cyphal_quadcopter() {
         ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
 
-configure_px4_v1_14_cyphal_octorotor() {
+px4_v1_14_0_cyphal_octorotor() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_CYPHAL_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/octorotor/airframe.yaml \
@@ -31,7 +31,7 @@ configure_px4_v1_14_cyphal_octorotor() {
         ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
 
-configure_px4_v1_14_dronecan_quadrotor() {
+px4_v1_14_0_dronecan_quadrotor() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_DRONECAN_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
         ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/airframe.yaml \
@@ -107,20 +107,20 @@ PX4_V1_14_0_BETA_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/re
 mkdir -p $DOWNLOADS_DIR
 rm -f $DOWNLOADED_BINARY_PATH
 
-if [[ $1 == "cyphal_quadrotor" ]]; then
-    configure_px4_v1_14_cyphal_quadcopter
-elif [[ $1 == "cyphal_octorotor" ]]; then
-    configure_px4_v1_14_cyphal_octorotor
-elif [[ $1 == "dronecan_quadrotor" ]]; then
-    configure_px4_v1_14_dronecan_quadrotor
-elif [[ $1 == "px4_v1_12_1_dronecan_vtol" ]]; then
+if [[ $1 == "px4_v1_12_1_dronecan_vtol" ]]; then
     px4_v1_12_1_dronecan_vtol
-elif [[ $1 == "px4_v1_14_0_beta_dronecan_vtol" ]]; then
-    px4_v1_14_0_beta_dronecan_vtol
-elif [[ $1 == "px4_v1_14_0_beta_cyphal_vtol" ]]; then
-    px4_v1_14_0_beta_cyphal_vtol
 elif [[ $1 == "px4_v1_14_0_beta_cyphal_vtol_8_motors" ]]; then
     px4_v1_14_0_beta_cyphal_vtol_8_motors
+elif [[ $1 == "px4_v1_14_0_beta_cyphal_vtol" ]]; then
+    px4_v1_14_0_beta_cyphal_vtol
+elif [[ $1 == "px4_v1_14_0_beta_dronecan_vtol" ]]; then
+    px4_v1_14_0_beta_dronecan_vtol
+elif [[ $1 == "cyphal_octorotor" ]]; then
+    px4_v1_14_0_cyphal_octorotor
+elif [[ $1 == "cyphal_quadrotor" ]]; then
+    px4_v1_14_0_cyphal_quadcopter
+elif [[ $1 == "dronecan_quadrotor" ]]; then
+    px4_v1_14_0_dronecan_quadrotor
 else
     printf "$RED$SCRIPT_NAME ERROR (line ${LINENO}): Unknown argument: '$1' $NC\n"
     exit 1
