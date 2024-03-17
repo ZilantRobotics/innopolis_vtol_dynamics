@@ -124,7 +124,7 @@ Well, here is the output of the command:
 ```bash
 Primary supported modes (with aliases):
   px4_v1_14_0_cyphal_quadcopter,cq | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
-  cyphal_standard_vtol,csv    | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
+  px4_v1_14_0_cyphal_quadplane_vtol,csv   | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
   dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
   dronecan_vtol_v1_14_0,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
   dronecan_vtol_v1_12_1,dvo   | DroneCAN    PX4 v1.12       vtol 13070
