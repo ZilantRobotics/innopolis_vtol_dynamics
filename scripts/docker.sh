@@ -15,7 +15,7 @@ Supported modes (with aliases):
 -------------------------------------------------------------------------------
   Command                     | Protocol    Autopilot SW    Airframe
 -------------------------------------------------------------------------------
-  cyphal_quadrotor,cq         | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
+  px4_v1_14_0_cyphal_quadcopter,cq  | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
   cyphal_standard_vtol,csv    | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
   cyphal_vtol_8_motors,cv8    | Cyphal      PX4 v1.14-beta  VTOL 8 motors (13050)
   dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
@@ -194,14 +194,15 @@ sitl_flight_goggles() {
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh sitl_flight_goggles
 }
 
-cyphal_quadrotor() {
+px4_v1_14_0_cyphal_quadcopter() {
     kill_all_related_containers
     setup_cyphal_hitl_config
     slcan_checker&
+    vehicle="px4_v1_14_0_cyphal_quadcopter"
     if [[ $OPTIONS == "--force" ]]; then
-        ./configure.sh cyphal_quadrotor
+        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_quadrotor
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 
 cyphal_octorotor() {
@@ -284,8 +285,8 @@ elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then
     sitl_flight_goggles
-elif [ "$1" = "cyphal_quadrotor" ] || [ "$1" = "cq" ]; then
-    cyphal_quadrotor
+elif [ "$1" = "px4_v1_14_0_cyphal_quadcopter" ] || [ "$1" = "cq" ]; then
+    px4_v1_14_0_cyphal_quadcopter
 elif [ "$1" = "cyphal_octorotor" ] || [ "$1" = "co" ]; then
     cyphal_octorotor
 elif [ "$1" = "cyphal_standard_vtol" ] || [ "$1" = "csv" ]; then

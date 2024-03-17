@@ -91,7 +91,7 @@ To get the list of all supported modes, just type:
 To run PX4 Cyphal quadcopter, type:
 
 ```bash
-./scripts/docker.sh cq  # cq = cyphal_quadrotor
+./scripts/docker.sh cq  # cq = px4_v1_14_0_cyphal_quadcopter
 ```
 
 To run PX4 Dronecan VTOL, type:
@@ -123,7 +123,7 @@ Well, here is the output of the command:
 
 ```bash
 Primary supported modes (with aliases):
-  cyphal_quadrotor,cq         | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
+  px4_v1_14_0_cyphal_quadcopter,cq | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
   cyphal_standard_vtol,csv    | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
   dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
   dronecan_vtol_v1_14_0,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
