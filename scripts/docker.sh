@@ -16,7 +16,7 @@ Supported modes (with aliases):
   Command                     | Protocol    Autopilot SW    Airframe
 -------------------------------------------------------------------------------
   px4_v1_14_0_cyphal_quadcopter,cq  | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
-  cyphal_standard_vtol,csv    | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
+  px4_v1_14_0_cyphal_quadplane_vtol,csv     | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
   cyphal_vtol_8_motors,cv8    | Cyphal      PX4 v1.14-beta  VTOL 8 motors (13050)
   dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
   dronecan_vtol_v1_14_0,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
@@ -216,14 +216,15 @@ px4_v1_14_0_cyphal_octorotor() {
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 
-cyphal_standard_vtol() {
+px4_v1_14_0_cyphal_quadplane_vtol() {
     kill_all_related_containers
     setup_cyphal_hitl_config
     slcan_checker&
+    vehicle="px4_v1_14_0_cyphal_quadplane_vtol"
     if [[ $OPTIONS == "--force" ]]; then
-        ./configure.sh px4_v1_14_0_beta_cyphal_vtol
+        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_standard_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 
 cyphal_vtol_8_motors() {
@@ -290,8 +291,8 @@ elif [ "$1" = "px4_v1_14_0_cyphal_quadcopter" ] || [ "$1" = "cq" ]; then
     px4_v1_14_0_cyphal_quadcopter
 elif [ "$1" = "px4_v1_14_0_cyphal_octorotor" ] || [ "$1" = "co" ]; then
     px4_v1_14_0_cyphal_octorotor
-elif [ "$1" = "cyphal_standard_vtol" ] || [ "$1" = "csv" ]; then
-    cyphal_standard_vtol
+elif [ "$1" = "px4_v1_14_0_cyphal_quadplane_vtol" ] || [ "$1" = "csv" ]; then
+    px4_v1_14_0_cyphal_quadplane_vtol
 elif [ "$1" = "cyphal_vtol_8_motors" ] || [ "$1" = "cv8" ]; then
     cyphal_vtol_8_motors
 elif [ "$1" = "cyphal_and_dronecan" ]; then
