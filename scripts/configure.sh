@@ -22,16 +22,6 @@ px4_v1_12_1_dronecan_vtol() {
         ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
 
-px4_v1_14_0_beta_cyphal_vtol_8_motors() {
-    wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_CYPHAL_URL
-    autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
-        ${REPOSITORY_DIR}/configs/px4/v1.14/vtol_octoplane_coaxial/airframe.yaml \
-        ${REPOSITORY_DIR}/configs/px4/v1.14/vtol_octoplane_coaxial/cyphal.yaml \
-        ${REPOSITORY_DIR}/configs/px4/v1.14/vtol_octoplane_coaxial/geometry.yaml \
-        ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
-        ${REPOSITORY_DIR}/configs/px4/common.yaml
-}
-
 if [ -z $1 ]; then
     printf "$RED$SCRIPT_NAME ERROR (line ${LINENO}): Argument is not specified!$NC\n"
     exit 1
@@ -56,7 +46,6 @@ fi
 DOWNLOADS_DIR=$REPOSITORY_DIR/downloads
 DOWNLOADED_BINARY_PATH=$DOWNLOADS_DIR/px4_fmu-v5_latest_downloaded_firmware.px4
 PX4_V1_12_1_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.12.1_hitl/px4_fmu-v5_default.px4
-PX4_V1_14_0_BETA_CYPHAL_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.1-beta1/px4_fmu-v5_cyphal.px4
 
 
 mkdir -p $DOWNLOADS_DIR
@@ -64,8 +53,6 @@ rm -f $DOWNLOADED_BINARY_PATH
 
 if [[ $1 == "px4_v1_12_1_dronecan_vtol" ]]; then
     px4_v1_12_1_dronecan_vtol
-elif [[ $1 == "px4_v1_14_0_beta_cyphal_vtol_8_motors" ]]; then
-    px4_v1_14_0_beta_cyphal_vtol_8_motors
 else
     printf "$RED$SCRIPT_NAME ERROR (line ${LINENO}): Unknown argument: '$1' $NC\n"
     exit 1
