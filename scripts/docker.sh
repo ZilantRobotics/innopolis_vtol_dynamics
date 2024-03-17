@@ -39,6 +39,7 @@ Commands (with aliases):
 }
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+REPOSITORY_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Kill the container if sniffer is disconnected
 slcan_checker() {
@@ -163,10 +164,11 @@ dronecan_vtol_v1_14_0() {
     kill_all_related_containers
     setup_dronecan_hitl_config
     slcan_checker&
+    vehicle="px4_v1_14_0_beta_dronecan_vtol"
     if [[ $OPTIONS == "--force" ]]; then
-        ./configure.sh px4_v1_14_0_beta_dronecan_vtol
+        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh px4_v1_14_0_beta_dronecan_vtol
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 
 dronecan_quadrotor() {
