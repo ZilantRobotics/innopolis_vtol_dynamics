@@ -3,7 +3,7 @@ CBRK_SUPPLY_CHK:  894281
 COM_ARM_CHK_ESCS: 0
 CBRK_IO_SAFETY:   22027
 SYS_BOARD_SENS:   0
-COM_RC_IN_MODE:   1
+COM_RC_IN_MODE:   4       # Stick input disabled (it used to be 1 and the vehicle was Not ready).
 FD_ACT_EN:        0       # Enable Actuator Failure check
 
 WV_EN: 0                  # Weather vane. By default Enabled.
