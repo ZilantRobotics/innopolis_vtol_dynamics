@@ -171,14 +171,15 @@ dronecan_vtol_v1_14_0() {
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 
-dronecan_quadrotor() {
+px4_v1_14_0_dronecan_quadrotor() {
     kill_all_related_containers
     setup_dronecan_hitl_config
     slcan_checker&
+    vehicle="px4_v1_14_0_dronecan_quadrotor"
     if [[ $OPTIONS == "--force" ]]; then
-        ./configure.sh dronecan_quadrotor
+        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh dronecan_flight_goggles
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 
 sitl_inno_vtol() {
@@ -278,7 +279,7 @@ elif [ "$1" = "dronecan_vtol_v1_12_1" ] || [ "$1" = "dvo" ]; then
 elif [ "$1" = "dronecan_vtol_v1_14_0" ] || [ "$1" = "dv" ]; then
     dronecan_vtol_v1_14_0
 elif [ "$1" = "dronecan_quadrotor" ] || [ "$1" = "dq" ]; then
-    dronecan_quadrotor
+    px4_v1_14_0_dronecan_quadrotor
 elif [ "$1" = "sitl_inno_vtol" ]; then
     sitl_inno_vtol
 elif [ "$1" = "sitl_flight_goggles" ]; then

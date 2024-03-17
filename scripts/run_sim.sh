@@ -12,7 +12,7 @@ Usage: run_sim.sh <command>
 Commands:
   px4_v1_14_0_beta_dronecan_vtol          Run dynamics simulator in DroneCan HITL mode for px4 vtol 13000 airframe
   px4_v1_12_1_dronecan_vtol               Run dynamics simulator in DroneCan HITL mode for px4 vtol 13070 airframe
-  dronecan_flight_goggles                 Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
+  px4_v1_14_0_dronecan_quadrotor          Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
   cyphal_quadrotor                        Cyphal HITL PX4 Quadrotor (4001)
   cyphal_octorotor                        Cyphal HITL PX4 Octorotor (12001)
   cyphal_standard_vtol                    Run dynamics simulator in Cyphal HITL mode for vtol 4 motors airframe.
@@ -108,7 +108,7 @@ px4_v1_12_1_dronecan_vtol() {
         dynamics:=vtol_dynamics
 }
 
-dronecan_flight_goggles() {
+px4_v1_14_0_dronecan_quadrotor() {
     setup_ros
     setup_dronecan_hitl
     $SCRIPT_DIR/airframe_printer.sh 4001
@@ -238,8 +238,8 @@ if [ "$1" = "px4_v1_14_0_beta_dronecan_vtol" ]; then
     px4_v1_14_0_beta_dronecan_vtol
 elif [ "$1" = "px4_v1_12_1_dronecan_vtol" ]; then
     px4_v1_12_1_dronecan_vtol
-elif [ "$1" = "dronecan_flight_goggles" ]; then
-    dronecan_flight_goggles
+elif [ "$1" = "px4_v1_14_0_dronecan_quadrotor" ]; then
+    px4_v1_14_0_dronecan_quadrotor
 elif [ "$1" = "cyphal_quadrotor" ]; then
     cyphal_quadrotor
 elif [ "$1" = "cyphal_octorotor" ]; then

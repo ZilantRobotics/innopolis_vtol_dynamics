@@ -31,15 +31,6 @@ px4_v1_14_0_cyphal_octorotor() {
         ${REPOSITORY_DIR}/configs/px4/common.yaml
 }
 
-px4_v1_14_0_dronecan_quadrotor() {
-    wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_DRONECAN_URL
-    autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
-        ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/airframe.yaml \
-        ${REPOSITORY_DIR}/configs/px4/v1.14/quadcopter/dronecan.yaml \
-        ${REPOSITORY_DIR}/configs/px4/dronecan.yaml \
-        ${REPOSITORY_DIR}/configs/px4/common.yaml
-}
-
 px4_v1_12_1_dronecan_vtol() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_12_1_DRONECAN_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
@@ -92,7 +83,6 @@ DOWNLOADS_DIR=$REPOSITORY_DIR/downloads
 DOWNLOADED_BINARY_PATH=$DOWNLOADS_DIR/px4_fmu-v5_latest_downloaded_firmware.px4
 PX4_V1_12_1_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.12.1_hitl/px4_fmu-v5_default.px4
 PX4_V1_14_0_BETA_CYPHAL_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.1-beta1/px4_fmu-v5_cyphal.px4
-PX4_V1_14_0_BETA_DRONECAN_URL=https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.1-beta1/px4_fmu-v5_default.px4
 
 
 mkdir -p $DOWNLOADS_DIR
@@ -108,8 +98,6 @@ elif [[ $1 == "cyphal_octorotor" ]]; then
     px4_v1_14_0_cyphal_octorotor
 elif [[ $1 == "cyphal_quadrotor" ]]; then
     px4_v1_14_0_cyphal_quadcopter
-elif [[ $1 == "dronecan_quadrotor" ]]; then
-    px4_v1_14_0_dronecan_quadrotor
 else
     printf "$RED$SCRIPT_NAME ERROR (line ${LINENO}): Unknown argument: '$1' $NC\n"
     exit 1
