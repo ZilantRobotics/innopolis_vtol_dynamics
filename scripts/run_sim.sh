@@ -10,7 +10,7 @@ https://github.com/ZilantRobotics/innopolis_vtol_dynamics
 Usage: run_sim.sh <command>
 
 Commands:
-  px4_v1_14_0_beta_dronecan_vtol          Run dynamics simulator in DroneCan HITL mode for px4 vtol 13000 airframe
+  px4_v1_14_0_dronecan_quadplane_vtol     Run dynamics simulator in DroneCan HITL mode for px4 vtol 13000 airframe
   px4_v1_12_1_dronecan_vtol               Run dynamics simulator in DroneCan HITL mode for px4 vtol 13070 airframe
   px4_v1_14_0_dronecan_quadrotor          Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
   px4_v1_14_0_cyphal_quadcopter           Cyphal HITL PX4 Quadrotor (4001)
@@ -84,7 +84,7 @@ setup_combined_hitl() {
     fi
 }
 
-px4_v1_14_0_beta_dronecan_vtol() {
+px4_v1_14_0_dronecan_quadplane_vtol() {
     setup_ros
     setup_dronecan_hitl
     $SCRIPT_DIR/airframe_printer.sh 13000
@@ -234,8 +234,8 @@ if [ "${BASH_SOURCE[0]}" -ef "$0" ]; then
 fi
 SCRIPT_DIR="$(dirname "$0")"
 
-if [ "$1" = "px4_v1_14_0_beta_dronecan_vtol" ]; then
-    px4_v1_14_0_beta_dronecan_vtol
+if [ "$1" = "px4_v1_14_0_dronecan_quadplane_vtol" ]; then
+    px4_v1_14_0_dronecan_quadplane_vtol
 elif [ "$1" = "px4_v1_12_1_dronecan_vtol" ]; then
     px4_v1_12_1_dronecan_vtol
 elif [ "$1" = "px4_v1_14_0_dronecan_quadrotor" ]; then

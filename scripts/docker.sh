@@ -13,19 +13,19 @@ Options:
 
 Supported modes (with aliases):
 -------------------------------------------------------------------------------
-  Command                     | Protocol    Autopilot SW    Airframe
+  Command                                   | Protocol    Autopilot SW    Airframe
 -------------------------------------------------------------------------------
-  px4_v1_14_0_cyphal_quadcopter,cq  | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
+  px4_v1_14_0_cyphal_quadcopter,cq          | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
   px4_v1_14_0_cyphal_quadplane_vtol,csv     | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
   px4_v1_14_0_cyphal_octoplane_vtol,cv8     | Cyphal      PX4 v1.14-beta  VTOL 8 motors (13050)
-  dronecan_quadrotor,dq       | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
-  dronecan_vtol_v1_14_0,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
-  dronecan_vtol_v1_12_1,dvo   | DroneCAN    PX4 v1.12       vtol 13070
+  px4_v1_14_0_dronecan_quadrotor,dq         | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
+  px4_v1_14_0_dronecan_quadplane_vtol,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
+  px4_v1_12_1_dronecan_vtol,dvo             | DroneCAN    PX4 v1.12       vtol 13070
 -------------------------------------------------------------------------------
-  px4_v1_14_0_cyphal_octorotor,co | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
-  sitl_inno_vtol              | MAVLink     PX4 v1.12       vtol 13070
-  sitl_flight_goggles         | MAVLink     PX4 v1.12       Quadrotor (4001)
-  cyphal_and_dronecan         | 2 CAN       AP  v4.4.0      Copter
+  px4_v1_14_0_cyphal_octorotor,co           | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
+  sitl_inno_vtol                            | MAVLink     PX4 v1.12       vtol 13070
+  sitl_flight_goggles                       | MAVLink     PX4 v1.12       Quadrotor (4001)
+  cyphal_and_dronecan                       | 2 CAN       AP  v4.4.0      Copter
 -------------------------------------------------------------------------------
 
 Commands (with aliases):
@@ -138,123 +138,29 @@ setup_cyphal_and_dronecan_hitl_config() {
     echo "- CYPHAL_DEV_PATH_SYMLINK is" $CYPHAL_DEV_PATH_SYMLINK
 }
 
-build_docker_image() {
+docker_build_image() {
     docker build -t $IMAGE_NAME ..
 }
 
-pull_docker_image() {
+docker_pull_image() {
     docker pull $IMAGE_NAME
 }
 
-push_docker_image() {
+docker_push_image() {
     docker push $IMAGE_NAME
 }
 
-dronecan_vtol_v1_12_1() {
-    kill_all_related_containers
-    setup_dronecan_hitl_config
-    slcan_checker&
-    vehicle="px4_v1_12_1_dronecan_vtol"
-    if [[ $OPTIONS == "--force" ]]; then
-        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
-    fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
-}
-
-dronecan_vtol_v1_14_0() {
-    kill_all_related_containers
-    setup_dronecan_hitl_config
-    slcan_checker&
-    vehicle="px4_v1_14_0_beta_dronecan_vtol"
-    if [[ $OPTIONS == "--force" ]]; then
-        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
-    fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
-}
-
-px4_v1_14_0_dronecan_quadrotor() {
-    kill_all_related_containers
-    setup_dronecan_hitl_config
-    slcan_checker&
-    vehicle="px4_v1_14_0_dronecan_quadrotor"
-    if [[ $OPTIONS == "--force" ]]; then
-        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
-    fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
-}
-
-sitl_inno_vtol() {
-    kill_all_related_containers
-    setup_mavlink_sitl_config
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh sitl_inno_vtol
-}
-
-sitl_flight_goggles() {
-    kill_all_related_containers
-    setup_mavlink_sitl_config
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh sitl_flight_goggles
-}
-
-px4_v1_14_0_cyphal_quadcopter() {
-    kill_all_related_containers
-    setup_cyphal_hitl_config
-    slcan_checker&
-    vehicle="px4_v1_14_0_cyphal_quadcopter"
-    if [[ $OPTIONS == "--force" ]]; then
-        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
-    fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
-}
-
-px4_v1_14_0_cyphal_octorotor() {
-    kill_all_related_containers
-    setup_cyphal_hitl_config
-    slcan_checker&
-    vehicle="px4_v1_14_0_cyphal_octorotor"
-    if [[ $OPTIONS == "--force" ]]; then
-        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
-    fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
-}
-
-px4_v1_14_0_cyphal_quadplane_vtol() {
-    kill_all_related_containers
-    setup_cyphal_hitl_config
-    slcan_checker&
-    vehicle="px4_v1_14_0_cyphal_quadplane_vtol"
-    if [[ $OPTIONS == "--force" ]]; then
-        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
-    fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
-}
-
-px4_v1_14_0_cyphal_octoplane_vtol() {
-    kill_all_related_containers
-    setup_cyphal_hitl_config
-    slcan_checker&
-    vehicle="px4_v1_14_0_cyphal_octoplane_vtol"
-    if [[ $OPTIONS == "--force" ]]; then
-        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
-    fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
-}
-
-cyphal_and_dronecan_inno_vtol() {
-    echo "Cyphal and DroneCAN mode is a special mode that uses:"
-    echo "- slcan0 based on the 1-st sniffer for DroneCAN communication (sensors)"
-    echo "- slcan1 based on the 2-nd sniffer for Cyphal   communication (Actuators only)"
-    kill_all_related_containers
-    setup_cyphal_and_dronecan_hitl_config
-    slcan_checker&
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_and_dronecan_inno_vtol
-}
-
-run_interactive() {
+docker_countainer_run_interactive() {
     setup_cyphal_hitl_config
     docker container run --rm -it $DOCKER_FLAGS $IMAGE_NAME /bin/bash
 }
 
-kill_all_related_containers() {
+docker_container_run_test() {
+    setup_mavlink_sitl_config
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./uav_dynamics/uav_hitl_dynamics/catkin_test.sh --docker
+}
+
+docker_kill_all_related_containers() {
     containers=$(docker ps -q --filter ancestor=$IMAGE_NAME)
     if [ ! -z "${containers}" ]; then
         printf "Killing the following containers: "
@@ -262,9 +168,41 @@ kill_all_related_containers() {
     fi
 }
 
-test() {
+
+docker_container_run_dronecan() {
+    docker_kill_all_related_containers
+    setup_dronecan_hitl_config
+    slcan_checker&
+    if [[ $OPTIONS == "--force" ]]; then
+        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
+    fi
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
+}
+
+docker_container_run_cyphal() {
+    docker_kill_all_related_containers
+    setup_cyphal_hitl_config
+    slcan_checker&
+    if [[ $OPTIONS == "--force" ]]; then
+        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
+    fi
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
+}
+
+docker_container_run_mavlink() {
+    docker_kill_all_related_containers
     setup_mavlink_sitl_config
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./uav_dynamics/uav_hitl_dynamics/catkin_test.sh --docker
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
+}
+
+docker_container_run_cyphal_and_dronecan_inno_vtol() {
+    echo "Cyphal and DroneCAN mode is a special mode that uses:"
+    echo "- slcan0 based on the 1-st sniffer for DroneCAN communication (sensors)"
+    echo "- slcan1 based on the 2-nd sniffer for Cyphal   communication (Actuators only)"
+    docker_kill_all_related_containers
+    setup_cyphal_and_dronecan_hitl_config
+    slcan_checker&
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_and_dronecan_inno_vtol
 }
 
 ## Start from here
@@ -273,38 +211,65 @@ cd "$(dirname "$0")"
 setup_image_name_and_version
 OPTIONS=$2
 
-if [ "$1" = "build" ] || [ "$1" = "b" ]; then
-    build_docker_image
-elif [ "$1" = "pull" ]; then
-    pull_docker_image
-elif [ "$1" = "push" ]; then
-    push_docker_image
-elif [ "$1" = "dronecan_vtol_v1_12_1" ] || [ "$1" = "dvo" ]; then
-    dronecan_vtol_v1_12_1
-elif [ "$1" = "dronecan_vtol_v1_14_0" ] || [ "$1" = "dv" ]; then
-    dronecan_vtol_v1_14_0
-elif [ "$1" = "dronecan_quadrotor" ] || [ "$1" = "dq" ]; then
-    px4_v1_14_0_dronecan_quadrotor
-elif [ "$1" = "sitl_inno_vtol" ]; then
-    sitl_inno_vtol
-elif [ "$1" = "sitl_flight_goggles" ]; then
-    sitl_flight_goggles
-elif [ "$1" = "px4_v1_14_0_cyphal_quadcopter" ] || [ "$1" = "cq" ]; then
-    px4_v1_14_0_cyphal_quadcopter
-elif [ "$1" = "px4_v1_14_0_cyphal_octorotor" ] || [ "$1" = "co" ]; then
-    px4_v1_14_0_cyphal_octorotor
-elif [ "$1" = "px4_v1_14_0_cyphal_quadplane_vtol" ] || [ "$1" = "csv" ]; then
-    px4_v1_14_0_cyphal_quadplane_vtol
-elif [ "$1" = "px4_v1_14_0_cyphal_octoplane_vtol" ] || [ "$1" = "cv8" ]; then
-    px4_v1_14_0_cyphal_octoplane_vtol
-elif [ "$1" = "cyphal_and_dronecan" ]; then
-    cyphal_and_dronecan_inno_vtol
-elif [ "$1" = "interactive" ] || [ "$1" = "i" ]; then
-    run_interactive
-elif [ "$1" = "test" ]; then
-    test
-elif [ "$1" = "kill" ]; then
-    kill_all_related_containers
+## Handle aliases
+declare -A aliases=(
+    [b]="build"
+    [i]="interactive"
+    [dvo]="px4_v1_12_1_dronecan_vtol"
+    [dv]="px4_v1_14_0_dronecan_quadplane_vtol"
+    [dq]="px4_v1_14_0_dronecan_quadrotor"
+    [cq]="px4_v1_14_0_cyphal_quadcopter"
+    [co]="px4_v1_14_0_cyphal_octorotor"
+    [csv]="px4_v1_14_0_cyphal_quadplane_vtol"
+    [cv8]="px4_v1_14_0_cyphal_octoplane_vtol"
+)
+if [[ -n "${aliases[$1]}" ]]; then
+    CMD="${aliases[$1]}"
+else
+    CMD=$1
+fi
+
+
+# Common commands:
+if [ "$CMD" = "build" ]; then
+    docker_build_image
+elif [ "$CMD" = "pull" ]; then
+    docker_pull_image
+elif [ "$CMD" = "push" ]; then
+    docker_push_image
+elif [ "$CMD" = "interactive" ]; then
+    docker_countainer_run_interactive
+elif [ "$CMD" = "test" ]; then
+    docker_container_run_test
+elif [ "$CMD" = "kill" ]; then
+    docker_kill_all_related_containers
+
+# DroneCAN commands:
+elif [ "$CMD" = "px4_v1_12_1_dronecan_vtol" ] || \
+     [ "$CMD" = "px4_v1_14_0_dronecan_quadplane_vtol" ] || \
+     [ "$CMD" = "px4_v1_14_0_dronecan_quadrotor" ] ; then
+    vehicle=$CMD
+    docker_container_run_dronecan
+
+# Cyphal commands:
+elif [ "$CMD" = "px4_v1_14_0_cyphal_quadcopter" ] || \
+     [ "$CMD" = "px4_v1_14_0_cyphal_octorotor" ] || \
+     [ "$CMD" = "px4_v1_14_0_cyphal_quadplane_vtol" ] || \
+     [ "$CMD" = "px4_v1_14_0_cyphal_octoplane_vtol" ] ; then
+    vehicle=$CMD
+    docker_container_run_cyphal
+
+# MAVLink commands:
+elif [ "$CMD" = "sitl_inno_vtol" ] || \
+     [ "$CMD" = "sitl_flight_goggles" ] ; then
+    vehicle=$CMD
+    docker_container_run_mavlink
+
+# DroneCAN + Cyphal commands:
+elif [ "$CMD" = "cyphal_and_dronecan" ]; then
+    docker_container_run_cyphal_and_dronecan_inno_vtol
+
+# Help:
 else
     print_help
 fi
