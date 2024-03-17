@@ -14,14 +14,6 @@ Automatical configuration:
 3. Configure parameters"
 }
 
-px4_v1_14_0_cyphal_octorotor() {
-    wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_14_0_BETA_CYPHAL_URL
-    autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
-        ${REPOSITORY_DIR}/configs/px4/v1.14/octorotor/airframe.yaml \
-        ${REPOSITORY_DIR}/configs/px4/cyphal.yaml \
-        ${REPOSITORY_DIR}/configs/px4/common.yaml
-}
-
 px4_v1_12_1_dronecan_vtol() {
     wget -O $DOWNLOADED_BINARY_PATH $PX4_V1_12_1_DRONECAN_URL
     autopilot-configurator -v --firmware $DOWNLOADED_BINARY_PATH -f --config \
@@ -85,8 +77,6 @@ elif [[ $1 == "px4_v1_14_0_beta_cyphal_vtol_8_motors" ]]; then
     px4_v1_14_0_beta_cyphal_vtol_8_motors
 elif [[ $1 == "px4_v1_14_0_beta_cyphal_vtol" ]]; then
     px4_v1_14_0_beta_cyphal_vtol
-elif [[ $1 == "cyphal_octorotor" ]]; then
-    px4_v1_14_0_cyphal_octorotor
 else
     printf "$RED$SCRIPT_NAME ERROR (line ${LINENO}): Unknown argument: '$1' $NC\n"
     exit 1

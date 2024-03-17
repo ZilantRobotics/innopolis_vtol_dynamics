@@ -22,7 +22,7 @@ Supported modes (with aliases):
   dronecan_vtol_v1_14_0,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
   dronecan_vtol_v1_12_1,dvo   | DroneCAN    PX4 v1.12       vtol 13070
 -------------------------------------------------------------------------------
-  cyphal_octorotor,co         | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
+  px4_v1_14_0_cyphal_octorotor,co | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
   sitl_inno_vtol              | MAVLink     PX4 v1.12       vtol 13070
   sitl_flight_goggles         | MAVLink     PX4 v1.12       Quadrotor (4001)
   cyphal_and_dronecan         | 2 CAN       AP  v4.4.0      Copter
@@ -205,14 +205,15 @@ px4_v1_14_0_cyphal_quadcopter() {
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 
-cyphal_octorotor() {
+px4_v1_14_0_cyphal_octorotor() {
     kill_all_related_containers
     setup_cyphal_hitl_config
     slcan_checker&
+    vehicle="px4_v1_14_0_cyphal_octorotor"
     if [[ $OPTIONS == "--force" ]]; then
-        ./configure.sh cyphal_octorotor
+        ${REPOSITORY_DIR}/scripts/configurator.py ${REPOSITORY_DIR}/configs/vehicles/${vehicle}.yaml
     fi
-    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh cyphal_octorotor
+    docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 
 cyphal_standard_vtol() {
@@ -287,8 +288,8 @@ elif [ "$1" = "sitl_flight_goggles" ]; then
     sitl_flight_goggles
 elif [ "$1" = "px4_v1_14_0_cyphal_quadcopter" ] || [ "$1" = "cq" ]; then
     px4_v1_14_0_cyphal_quadcopter
-elif [ "$1" = "cyphal_octorotor" ] || [ "$1" = "co" ]; then
-    cyphal_octorotor
+elif [ "$1" = "px4_v1_14_0_cyphal_octorotor" ] || [ "$1" = "co" ]; then
+    px4_v1_14_0_cyphal_octorotor
 elif [ "$1" = "cyphal_standard_vtol" ] || [ "$1" = "csv" ]; then
     cyphal_standard_vtol
 elif [ "$1" = "cyphal_vtol_8_motors" ] || [ "$1" = "cv8" ]; then
