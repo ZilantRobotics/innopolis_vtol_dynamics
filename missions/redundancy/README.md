@@ -22,11 +22,11 @@ Steps:
 
 During the flight, the first airspeed was disabled, the vehicle triggered a failsafe behavior (adivese RTL) and the airspeed selector switched to the second airspeed instance:
 
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/scenarios/redundant_dprs.gif" alt="drawing"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/scenarios/redundant_dprs.gif" alt="drawing"/>
 
 The disabled airspeed was veryfied in MAVLink console with `listener airspeed`:
 
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/scenarios/redundant_dprs.png" alt="drawing"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/scenarios/redundant_dprs.png" alt="drawing"/>
 
 The full flight log: [Cyphal VTOL PX4 v1.14](https://review.px4.io/plot_app?log=a6a3fed5-4917-4887-b32c-812defe7cb1d).
 
@@ -40,7 +40,7 @@ You can disable and re-enable any sensor by changing the corresponded port ID in
 
 Type `y mon` to display the information about online nodes and network traffic in real time:
 
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/cyphal/yakut_monitor.png" width="512" alt="drawing"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/cyphal/yakut_monitor.png" width="512" alt="drawing"/>
 
 
 For example, the port identifier of the first differential pressure is 2600.
