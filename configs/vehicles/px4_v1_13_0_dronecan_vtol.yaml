@@ -1,0 +1,5 @@
+firmware: https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.13.0_hitl/px4_fmu-v5_default.px4
+params:
+  - configs/px4/v1.13/vtol_13070/airframe.yaml
+  - configs/px4/dronecan.yaml
+  - configs/px4/common.yaml

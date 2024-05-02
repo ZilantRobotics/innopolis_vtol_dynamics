@@ -127,7 +127,7 @@ Primary supported modes (with aliases):
   px4_v1_14_0_cyphal_quadplane_vtol,csv  | Cyphal     PX4 v1.14-beta  Standard VTOL (13000)
   px4_v1_14_0_dronecan_quadrotor,dq      | DroneCAN   PX4 v1.14-beta  Quadrotor (4001)
   px4_v1_14_0_dronecan_quadplane_vtol,dv | DroneCAN   PX4 v1.14-beta  Standard VTOL (13000)
-  px4_v1_12_1_dronecan_vtol,dvo          | DroneCAN   PX4 v1.12       vtol 13070
+  px4_v1_13_0_dronecan_vtol,dv1130       | DroneCAN   PX4 v1.13.0     vtol 13070
 
 Other modes:
   sitl_inno_vtol                        | MAVLink     PX4 v1.12       vtol 13070
