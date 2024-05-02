@@ -20,7 +20,7 @@ Supported modes (with aliases):
   px4_v1_14_0_cyphal_octoplane_vtol,cv8     | Cyphal      PX4 v1.14-beta  VTOL 8 motors (13050)
   px4_v1_14_0_dronecan_quadrotor,dq         | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
   px4_v1_14_0_dronecan_quadplane_vtol,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
-  px4_v1_12_1_dronecan_vtol,dvo             | DroneCAN    PX4 v1.12       vtol 13070
+  px4_v1_13_0_dronecan_vtol,dv1130          | DroneCAN    PX4 v1.13       vtol 13070
 -------------------------------------------------------------------------------
   px4_v1_14_0_cyphal_octorotor,co           | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
   sitl_inno_vtol                            | MAVLink     PX4 v1.12       vtol 13070
@@ -215,7 +215,7 @@ OPTIONS=$2
 declare -A aliases=(
     [b]="build"
     [i]="interactive"
-    [dvo]="px4_v1_12_1_dronecan_vtol"
+    [dv1130]="px4_v1_13_0_dronecan_vtol"
     [dv]="px4_v1_14_0_dronecan_quadplane_vtol"
     [dq]="px4_v1_14_0_dronecan_quadrotor"
     [cq]="px4_v1_14_0_cyphal_quadcopter"
@@ -247,7 +247,7 @@ elif [ "$CMD" = "kill" ]; then
     docker_kill_all_related_containers
 
 # DroneCAN commands:
-elif [ "$CMD" = "px4_v1_12_1_dronecan_vtol" ] || \
+elif [ "$CMD" = "px4_v1_13_0_dronecan_vtol" ] || \
      [ "$CMD" = "px4_v1_14_0_dronecan_quadplane_vtol" ] || \
      [ "$CMD" = "px4_v1_14_0_dronecan_quadrotor" ] ; then
     vehicle=$CMD
