@@ -223,7 +223,9 @@ declare -A aliases=(
     [csv]="px4_v1_14_0_cyphal_quadplane_vtol"
     [cv8]="px4_v1_14_0_cyphal_octoplane_vtol"
 )
-if [[ -n "${aliases[$1]}" ]]; then
+if [ $# -eq 0 ]; then
+    CMD="help"
+elif [[ -n "${aliases[$1]}" ]]; then
     CMD="${aliases[$1]}"
 else
     CMD=$1
