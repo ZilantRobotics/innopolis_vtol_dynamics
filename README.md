@@ -1,6 +1,6 @@
-# UAV HITL Dynamics Simulator
+# UAV HITL Simulator [![catkin_build](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/catkin_build.yml/badge.svg)](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/catkin_build.yml)
 
-UAV HITL Dynamics Simulator is a set of ROS packages proposed full simulation for UAV based on PX4/Ardupilot autopilot.
+UAV HITL Simulator brings up a set of ROS packages, config files and instructions to establish a full simulation for UAV based on PX4/Ardupilot autopilot.
 
 ![dynamics](docs/img/dynamics.png?raw=true "dynamics")
 
