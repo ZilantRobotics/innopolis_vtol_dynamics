@@ -6,4 +6,4 @@
 
 ## Actuators Setup
 
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/configs/px4_v1.14_standard_vtol.png" alt="drawing" width="480"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/configs/px4_v1.14_standard_vtol.png" alt="drawing" width="480"/>

@@ -1,6 +1,6 @@
 # Inspection Quadcopter
 
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/inspection.png" alt="drawing"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/inspection.png" alt="drawing"/>
 
 ## Usage
 

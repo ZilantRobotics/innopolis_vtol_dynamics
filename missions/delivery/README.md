@@ -2,7 +2,7 @@
 
 Testing and optimization of cargo delivery processes using unmanned aerial vehicles.
 
-<img src="https://raw.githubusercontent.com/RaccoonlabDev/innopolis_vtol_dynamics/docs/assets/delivery.png" alt="drawing"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/delivery.png" alt="drawing"/>
 
 ## Usage
 
