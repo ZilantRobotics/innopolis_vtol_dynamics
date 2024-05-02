@@ -2,7 +2,7 @@
 
 UAV HITL Simulator brings up a set of ROS packages, config files and instructions to establish a full simulation for UAV based on PX4/Ardupilot autopilot.
 
-![dynamics](docs/img/dynamics.png?raw=true "dynamics")
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/dynamics.png" alt="drawing"/>
 
 The key feature of this simulation is to run it in such a way that the hardware knows nothing about the simulation. This can be done with Cyphal/DroneCAN. It covers more PX4 modules than standard SITL and HITL.
 
@@ -33,7 +33,7 @@ VTOL HITL Dynamics Simulator is designed to be modular. It is divided into the f
 
 The design of the simulator is shown below.
 
-![scheme](docs/img/scheme.png?raw=true "scheme")
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/scheme.png" alt="drawing"/>
 
 ## 2. Usage
 
@@ -71,7 +71,7 @@ Typically we use [CUAV v5+](https://docs.px4.io/master/en/flight_controller/cuav
 
 An example of a connection is shown in the picture below.
 
-<img src="docs/img/sniffer_connection.png" alt="drawing" width="640"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/sniffer_connection.png" alt="drawing"  width="640"/>
 
 All default parameters expect that you use CAN1 on the autopilot side.
 
