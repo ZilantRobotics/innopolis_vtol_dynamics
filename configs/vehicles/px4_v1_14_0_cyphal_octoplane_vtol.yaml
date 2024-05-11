@@ -1,7 +1,0 @@
-firmware: https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.1-beta1/px4_fmu-v5_cyphal.px4
-params:
-  - configs/px4/v1.14/vtol_octoplane_coaxial/airframe.yaml
-  - configs/px4/v1.14/vtol_octoplane_coaxial/cyphal.yaml
-  - configs/px4/v1.14/vtol_octoplane_coaxial/geometry.yaml
-  - configs/px4/cyphal.yaml
-  - configs/px4/common.yaml
