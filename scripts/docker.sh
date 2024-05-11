@@ -22,7 +22,7 @@ Supported modes (with aliases):
   px4_v1_14_0_dronecan_quadplane_vtol,dv    | DroneCAN    PX4 v1.14-beta  Standard VTOL (13000)
   px4_v1_13_0_dronecan_vtol,dv1130          | DroneCAN    PX4 v1.13       vtol 13070
 -------------------------------------------------------------------------------
-  px4_v1_14_0_cyphal_octorotor,co           | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
+  px4_v1_15_0_cyphal_octorotor,co           | Cyphal      PX4 v1.15-alpha Octorotor Coaxial (12001)
   sitl_inno_vtol                            | MAVLink     PX4 v1.12       vtol 13070
   sitl_flight_goggles                       | MAVLink     PX4 v1.12       Quadrotor (4001)
   cyphal_and_dronecan                       | 2 CAN       AP  v4.4.0      Copter
@@ -219,7 +219,7 @@ declare -A aliases=(
     [dv]="px4_v1_14_0_dronecan_quadplane_vtol"
     [dq]="px4_v1_14_0_dronecan_quadrotor"
     [cq]="px4_v1_15_0_cyphal_quadcopter"
-    [co]="px4_v1_14_0_cyphal_octorotor"
+    [co]="px4_v1_15_0_cyphal_octorotor"
     [csv]="px4_v1_15_0_cyphal_quadplane_vtol"
     [cv8]="px4_v1_14_0_cyphal_octoplane_vtol"
 )
@@ -255,7 +255,7 @@ elif [ "$CMD" = "px4_v1_13_0_dronecan_vtol" ] || \
 
 # Cyphal commands:
 elif [ "$CMD" = "px4_v1_15_0_cyphal_quadcopter" ] || \
-     [ "$CMD" = "px4_v1_14_0_cyphal_octorotor" ] || \
+     [ "$CMD" = "px4_v1_15_0_cyphal_octorotor" ] || \
      [ "$CMD" = "px4_v1_15_0_cyphal_quadplane_vtol" ] || \
      [ "$CMD" = "px4_v1_14_0_cyphal_octoplane_vtol" ] ; then
     vehicle=$CMD

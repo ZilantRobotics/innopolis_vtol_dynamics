@@ -133,7 +133,7 @@ Other modes:
   sitl_inno_vtol                        | MAVLink     PX4 v1.12       vtol 13070
   sitl_flight_goggles                   | MAVLink     PX4 v1.12       Quadrotor (4001)
   cyphal_and_dronecan                   | 2 CAN       AP  v4.4.0      Copter
-  px4_v1_14_0_cyphal_octorotor,co       | Cyphal      PX4 v1.14-beta  Octorotor Coaxial (12001)
+  px4_v1_15_0_cyphal_octorotor,co       | Cyphal      PX4 v1.15-alpha Octorotor Coaxial (12001)
 
 ```
 

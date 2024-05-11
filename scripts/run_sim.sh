@@ -14,7 +14,7 @@ Commands:
   px4_v1_13_0_dronecan_vtol               Run dynamics simulator in DroneCan HITL mode for px4 vtol 13070 airframe
   px4_v1_14_0_dronecan_quadrotor          Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
   px4_v1_15_0_cyphal_quadcopter           Cyphal HITL PX4 Quadrotor (4001)
-  px4_v1_14_0_cyphal_octorotor            Cyphal HITL PX4 Octorotor (12001)
+  px4_v1_15_0_cyphal_octorotor            Cyphal HITL PX4 Octorotor (12001)
   px4_v1_15_0_cyphal_quadplane_vtol       Run dynamics simulator in Cyphal HITL mode for vtol 4 motors airframe.
   px4_v1_14_0_cyphal_octoplane_vtol       Run dynamics simulator in Cyphal HITL mode for vtol 8 motors airframe.
   cyphal_and_dronecan_inno_vtol           Run dynamics simulator in DroneCan + Cyphal mode for vtol airframe.
@@ -132,7 +132,7 @@ px4_v1_15_0_cyphal_quadcopter() {
         dynamics:=quadcopter
 }
 
-px4_v1_14_0_cyphal_octorotor() {
+px4_v1_15_0_cyphal_octorotor() {
     setup_ros
     setup_cyphal_hitl
     $SCRIPT_DIR/airframe_printer.sh 12001
@@ -242,8 +242,8 @@ elif [ "$1" = "px4_v1_14_0_dronecan_quadrotor" ]; then
     px4_v1_14_0_dronecan_quadrotor
 elif [ "$1" = "px4_v1_15_0_cyphal_quadcopter" ]; then
     px4_v1_15_0_cyphal_quadcopter
-elif [ "$1" = "px4_v1_14_0_cyphal_octorotor" ]; then
-    px4_v1_14_0_cyphal_octorotor
+elif [ "$1" = "px4_v1_15_0_cyphal_octorotor" ]; then
+    px4_v1_15_0_cyphal_octorotor
 elif [ "$1" = "px4_v1_15_0_cyphal_quadplane_vtol" ]; then
     px4_v1_15_0_cyphal_quadplane_vtol
 elif [ "$1" = "px4_v1_14_0_cyphal_octoplane_vtol" ]; then
