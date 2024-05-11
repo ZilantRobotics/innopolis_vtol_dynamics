@@ -1,0 +1,6 @@
+firmware: https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.15.0-0.4.2-alpha1/px4_fmu-v5_cyphal.px4
+params:
+  - configs/px4/v1.15/quadcopter/airframe.yaml
+  - configs/px4/v1.15/quadcopter/cyphal.yaml
+  - configs/px4/cyphal.yaml
+  - configs/px4/common.yaml
