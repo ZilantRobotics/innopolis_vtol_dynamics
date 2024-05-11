@@ -15,7 +15,7 @@ Supported modes (with aliases):
 -------------------------------------------------------------------------------
   Command                                   | Protocol    Autopilot SW    Airframe
 -------------------------------------------------------------------------------
-  px4_v1_14_0_cyphal_quadcopter,cq          | Cyphal      PX4 v1.14-beta  Quadrotor x (4001)
+  px4_v1_15_0_cyphal_quadcopter,cq          | Cyphal      PX4 v1.15-alpha Quadrotor x (4001)
   px4_v1_14_0_cyphal_quadplane_vtol,csv     | Cyphal      PX4 v1.14-beta  Standard VTOL (13000)
   px4_v1_14_0_cyphal_octoplane_vtol,cv8     | Cyphal      PX4 v1.14-beta  VTOL 8 motors (13050)
   px4_v1_14_0_dronecan_quadrotor,dq         | DroneCAN    PX4 v1.14-beta  Quadrotor (4001)
@@ -218,7 +218,7 @@ declare -A aliases=(
     [dv1130]="px4_v1_13_0_dronecan_vtol"
     [dv]="px4_v1_14_0_dronecan_quadplane_vtol"
     [dq]="px4_v1_14_0_dronecan_quadrotor"
-    [cq]="px4_v1_14_0_cyphal_quadcopter"
+    [cq]="px4_v1_15_0_cyphal_quadcopter"
     [co]="px4_v1_14_0_cyphal_octorotor"
     [csv]="px4_v1_14_0_cyphal_quadplane_vtol"
     [cv8]="px4_v1_14_0_cyphal_octoplane_vtol"
@@ -254,7 +254,7 @@ elif [ "$CMD" = "px4_v1_13_0_dronecan_vtol" ] || \
     docker_container_run_dronecan
 
 # Cyphal commands:
-elif [ "$CMD" = "px4_v1_14_0_cyphal_quadcopter" ] || \
+elif [ "$CMD" = "px4_v1_15_0_cyphal_quadcopter" ] || \
      [ "$CMD" = "px4_v1_14_0_cyphal_octorotor" ] || \
      [ "$CMD" = "px4_v1_14_0_cyphal_quadplane_vtol" ] || \
      [ "$CMD" = "px4_v1_14_0_cyphal_octoplane_vtol" ] ; then
