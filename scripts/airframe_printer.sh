@@ -64,23 +64,23 @@ PX4_VTOL_OCTOPLANE_13050="""
        /__________\ 
 """
 
-if [[ $1 == 4001 ]]; then
-  echo """
-      PX4 Quadrotor x
-          (4001)$PX4_QUADROTOR_X_4001"""
+# if [[ $1 == 4001 ]]; then
+#   echo """
+#       PX4 Quadrotor x
+#           (4001)$PX4_QUADROTOR_X_4001"""
 
-elif [[ $1 == 12001 ]]; then
-  echo """
-   PX4 Octorotor Coaxial
-          (12001)$PX4_OCTOROTOR_COAXIAL_12001"""
+# elif [[ $1 == 12001 ]]; then
+#   echo """
+#    PX4 Octorotor Coaxial
+#           (12001)$PX4_OCTOROTOR_COAXIAL_12001"""
 
-elif [[ $1 == 13000 ]]; then
-  echo """
-     PX4 Standard VTOL
-          (13000)$PX4_STANDARD_VTOL_13000"""
+# elif [[ $1 == 13000 ]]; then
+#   echo """
+#      PX4 Standard VTOL
+#           (13000)$PX4_STANDARD_VTOL_13000"""
 
-elif [[ $1 == 13050 ]]; then
-  echo """
-     PX4 VTOL Octoplane
-          (13050)$PX4_VTOL_OCTOPLANE_13050"""
-fi
+# elif [[ $1 == 13050 ]]; then
+#   echo """
+#      PX4 VTOL Octoplane
+#           (13050)$PX4_VTOL_OCTOPLANE_13050"""
+# fi
