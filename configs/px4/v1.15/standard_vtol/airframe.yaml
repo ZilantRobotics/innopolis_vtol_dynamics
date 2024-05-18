@@ -20,3 +20,5 @@ FW_P_RMAX_POS: 30.0       # Default 60.0
 MC_YAWRATE_P: 1.0         # Yaw rate P gain. Default 0.2. Max 0.6.
 
 VT_B_TRANS_RAMP: 10.0     # Back transition MC motor ramp up time. Default 3.0 sec.
+
+EKF2_GPS_CHECK: 101.0     # Remove speed checks
