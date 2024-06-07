@@ -3,3 +3,7 @@ params:
   - configs/px4/v1.15/octorotor/airframe.yaml
   - configs/px4/cyphal.yaml
   - configs/px4/common.yaml
+mode: cyphal
+alias: co
+sim_config: px4_v1_15_0_cyphal_octorotor
+info: ""
