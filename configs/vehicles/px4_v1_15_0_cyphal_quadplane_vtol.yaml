@@ -4,3 +4,7 @@ params:
   - configs/px4/v1.15/standard_vtol/cyphal.yaml
   - configs/px4/cyphal.yaml
   - configs/px4/common.yaml
+mode: cyphal
+alias: csv
+sim_config: px4_v1_15_0_cyphal_quadplane_vtol
+info: ""
