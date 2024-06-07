@@ -23,8 +23,8 @@ Supported modes (with aliases):
   px4_v1_13_0_dronecan_vtol,dv1130          | DroneCAN    PX4 v1.13       vtol 13070
 -------------------------------------------------------------------------------
   px4_v1_15_0_cyphal_octorotor,co           | Cyphal      PX4 v1.15-alpha Octorotor Coaxial (12001)
-  sitl_inno_vtol                            | MAVLink     PX4 v1.12       vtol 13070
-  sitl_flight_goggles                       | MAVLink     PX4 v1.12       Quadrotor (4001)
+  px4_v1_12_0_mavlink_quadplane_vtol        | MAVLink     PX4 v1.12       vtol 13070
+  px4_v1_12_0_mavlink_quadcopter            | MAVLink     PX4 v1.12       Quadrotor (4001)
   cyphal_and_dronecan                       | 2 CAN       AP  v4.4.0      Copter
 -------------------------------------------------------------------------------
 
@@ -262,8 +262,8 @@ elif [ "$CMD" = "px4_v1_15_0_cyphal_quadcopter" ] || \
     docker_container_run_cyphal
 
 # MAVLink commands:
-elif [ "$CMD" = "sitl_inno_vtol" ] || \
-     [ "$CMD" = "sitl_flight_goggles" ] ; then
+elif [ "$CMD" = "px4_v1_12_0_mavlink_quadplane_vtol" ] || \
+     [ "$CMD" = "px4_v1_12_0_mavlink_quadcopter" ] ; then
     vehicle=$CMD
     docker_container_run_mavlink
 
