@@ -1,3 +1,4 @@
 raccoonlab-tools>=0.1.0
 autopilot-tools>=0.4.4
 wget>=3.2
+netifaces
