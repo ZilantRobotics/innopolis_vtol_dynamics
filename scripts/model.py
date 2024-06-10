@@ -36,7 +36,9 @@ class ContainerInfo:
 
 class AutopilotInterface:
     KNOWN_AUTOPILOTS = {
-        '/dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v5.x_0' : "CUAV V5+",
+        '/dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v5.x_0' : "PX4 CUAV V5+",
+        "/dev/serial/by-id/usb-Auterion_PX4_FMU_v6X.x_0" : "PX4 v6X",
+        "/dev/serial/by-id/usb-Auterion_PX4_FMU_v6C.x_0" : "PX4 v6C",
     }
     def __init__(self) -> None:
         self._autopilot = None
