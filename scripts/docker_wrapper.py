@@ -34,7 +34,9 @@ class DockerWrapper:
         if container_identifier is None:
             return
 
-        subprocess.run(["docker", "kill", container_identifier], check=True)
+        cmd = ["docker", "kill", container_identifier]
+        print(' '.join(cmd))
+        subprocess.run(cmd, check=True)
 
     @staticmethod
     def run_container(sniffer_path: str, image_name: str, sim_config: str, mode: SimMode):

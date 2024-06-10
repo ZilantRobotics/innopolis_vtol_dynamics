@@ -16,8 +16,9 @@
 import os
 import sys
 import time
+import logging
+import datetime
 from typing import Optional
-from pathlib import Path
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 from configurator import configure
@@ -25,8 +26,12 @@ from command import SimCommand
 from docker_wrapper import DockerWrapper
 from model import SimModel
 
-REPOSITORY_DIR = Path(__file__).parent.parent.absolute()
-VEHICLES_DIR = f"{REPOSITORY_DIR}/configs/vehicles"
+REPO_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+VEHICLES_DIR = os.path.join(REPO_DIR, "configs", "vehicles")
+BINARY_OUTPUT_PATH = os.path.join(REPO_DIR, "firmware.bin")
+LOG_FILENAME = f"log_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+LOG_PATH = os.path.join(REPO_DIR, "logs", LOG_FILENAME)
+
 COMMANDS = [
     SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
     SimCommand(name="kill", alias='', mode=None, info="Kill the running Docker container"),
@@ -102,6 +107,16 @@ class SimView:
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        filename=LOG_PATH,
+                        filemode='w')
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger().addHandler(console)
+
     parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
 
     command_help = f'{"Command":<36} {"Alias":<10} {"Info"}\n'
