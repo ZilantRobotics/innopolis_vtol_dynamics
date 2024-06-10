@@ -8,3 +8,11 @@ FW_AIRSPD_STALL: 15.0     # Stall Airspeed (CAS)
 NAV_LOITER_RAD: 150.0     # Loiter radius (FW only)
 FW_YR_P: 0.5              # Yaw rate proportional rate
 VT_ELEV_MC_LOCK : 1       # Lock control surfaces in hover
+
+FW_R_LIM: 35.0            # Default 50.0 that is out of max angle supported by the vtol dynamics
+FW_R_RMAX: 30.0           # Default 70.0
+FW_RR_P: 0.1              # Default 0.05
+
+FW_P_RMAX_NEG: 30.0       # Default 60.0
+FW_P_RMAX_POS: 30.0       # Default 60.0
+FW_PR_P: 0.12             # Default 0.08
