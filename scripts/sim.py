@@ -25,12 +25,14 @@ from configurator import configure
 from command import SimCommand
 from docker_wrapper import DockerWrapper
 from model import SimModel
+import check
 
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 VEHICLES_DIR = os.path.join(REPO_DIR, "configs", "vehicles")
 BINARY_OUTPUT_PATH = os.path.join(REPO_DIR, "firmware.bin")
 LOG_FILENAME = f"log_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-LOG_PATH = os.path.join(REPO_DIR, "logs", LOG_FILENAME)
+LOGS_DIR = os.path.join(REPO_DIR, "logs")
+LOG_PATH = os.path.join(LOGS_DIR, LOG_FILENAME)
 
 COMMANDS = [
     SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
@@ -79,6 +81,7 @@ class SimCommander:
         DockerWrapper.kill_container_by_id(self._model.docker_info.id)
 
     def _build(self) -> None:
+        check.check()
         DockerWrapper.build(self._model.full_image_name)
 
 class SimView:
@@ -107,6 +110,8 @@ class SimView:
 
 
 def main():
+    if not os.path.exists(LOGS_DIR):
+        os.makedirs(LOGS_DIR)
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         filename=LOG_PATH,

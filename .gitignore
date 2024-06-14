@@ -2,3 +2,4 @@
 logs_and_video/
 *.pyc
 downloads*
+logs/

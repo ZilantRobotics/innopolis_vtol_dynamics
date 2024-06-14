@@ -39,6 +39,9 @@ def check_submodules() -> None:
         logging.error("submodules not exist. Run: 'git submodule update --init --recursive'")
         sys.exit(1)
 
-if __name__ == "__main__":
+def check() -> None:
     check_python_requirements()
     check_submodules()
+
+if __name__ == "__main__":
+    check()
