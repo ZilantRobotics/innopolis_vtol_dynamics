@@ -26,8 +26,6 @@ jobs:
       # 3. Install requirements
       - name: Install innopolis_vtol_dynamics requirements
         run: ./catkin_ws/src/innopolis_vtol_dynamics/uav_dynamics/uav_hitl_dynamics/install_requirements.sh
-      - name: Install geographiclib_conversions requirements
-        run: ./catkin_ws/src/innopolis_vtol_dynamics/uav_dynamics/geographiclib_conversions/scripts/install.sh
       - name: Install uavcan_communicator requirements
         run: |
           cd catkin_ws/src/innopolis_vtol_dynamics/communicators/uavcan_communicator                &&  \

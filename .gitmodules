@@ -7,9 +7,6 @@
 [submodule "uav_dynamics/timed_roslaunch"]
 	path = uav_dynamics/timed_roslaunch
 	url = https://github.com/MoriKen254/timed_roslaunch.git
-[submodule "uav_dynamics/geographiclib_conversions"]
-	path = uav_dynamics/geographiclib_conversions
-	url = https://github.com/RaccoonLabDev/geographiclib_conversions.git
 [submodule "uav_dynamics/uav_hitl_dynamics"]
 	path = uav_dynamics/uav_hitl_dynamics
 	url = https://github.com/ZilantRobotics/uav_hitl_dynamics.git
