@@ -15,6 +15,7 @@ jobs:
       # 1. Install basic requirements
       - run: apt-get update && apt-get install -y git
       - run: if [[ "$ROS_DISTRO" = "noetic" ]] ;  then apt-get install -y python3-pip ros-noetic-catkin python3-catkin-tools ; fi
+      - run: pip install setuptools==68.0.0 importlib-metadata==8.2.0 # hack because there is an issue on >=71.0.0 https://github.com/pypa/setuptools/issues/4478
 
       # 2. Checkout repo with submodules
       - uses: actions/checkout@v2

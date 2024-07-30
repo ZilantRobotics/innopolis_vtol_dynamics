@@ -9,7 +9,12 @@ WORKDIR /catkin_ws/src/uav_hitl_simulator
 # 1. Install basic requirements
 RUN apt-get update                                                              &&  \
     apt-get upgrade -y                                                          &&  \
-    apt-get install -y  git ros-$ROS_DISTRO-catkin python3-pip python3-catkin-tools
+    apt-get install -y  git ros-$ROS_DISTRO-catkin python3-pip
+
+# hack because there is an issue on >=71.0.0 https://github.com/pypa/setuptools/issues/4478
+RUN pip install setuptools==68.0.0 importlib-metadata==8.2.0
+RUN apt-get install -y python3-catkin-tools
+
 RUN if [[ "$ROS_DISTRO" = "melodic" ]] ; then apt-get install -y python-pip python-catkin-tools ; fi
 
 # 2. Install requirements
