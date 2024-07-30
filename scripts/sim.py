@@ -19,6 +19,7 @@ import time
 import logging
 import datetime
 from typing import Optional
+from pathlib import Path
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 from configurator import configure
@@ -30,7 +31,8 @@ REPO_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 VEHICLES_DIR = os.path.join(REPO_DIR, "configs", "vehicles")
 BINARY_OUTPUT_PATH = os.path.join(REPO_DIR, "firmware.bin")
 LOG_FILENAME = f"log_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-LOG_PATH = os.path.join(REPO_DIR, "logs", LOG_FILENAME)
+LOGS_DIR = os.path.join(REPO_DIR, "logs")
+LOG_PATH = os.path.join(LOGS_DIR, LOG_FILENAME)
 
 COMMANDS = [
     SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
@@ -107,6 +109,7 @@ class SimView:
 
 
 def main():
+    Path(LOGS_DIR).mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         filename=LOG_PATH,
