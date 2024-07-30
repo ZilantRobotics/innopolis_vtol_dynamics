@@ -17,30 +17,28 @@ RUN apt-get install -y python3-catkin-tools
 
 RUN if [[ "$ROS_DISTRO" = "melodic" ]] ; then apt-get install -y python-pip python-catkin-tools ; fi
 
-# 2. Install requirements
-# 2.1. geographiclib_conversions
-COPY uav_dynamics/geographiclib_conversions uav_dynamics/geographiclib_conversions/
-RUN ./uav_dynamics/geographiclib_conversions/scripts/install.sh
+# Setup ROS
 RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
     cd ../../                                                                   &&  \
     git config --global http.sslverify false                                    && \
     catkin build
 
-# 2.2. inno-sim-interface
+# 2. Install requirements
+# 2.1. inno-sim-interface
 RUN sudo apt-get install -y ros-$ROS_DISTRO-rosauth                             &&  \
     pip install bson pymongo protobuf Pillow twisted
 
-# 2.3. innopolis_vtol_dynamics
+# 2.2. innopolis_vtol_dynamics
 COPY uav_dynamics/uav_hitl_dynamics/install_requirements.sh    uav_dynamics/uav_hitl_dynamics/install_requirements.sh
 COPY uav_dynamics/uav_hitl_dynamics/requirements.txt           uav_dynamics/uav_hitl_dynamics/requirements.txt
 RUN apt-get update && \
     uav_dynamics/uav_hitl_dynamics/install_requirements.sh
 
-# 2.4 tools/can
+# 2.3 tools/can
 COPY scripts/tools scripts/tools
 RUN ./scripts/tools/can/install.sh --yes
 
-# 2.5. communicators
+# 2.4. communicators
 COPY communicators/mavlink_communicator/                        communicators/mavlink_communicator/
 COPY communicators/uavcan_communicator/                         communicators/uavcan_communicator/
 COPY communicators/cyphal_communicator/scripts/config.sh        communicators/cyphal_communicator/scripts/config.sh
