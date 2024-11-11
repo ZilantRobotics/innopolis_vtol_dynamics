@@ -37,9 +37,7 @@ The design of the simulator is shown below.
 
 ## 2. Usage
 
-The simulator is distributed as a Docker image. It is recommended to use the `./scripts/docker.sh` script. It configures all the necessary Docker flags, performs automatic firmware upload,
-configuration, creates a CAN interface, and generally provides a simple interface to interact with
-the simulator.
+The simulator is distributed as a Docker image. To simplify the interraction with Docker, a `./scripts/sim.py` script was written. The script configures all the necessary Docker flags, performs automatic firmware upload, configuration, creates a CAN interface, and generally provides a simple interface to interact with the simulator.
 
 **Step 1. Clone repository with submodules**
 
@@ -58,7 +56,7 @@ git submodule update --init --recursive
 To build docker image, type:
 
 ```bash
-./scripts/docker.sh build
+./scripts/sim.py b # build
 ```
 
 > An image on dockerhub usually is not up to date, so it's better to build manually
@@ -85,19 +83,19 @@ To run force mode you need to install [autopilot-tools](https://pypi.org/project
 To get the list of all supported modes, just type:
 
 ```bash
-./scripts/docker.sh --help
+./scripts/sim.py --help
 ```
 
 To run PX4 Cyphal quadcopter, type:
 
 ```bash
-./scripts/docker.sh cq  # cq = px4_v1_15_0_cyphal_quadcopter
+./scripts/sim.py cq  # cq = px4_v1_15_0_cyphal_quadcopter
 ```
 
 To run PX4 Dronecan VTOL, type:
 
 ```bash
-./scripts/docker.sh dv  # cq = dronecan_vtol
+./scripts/sim.py dv  # cq = dronecan_vtol
 ```
 
 Troubleshooting:
@@ -117,7 +115,7 @@ Here 2 options are suggested.
 
 ## 3. Supported modes
 
-You can obrain the actual list of the suported modes by typing `./scripts/docker.sh --help`.
+You can obrain the actual list of the suported modes by typing `./scripts/sim.py --help`.
 
 Well, here is the output of the command:
 
@@ -157,3 +155,17 @@ Outdated manual instructions:
 - [PX4 Cyphal manual configuration instructions](docs/px4/cyphal.md)
 - [PX4 DroneCAN manual configuration instructions](docs/px4/dronecan.md)
 - [ArduPilot manual configuration instructions](docs/ardupilot/README.md)
+
+## 6. Changelog notes
+
+| Version | ReleaseDate | Major changes |
+| ------- | ----------- | ------------- |
+| v0.9.0 | in progress  | Add fmu-v6c and fmu-v6x support beside fmu-v5 |
+| v0.8.0 | Jun 10, 2024 | Update PX4 from v1.14 to v1.15 |
+| v0.7.0 | Oct 31, 2023 | Update PX4 from v1.13 to v1.14 |
+| v0.6.0 | Jul 16, 2023 | Add Octorotor dynamics, fault scenarios and Cyphal ESC feedback |
+| v0.5.0 | May 17, 2023 | Add Cyphal PX4 v1.13.0 quadcopter, update DroneCAN PX4 from v1.12.1 to v1.13.0 |
+| v0.4.0 | May 16, 2022 | Add Cyphal/DroneCAN custom version of Ardupilot |
+| v0.3.0 | Aug 25, 2021 | Add Docker |
+| v0.2.0 | Aug 17, 2021 | Update to public DroneCAN PX4 v1.12.1 |
+| v0.1.0 | Mar 18, 2021 | First public release for private custom version of DroneCAN PX4 v1.11.2, only CUAV V5+, SITL and HITL modes |
