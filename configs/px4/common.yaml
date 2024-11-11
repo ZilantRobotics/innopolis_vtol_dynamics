@@ -7,4 +7,4 @@ COM_RC_IN_MODE:   4       # Stick input disabled (it used to be 1 and the vehicl
 FD_ACT_EN:        0       # Enable Actuator Failure check
 
 WV_EN: 0                  # Weather vane. By default Enabled.
-ASPD_FS_T_START: 1        # Switch back to using airspeed sensor if checks indicate sensor is good. Default: -1 that means disable the re-enabling in flight.
+ASPD_FS_T_START: 1.0      # Switch back to using airspeed sensor if checks indicate sensor is good. Default: -1 that means disable the re-enabling in flight.
