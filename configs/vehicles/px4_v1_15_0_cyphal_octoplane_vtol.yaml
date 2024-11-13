@@ -1,4 +1,7 @@
-firmware: https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.15.0-0.4.2-alpha1/px4_fmu-v5_cyphal.px4
+release:
+  org: PonomarevDA
+  repo: PX4-Autopilot
+  tag: v1.15.0-0.6.0-beta1
 params:
   - configs/px4/v1.15/vtol_octoplane_coaxial/airframe.yaml
   - configs/px4/v1.15/vtol_octoplane_coaxial/cyphal.yaml
