@@ -20,9 +20,9 @@ import logging
 import datetime
 from typing import Optional
 from pathlib import Path
-
 from argparse import ArgumentParser, RawTextHelpFormatter
-from configurator import configure
+from autopilot_tools.configurator import AutopilotConfigurator
+
 from command import SimCommand
 from docker_wrapper import DockerWrapper
 from model import SimModel
@@ -49,7 +49,7 @@ class SimCommander:
     def __del__(self):
         self._kill()
 
-    def execute(self, command: SimCommand, upload_firmware: bool, configure_params: bool) -> None:
+    def execute(self, command: SimCommand, need_upload_firmware: bool, need_load_parameters: bool) -> None:
         assert isinstance(command, SimCommand)
 
         if command.name == "kill":
@@ -60,9 +60,11 @@ class SimCommander:
             self._build()
             sys.exit(0)
 
-        if upload_firmware or configure_params:
+        if need_upload_firmware or need_load_parameters:
             config_path = f"{VEHICLES_DIR}/{command.name}.yaml"
-            configure(config_path, upload_firmware, configure_params)
+            AutopilotConfigurator.configure_with_yaml_file(config_path=config_path,
+                                                           need_upload_firmware=need_upload_firmware,
+                                                           need_load_parameters=need_load_parameters)
 
         if command.mode is None:
             return
