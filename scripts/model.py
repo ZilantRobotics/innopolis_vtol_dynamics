@@ -36,9 +36,14 @@ class ContainerInfo:
 
 class AutopilotInterface:
     KNOWN_AUTOPILOTS = {
-        '/dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v5.x_0' : "PX4 CUAV V5+",
-        "/dev/serial/by-id/usb-Auterion_PX4_FMU_v6X.x_0" : "PX4 v6X",
-        "/dev/serial/by-id/usb-Auterion_PX4_FMU_v6C.x_0" : "PX4 v6C",
+        "/dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v5"      : "px4_fmu-v5",
+        "/dev/serial/by-id/usb-3D_Robotics_PX4_BL_FMU_v5"   : "px4_fmu-v5",
+
+        "/dev/serial/by-id/usb-Auterion_PX4_FMU_v6X"        : "px4_fmu-v6x",
+        "/dev/serial/by-id/usb-Auterion_PX4_BL_FMU_v6X"     : "px4_fmu-v6x",
+
+        "/dev/serial/by-id/usb-Auterion_PX4_FMU_v6C"        : "px4_fmu-v6c",
+        "/dev/serial/by-id/usb-Auterion_PX4_BL_FMU_v6C"     : "px4_fmu-v6c",
     }
     def __init__(self) -> None:
         self._autopilot = None
@@ -57,8 +62,11 @@ class AutopilotInterface:
         return updated
 
     @property
-    def autopilot_name(self) -> str:
-        return "Unknown" if self._autopilot is None else self._autopilot
+    def autopilot_name(self) -> Optional[str]:
+        """
+        Known autopilots: px4_fmu-v5, px4_fmu-v6x, px4_fmu-v6c
+        """
+        return self._autopilot
 
     def __str__(self) -> str:
         if self._autopilot is None:
@@ -122,7 +130,7 @@ class SimModel:
         return self._docker_info.full_name
 
     @property
-    def autopilot_name(self) -> str:
+    def autopilot_name(self) -> Optional[str]:
         return self._autopilot_interface.autopilot_name
 
     @property
@@ -142,12 +150,12 @@ class SimModel:
         Return True if model is updated and View should be updated, othwerwise False
         """
         self._update_process()
-        updated = (
-            self._update_elapsed_seconds() or
-            self._sniffer_interface.update() or
-            self._autopilot_interface.update() or
-            self._docker_info.update()
-        )
+        updated = False
+        updated += self._update_elapsed_seconds()
+        updated += self._sniffer_interface.update()
+        updated += self._autopilot_interface.update()
+        updated += self._docker_info.update()
+
         return updated
 
     def add_process(self, process: subprocess.Popen) -> None:
