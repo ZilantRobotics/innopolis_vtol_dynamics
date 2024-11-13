@@ -10,9 +10,9 @@ https://github.com/ZilantRobotics/innopolis_vtol_dynamics
 Usage: run_sim.sh <command>
 
 Commands:
-  px4_v1_14_0_dronecan_quadplane_vtol     Run dynamics simulator in DroneCan HITL mode for px4 vtol 13000 airframe
+  px4_v1_15_0_dronecan_quadplane_vtol     Run dynamics simulator in DroneCan HITL mode for px4 vtol 13000 airframe
   px4_v1_13_0_dronecan_vtol               Run dynamics simulator in DroneCan HITL mode for px4 vtol 13070 airframe
-  px4_v1_14_0_dronecan_quadrotor          Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
+  px4_v1_15_0_dronecan_quadrotor          Run dynamics simulator in DroneCan HITL mode for flight_goggles airframe
   px4_v1_15_0_cyphal_quadcopter           Cyphal HITL PX4 Quadrotor (4001)
   px4_v1_15_0_cyphal_octorotor            Cyphal HITL PX4 Octorotor (12001)
   px4_v1_15_0_cyphal_quadplane_vtol       Run dynamics simulator in Cyphal HITL mode for vtol 4 motors airframe.
@@ -76,7 +76,7 @@ setup_combined_hitl() {
     fi
 }
 
-px4_v1_14_0_dronecan_quadplane_vtol() {
+px4_v1_15_0_dronecan_quadplane_vtol() {
     setup_ros
     setup_dronecan_hitl
     $SCRIPT_DIR/airframe_printer.sh 13000
@@ -100,7 +100,7 @@ px4_v1_13_0_dronecan_vtol() {
         dynamics:=vtol_dynamics
 }
 
-px4_v1_14_0_dronecan_quadrotor() {
+px4_v1_15_0_dronecan_quadrotor() {
     setup_ros
     setup_dronecan_hitl
     $SCRIPT_DIR/airframe_printer.sh 4001
@@ -202,12 +202,12 @@ if [ "${BASH_SOURCE[0]}" -ef "$0" ]; then
 fi
 SCRIPT_DIR="$(dirname "$0")"
 
-if [ "$1" = "px4_v1_14_0_dronecan_quadplane_vtol" ]; then
-    px4_v1_14_0_dronecan_quadplane_vtol
+if [ "$1" = "px4_v1_15_0_dronecan_quadplane_vtol" ]; then
+    px4_v1_15_0_dronecan_quadplane_vtol
 elif [ "$1" = "px4_v1_13_0_dronecan_vtol" ]; then
     px4_v1_13_0_dronecan_vtol
-elif [ "$1" = "px4_v1_14_0_dronecan_quadrotor" ]; then
-    px4_v1_14_0_dronecan_quadrotor
+elif [ "$1" = "px4_v1_15_0_dronecan_quadrotor" ]; then
+    px4_v1_15_0_dronecan_quadrotor
 elif [ "$1" = "px4_v1_15_0_cyphal_quadcopter" ]; then
     px4_v1_15_0_cyphal_quadcopter
 elif [ "$1" = "px4_v1_15_0_cyphal_octorotor" ]; then

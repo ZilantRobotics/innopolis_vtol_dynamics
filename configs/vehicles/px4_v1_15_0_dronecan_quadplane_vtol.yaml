@@ -1,4 +1,7 @@
-firmware: https://github.com/ZilantRobotics/PX4-Autopilot/releases/download/v1.14.0-0.4.1-beta1/px4_fmu-v5_default.px4
+release:
+  org: PonomarevDA
+  repo: PX4-Autopilot
+  tag: v1.15.0-0.6.0-beta1
 params:
   - configs/px4/v1.14/standard_vtol/airframe.yaml
   - configs/px4/v1.14/standard_vtol/dronecan.yaml
@@ -6,5 +9,5 @@ params:
   - configs/px4/common.yaml
 mode: dronecan
 alias: dv
-sim_config: px4_v1_14_0_dronecan_quadplane_vtol
+sim_config: px4_v1_15_0_dronecan_quadplane_vtol
 info: ""
