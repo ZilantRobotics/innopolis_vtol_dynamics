@@ -18,7 +18,7 @@ jobs:
       - run: pip install setuptools==68.0.0 importlib-metadata==8.2.0 # hack because there is an issue on >=71.0.0 https://github.com/pypa/setuptools/issues/4478
 
       # 2. Checkout repo with submodules
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: catkin_ws/src/innopolis_vtol_dynamics
           submodules: recursive
