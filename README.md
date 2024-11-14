@@ -23,17 +23,19 @@ The key feature of this simulation is to run it in such a way that the hardware 
 
 - Hardware: CUAV V5+, CAN-sniffer
 
-## 1. Design
+## 1. USE CASES
 
-VTOL HITL Dynamics Simulator is designed to be modular. It is divided into the following main components:
+### 1.1. CI/CD Unit
 
-1. `UAV dynamics` is the main node that handles actuator commands from the communicator, performs dynamics simulation, and publishes vehicle and sensors states.
-2. `Communicator` is the set of nodes that communicate with the `PX4 flight stack` in HITL (via Cyphal/DroneCAN) and SITL (via MAVLink) modes.
-3. `inno_sim_interface` is a bridge for interaction with `3D-Simulator` through ROS.
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_1.png" alt="drawing" width="640"/>
 
-The design of the simulator is shown below.
+### 1.2. HITL Simulator with desktop computer and 3D-simulator
 
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/scheme.png" alt="drawing"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2.png" alt="drawing" width="640"/>
+
+### 1.3. UAV in HITL Mode
+
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_3.png" alt="drawing" width="640"/>
 
 ## 2. Usage
 
@@ -137,13 +139,25 @@ Other modes:
 
 New modes will be extended step by step.
 
-## 4. Example
+## 4. Design
+
+VTOL HITL Dynamics Simulator is designed to be modular. It is divided into the following main components:
+
+1. `UAV dynamics` is the main node that handles actuator commands from the communicator, performs dynamics simulation, and publishes vehicle and sensors states.
+2. `Communicator` is the set of nodes that communicate with the `PX4 flight stack` in HITL (via Cyphal/DroneCAN) and SITL (via MAVLink) modes.
+3. `inno_sim_interface` is a bridge for interaction with `3D-Simulator` through ROS.
+
+The design of the simulator is shown below.
+
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/scheme.png" alt="drawing"/>
+
+## 5. Example
 
 Check the video below.
 
 [![Cyphal/DroneCAN HITL VTOL dynamics simulator](https://img.youtube.com/vi/e9MREW6tCmE/0.jpg)](https://youtu.be/e9MREW6tCmE)
 
-## 5. Auxilliary documentation
+## 6. Auxilliary documentation
 
 Docs:
 
@@ -156,7 +170,7 @@ Outdated manual instructions:
 - [PX4 DroneCAN manual configuration instructions](docs/px4/dronecan.md)
 - [ArduPilot manual configuration instructions](docs/ardupilot/README.md)
 
-## 6. Changelog notes
+## 7. Changelog notes
 
 | Version | ReleaseDate | Major changes |
 | ------- | ----------- | ------------- |
