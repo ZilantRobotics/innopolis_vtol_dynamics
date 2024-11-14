@@ -13,15 +13,21 @@ The key feature of this simulation is to run it in such a way that the hardware 
 - Development and testing of intelligent automatic control systems for UAVs
 - Training in the development and use of drones, including creating datasets and automated testing
 
-**Requirements**
+**Minimal requirements (for HITL only):**
+
+- Operating System: Linux based OS such as Ubuntu 22.04
+- Raspberry PI 4 is enough
+
+**Recommended requirements (for HITL + 3D simulator):**
 
 - Operating System: We've tailored the simulator for modern versions of Windows, Linux, and Mac. Choose the build that matches your OS.
-
 - CPU: Aim for an Intel i7 from the 11th or 12th generation. For those using AMD, any equivalent processor will suffice.
-
 - RAM: 16GB is a recommended minimum, but more is always better for performance.
 
-- Hardware: CUAV V5+, CAN-sniffer
+**Required hardware:**
+
+- Flight controller: fmu-v5, fmu-v6c or fmu-v6x
+- CAN-sniffer
 
 ## 1. USE CASES
 
@@ -60,7 +66,7 @@ test-scenario --output flight.ulg --timeout 1000 tests/ci/sviyazhsk_vtol.plan
 
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_3.png" alt="drawing" width="640"/>
 
-## 2. Usage
+## 2. USAGE
 
 The simulator is distributed as a Docker image. To simplify the interraction with Docker, a `./scripts/sim.py` script was written. The script configures all the necessary Docker flags, performs automatic firmware upload, configuration, creates a CAN interface, and generally provides a simple interface to interact with the simulator.
 
@@ -138,7 +144,7 @@ Here 2 options are suggested.
 
 > A new 3D simulator will appear here soon.
 
-## 3. Supported modes
+## 3. SUPPORTED MODES
 
 You can obrain the actual list of the suported modes by typing `./scripts/sim.py --help`.
 
@@ -162,7 +168,7 @@ Other modes:
 
 New modes will be extended step by step.
 
-## 4. Design
+## 4. DESIGN
 
 VTOL HITL Dynamics Simulator is designed to be modular. It is divided into the following main components:
 
@@ -174,13 +180,13 @@ The design of the simulator is shown below.
 
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/scheme.png" alt="drawing"/>
 
-## 5. Example
+## 5. EXAMPLE
 
 Check the video below.
 
 [![Cyphal/DroneCAN HITL VTOL dynamics simulator](https://img.youtube.com/vi/e9MREW6tCmE/0.jpg)](https://youtu.be/e9MREW6tCmE)
 
-## 6. Auxilliary documentation
+## 6. REFERENCE
 
 Docs:
 
@@ -193,7 +199,7 @@ Outdated manual instructions:
 - [PX4 DroneCAN manual configuration instructions](docs/px4/dronecan.md)
 - [ArduPilot manual configuration instructions](docs/ardupilot/README.md)
 
-## 7. Changelog notes
+## 7. CHANGELOG NOTES
 
 | Version | ReleaseDate | Major changes |
 | ------- | ----------- | ------------- |
