@@ -85,16 +85,13 @@ With RVIZ you can visualise the vehicle orientation, vectors of the applied forc
 
 > 3D-simulator demo is in process...
 
-**Test scenario 1. Delivery**
+**Test scenarios**
 
-Last Mile Aerologistics Scenarios are indended to be used with 3D-simulator. Testing and optimization of cargo delivery processes using unmanned aerial vehicles.
-
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/delivery.png" alt="drawing" width="800"/>
-
-| Test | Description |
+| Test scenario | Description |
 |-|-|
-| 1. Delivery from KazanExpress to the Yard | Approximate duration: 4 minutes </br> Plan: kazanexpress_to_yard.plan |
-| 2. Delivery from KazanExpress to the Technopark | Approximate duration: 6 minutes </br> Plan: tests/delivery/kazanexpress_to_technopark.plan |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/delivery.png" alt="drawing"/> | Last Mile Aerologistics Scenarios are indended to be used with 3D-simulator. Testing and optimization of cargo delivery processes using unmanned aerial vehicles. </br> 1. Delivery from KazanExpress to the Yard. 4 minutes. Plan: kazanexpress_to_yard.plan </br> 2. Delivery from KazanExpress to the Technopark. 6 minutes. Plan: kazanexpress_to_technopark.plan |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/inspection.png" alt="drawing"/> | Construction Inspection Detection Scenarios are indended to be used with 3D-simulator. </br> 1. Quadcopter. 3:40. Plan: technopark.plan </br> 2. VTOL. Structure scan of the northest techonopark. 9:25. Plan: technopark_structure_scan.plan </br> 3. VTOL. Survey of all technoparks in the town. 28:00. technopark_survey_half_town.plan </br> 3. VTOL. Survey of all the town. 44:40. technopark_survey_full_town.plan |
+
 
 ### 1.3. UAV in HITL Mode
 
