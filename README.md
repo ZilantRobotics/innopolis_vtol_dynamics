@@ -60,7 +60,30 @@ test-scenario --output flight.ulg --timeout 1000 tests/ci/sviyazhsk_vtol.plan
 
 ### 1.2. HITL Simulator with desktop computer and 3D-simulator
 
+Running the HITL simulator on a desktop unlocks advanced visualization and simulation capabilities. With tools like `gui_tool`, `yakut`, and `rviz`, you can monitor and interact with the simulation in real-time.
+If your desktop is equipped with a modern GPU, you can further enhance the experience by integrating a 3D simulator. This setup is ideal for testing complex scenarios such as delivery missions or inspections and can even be used for pilot training, offering a realistic and immersive simulation environment.
+
+The setup is as simple as possible. Just connect a CAN-sniffer and a flight controller to you Desktop via USB and connect the devices with each outher with CAN cable.
+
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2.png" alt="drawing" width="640"/>
+
+**Tool 1. CAN bus analysis tools: gui_tool, yakut**
+
+If you run a HITL simulator, you can then run both yakut, gui_tool and any other similar tools at any time. It allows you analyse the CAN bus in real time.
+
+| DroneCAN: [gui_tool](https://github.com/DroneCAN/gui_tool) | Cyphal: [yakut](https://github.com/OpenCyphal/yakut) |
+|-|-|
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_gui_tool.gif" alt="drawing" width="400"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_yakut.gif" alt="drawing" width="450"/>
+
+**Tool 2. RVIZ for a flight visualization**
+
+With RVIZ you can visualise the vehicle orientation, vectors of the applied forces, torques, speed and more.
+
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_rviz.gif" alt="drawing" width="640"/>
+
+**Tool 3. 3D-simulator**
+
+> 3D-simulator demo is in process...
 
 ### 1.3. UAV in HITL Mode
 
