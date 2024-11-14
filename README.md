@@ -35,7 +35,7 @@ The key feature of this simulation is to run it in such a way that the hardware 
 
 The HITL simulator itself is not computationally expensive. You can run it even on single-board computers like the Raspberry Pi. This feature allows the HITL simulator to be used as part of CI/CD process. Each time a developer makes a commit to the autopilot software, a the compiled binary can be deployed to a real flight controller and tested with HITL simulator. It is especially useful for developers actively working with DroneCAN/Cyphal drivers or related parts of the autopilot software.
 
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_1.png" alt="drawing" width="640"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_1.png" alt="drawing" width="800"/>
 
 A few examples of test scenarios for CI/CD are shown in the table below.
 
@@ -65,7 +65,7 @@ If your desktop is equipped with a modern GPU, you can further enhance the exper
 
 The setup is as simple as possible. Just connect a CAN-sniffer and a flight controller to you Desktop via USB and connect the devices with each outher with CAN cable.
 
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2.png" alt="drawing" width="640"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2.png" alt="drawing" width="800"/>
 
 **Tool 1. CAN bus analysis tools: gui_tool, yakut**
 
@@ -73,21 +73,32 @@ If you run a HITL simulator, you can then run both yakut, gui_tool and any other
 
 | DroneCAN: [gui_tool](https://github.com/DroneCAN/gui_tool) | Cyphal: [yakut](https://github.com/OpenCyphal/yakut) |
 |-|-|
-| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_gui_tool.gif" alt="drawing" width="400"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_yakut.gif" alt="drawing" width="450"/>
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_gui_tool.gif" alt="drawing" width="355"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_yakut.gif" alt="drawing" width="395"/>
 
 **Tool 2. RVIZ for a flight visualization**
 
 With RVIZ you can visualise the vehicle orientation, vectors of the applied forces, torques, speed and more.
 
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_rviz.gif" alt="drawing" width="640"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_rviz.gif" alt="drawing" width="800"/>
 
 **Tool 3. 3D-simulator**
 
 > 3D-simulator demo is in process...
 
+**Test scenario 1. Delivery**
+
+Last Mile Aerologistics Scenarios are indended to be used with 3D-simulator. Testing and optimization of cargo delivery processes using unmanned aerial vehicles.
+
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/delivery.png" alt="drawing" width="800"/>
+
+| Test | Description |
+|-|-|
+| 1. Delivery from KazanExpress to the Yard | Approximate duration: 4 minutes </br> Plan: kazanexpress_to_yard.plan |
+| 2. Delivery from KazanExpress to the Technopark | Approximate duration: 6 minutes </br> Plan: tests/delivery/kazanexpress_to_technopark.plan |
+
 ### 1.3. UAV in HITL Mode
 
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_3.png" alt="drawing" width="640"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_3.png" alt="drawing" width="800"/>
 
 ## 2. USAGE
 
@@ -123,7 +134,7 @@ Typically we use [CUAV v5+](https://docs.px4.io/master/en/flight_controller/cuav
 
 An example of a connection is shown in the picture below.
 
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/sniffer_connection.png" alt="drawing"  width="640"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/sniffer_connection.png" alt="drawing"  width="800"/>
 
 All default parameters expect that you use CAN1 on the autopilot side.
 
