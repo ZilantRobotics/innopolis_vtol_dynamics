@@ -27,7 +27,30 @@ The key feature of this simulation is to run it in such a way that the hardware 
 
 ### 1.1. CI/CD Unit
 
+The HITL simulator itself is not computationally expensive. You can run it even on single-board computers like the Raspberry Pi. This feature allows the HITL simulator to be used as part of CI/CD process. Each time a developer makes a commit to the autopilot software, a the compiled binary can be deployed to a real flight controller and tested with HITL simulator. It is especially useful for developers actively working with DroneCAN/Cyphal drivers or related parts of the autopilot software.
+
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_1.png" alt="drawing" width="640"/>
+
+A few examples of test scenarios for CI/CD are shown in the table below.
+
+| Test | Description |
+|-|-|
+| 1. Takeoff And Land | This is the simplest possible test scenario: take off, wait a few seconds, and land. It is the fastest scenario and it is intended to be triggered on every commit as part of CI. </br> Approximate duration: 30 sec </br> Plan: tests/ci/takeoff_and_land.plan |
+| 2. Square flight | Simple quadcopter flight test. </br> Approximate duration: 1 minute </br> Plan: tests/ci/square.plan |
+| 3. VTOL Long flight | This is the longest test scenario. It is dedicated for testing the stability. </br> Approximate duration: 10 minutes </br> Plan: tests/ci/sviyazhsk_vtol.plan |
+
+Any of these scenarios can be run with 3 steps.
+
+```bash
+# 1. Upload the new firmware to the autopilot
+autopilot-configurator --firmware <path_to_the_binary.px4>
+
+# 2. Run the simulator itself with the desired protocol and airframe.
+./scripts/sim.py cq
+
+# 3. Run the test scenario. The default test scenario execution timeout is 5 minutes. For long flights you need to explicitly increase the timeout:
+test-scenario --output flight.ulg --timeout 1000 tests/ci/sviyazhsk_vtol.plan
+```
 
 ### 1.2. HITL Simulator with desktop computer and 3D-simulator
 
