@@ -89,9 +89,22 @@ With RVIZ you can visualise the vehicle orientation, vectors of the applied forc
 
 | Test scenario | Description |
 |-|-|
-| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/delivery.png" alt="drawing"/> | Last Mile Aerologistics Scenarios are indended to be used with 3D-simulator. Testing and optimization of cargo delivery processes using unmanned aerial vehicles. </br> 1. Delivery from KazanExpress to the Yard. 4 minutes. Plan: kazanexpress_to_yard.plan </br> 2. Delivery from KazanExpress to the Technopark. 6 minutes. Plan: kazanexpress_to_technopark.plan |
-| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/inspection.png" alt="drawing"/> | Construction Inspection Detection Scenarios are indended to be used with 3D-simulator. </br> 1. Quadcopter. 3:40. Plan: technopark.plan </br> 2. VTOL. Structure scan of the northest techonopark. 9:25. Plan: technopark_structure_scan.plan </br> 3. VTOL. Survey of all technoparks in the town. 28:00. technopark_survey_half_town.plan </br> 3. VTOL. Survey of all the town. 44:40. technopark_survey_full_town.plan |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/delivery.png" alt="drawing"/> | **Delivery** or Last Mile Aerologistics Scenarios. Testing and optimization of cargo delivery processes using unmanned aerial vehicles. </br> 1. Delivery from KazanExpress to the Yard. 4 minutes. Plan: kazanexpress_to_yard.plan </br> 2. Delivery from KazanExpress to the Technopark. 6 minutes. Plan: kazanexpress_to_technopark.plan |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/inspection.png" alt="drawing"/> | **Construction Inspection**. </br> 1. Quadcopter. 3:40. Plan: technopark.plan </br> 2. VTOL. Structure scan of the northest techonopark. 9:25. Plan: technopark_structure_scan.plan </br> 3. VTOL. Survey of all technoparks in the town. 28:00. technopark_survey_half_town.plan </br> 3. VTOL. Survey of all the town. 44:40. technopark_survey_full_town.plan |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/scenarios/redundant_dprs.gif" alt="drawing"/> | **Fault scenarios**. </br> Evaluation of the behavior and response of UAV to various types of failures during flight. </br> 1. Using `/uav/scenario` ROS topic run or stop a specific event, for example disable differential pressure sensor (as shown on the example), gnss, ESC feedback or turn off ICE. Please, check [scenarios.hpp](https://github.com/ZilantRobotics/uav_hitl_dynamics/blob/main/src/scenarios.hpp) for details </br> 2. In Cyphal you can disable/enable any port in real time |
 
+<!--
+Cartography	Cartography Scenarios are indended to be used with 3D-simulator.
+Ground Infrastructure	Checking the interaction of unmanned aerial vehicles with ground infrastructure within the framework of air logistics tasks. These scenarios might be a part of the previous scenarios.
+-->
+
+**Key points in 3D simulation**
+
+| Yard | Delivery point | Technopark office parking | Buildings |
+| ---- | -------------- | ------------------------- | --------- |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/landing_station_yard.png" alt="drawing"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/landing_station_kazanexpress.png" alt="drawing"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/landing_station_technopark.png" alt="drawing"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/landing_station_building.png" alt="drawing"/> |
+
+<!-- | lat: 55.7487847875 </br> lon: 48.7430507069 | lat: 55.7503992494 </br> lon: 48.7481202714 | lat: 55.7517506178 </br> lon: 48.7506804476 | lat: 55.7531869667 </br> lon: 48.7510098844 | -->
 
 ### 1.3. UAV in HITL Mode
 
