@@ -13,29 +13,104 @@ The key feature of this simulation is to run it in such a way that the hardware 
 - Development and testing of intelligent automatic control systems for UAVs
 - Training in the development and use of drones, including creating datasets and automated testing
 
-**Requirements**
+**Minimal requirements (for HITL only):**
+
+- Operating System: Linux based OS such as Ubuntu 22.04
+- Raspberry PI 4 is enough
+
+**Recommended requirements (for HITL + 3D simulator):**
 
 - Operating System: We've tailored the simulator for modern versions of Windows, Linux, and Mac. Choose the build that matches your OS.
-
 - CPU: Aim for an Intel i7 from the 11th or 12th generation. For those using AMD, any equivalent processor will suffice.
-
 - RAM: 16GB is a recommended minimum, but more is always better for performance.
 
-- Hardware: CUAV V5+, CAN-sniffer
+**Required hardware:**
 
-## 1. Design
+- Flight controller: fmu-v5, fmu-v6c or fmu-v6x
+- CAN-sniffer
 
-VTOL HITL Dynamics Simulator is designed to be modular. It is divided into the following main components:
+## 1. USE CASES
 
-1. `UAV dynamics` is the main node that handles actuator commands from the communicator, performs dynamics simulation, and publishes vehicle and sensors states.
-2. `Communicator` is the set of nodes that communicate with the `PX4 flight stack` in HITL (via Cyphal/DroneCAN) and SITL (via MAVLink) modes.
-3. `inno_sim_interface` is a bridge for interaction with `3D-Simulator` through ROS.
+### 1.1. CI/CD Unit
 
-The design of the simulator is shown below.
+The HITL simulator itself is not computationally expensive. You can run it even on single-board computers like the Raspberry Pi. This feature allows the HITL simulator to be used as part of CI/CD process. Each time a developer makes a commit to the autopilot software, a the compiled binary can be deployed to a real flight controller and tested with HITL simulator. It is especially useful for developers actively working with DroneCAN/Cyphal drivers or related parts of the autopilot software.
 
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/scheme.png" alt="drawing"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_1.png" alt="drawing" width="800"/>
 
-## 2. Usage
+A few examples of test scenarios for CI/CD are shown in the table below.
+
+| Test | Description |
+|-|-|
+| 1. Takeoff And Land | This is the simplest possible test scenario: take off, wait a few seconds, and land. It is the fastest scenario and it is intended to be triggered on every commit as part of CI. </br> Approximate duration: 30 sec </br> Plan: tests/ci/takeoff_and_land.plan |
+| 2. Square flight | Simple quadcopter flight test. </br> Approximate duration: 1 minute </br> Plan: tests/ci/square.plan |
+| 3. VTOL Long flight | This is the longest test scenario. It is dedicated for testing the stability. </br> Approximate duration: 10 minutes </br> Plan: tests/ci/sviyazhsk_vtol.plan |
+
+Any of these scenarios can be run with 3 steps.
+
+```bash
+# 1. Upload the new firmware to the autopilot
+autopilot-configurator --firmware <path_to_the_binary.px4>
+
+# 2. Run the simulator itself with the desired protocol and airframe.
+./scripts/sim.py cq
+
+# 3. Run the test scenario. The default test scenario execution timeout is 5 minutes. For long flights you need to explicitly increase the timeout:
+test-scenario --output flight.ulg --timeout 1000 tests/ci/sviyazhsk_vtol.plan
+```
+
+### 1.2. HITL Simulator with desktop computer and 3D-simulator
+
+Running the HITL simulator on a desktop unlocks advanced visualization and simulation capabilities. With tools like `gui_tool`, `yakut`, and `rviz`, you can monitor and interact with the simulation in real-time.
+If your desktop is equipped with a modern GPU, you can further enhance the experience by integrating a 3D simulator. This setup is ideal for testing complex scenarios such as delivery missions or inspections and can even be used for pilot training, offering a realistic and immersive simulation environment.
+
+The setup is as simple as possible. Just connect a CAN-sniffer and a flight controller to you Desktop via USB and connect the devices with each outher with CAN cable.
+
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2.png" alt="drawing" width="800"/>
+
+**Tool 1. CAN bus analysis tools: gui_tool, yakut**
+
+If you run a HITL simulator, you can then run both yakut, gui_tool and any other similar tools at any time. It allows you analyse the CAN bus in real time.
+
+| DroneCAN: [gui_tool](https://github.com/DroneCAN/gui_tool) | Cyphal: [yakut](https://github.com/OpenCyphal/yakut) |
+|-|-|
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_gui_tool.gif" alt="drawing" width="355"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_yakut.gif" alt="drawing" width="395"/>
+
+**Tool 2. RVIZ for a flight visualization**
+
+With RVIZ you can visualise the vehicle orientation, vectors of the applied forces, torques, speed and more.
+
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_rviz.gif" alt="drawing" width="800"/>
+
+**Tool 3. 3D-simulator**
+
+> 3D-simulator demo is in process...
+
+**Test scenarios**
+
+| Test scenario | Description |
+|-|-|
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/delivery.png" alt="drawing"/> | **Delivery** or Last Mile Aerologistics Scenarios. Testing and optimization of cargo delivery processes using unmanned aerial vehicles. </br> 1. Delivery from KazanExpress to the Yard. 4 minutes. Plan: kazanexpress_to_yard.plan </br> 2. Delivery from KazanExpress to the Technopark. 6 minutes. Plan: kazanexpress_to_technopark.plan |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/inspection.png" alt="drawing"/> | **Construction Inspection**. </br> 1. Quadcopter. 3:40. Plan: technopark.plan </br> 2. VTOL. Structure scan of the northest techonopark. 9:25. Plan: technopark_structure_scan.plan </br> 3. VTOL. Survey of all technoparks in the town. 28:00. technopark_survey_half_town.plan </br> 3. VTOL. Survey of all the town. 44:40. technopark_survey_full_town.plan |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/scenarios/redundant_dprs.gif" alt="drawing"/> | **Fault scenarios**. </br> Evaluation of the behavior and response of UAV to various types of failures during flight. </br> 1. Using `/uav/scenario` ROS topic run or stop a specific event, for example disable differential pressure sensor (as shown on the example), gnss, ESC feedback or turn off ICE. Please, check [scenarios.hpp](https://github.com/ZilantRobotics/uav_hitl_dynamics/blob/main/src/scenarios.hpp) for details </br> 2. In Cyphal you can disable/enable any port in real time |
+
+<!--
+Cartography	Cartography Scenarios are indended to be used with 3D-simulator.
+Ground Infrastructure	Checking the interaction of unmanned aerial vehicles with ground infrastructure within the framework of air logistics tasks. These scenarios might be a part of the previous scenarios.
+-->
+
+**Key points in 3D simulation**
+
+| Yard | Delivery point | Technopark office parking | Buildings |
+| ---- | -------------- | ------------------------- | --------- |
+| <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/landing_station_yard.png" alt="drawing"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/landing_station_kazanexpress.png" alt="drawing"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/landing_station_technopark.png" alt="drawing"/> | <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/landing_station_building.png" alt="drawing"/> |
+
+<!-- | lat: 55.7487847875 </br> lon: 48.7430507069 | lat: 55.7503992494 </br> lon: 48.7481202714 | lat: 55.7517506178 </br> lon: 48.7506804476 | lat: 55.7531869667 </br> lon: 48.7510098844 | -->
+
+### 1.3. UAV in HITL Mode
+
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_3.png" alt="drawing" width="800"/>
+
+## 2. USAGE
 
 The simulator is distributed as a Docker image. To simplify the interraction with Docker, a `./scripts/sim.py` script was written. The script configures all the necessary Docker flags, performs automatic firmware upload, configuration, creates a CAN interface, and generally provides a simple interface to interact with the simulator.
 
@@ -69,7 +144,7 @@ Typically we use [CUAV v5+](https://docs.px4.io/master/en/flight_controller/cuav
 
 An example of a connection is shown in the picture below.
 
-<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/sniffer_connection.png" alt="drawing"  width="640"/>
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/sniffer_connection.png" alt="drawing"  width="800"/>
 
 All default parameters expect that you use CAN1 on the autopilot side.
 
@@ -113,7 +188,7 @@ Here 2 options are suggested.
 
 > A new 3D simulator will appear here soon.
 
-## 3. Supported modes
+## 3. SUPPORTED MODES
 
 You can obrain the actual list of the suported modes by typing `./scripts/sim.py --help`.
 
@@ -137,13 +212,25 @@ Other modes:
 
 New modes will be extended step by step.
 
-## 4. Example
+## 4. DESIGN
+
+VTOL HITL Dynamics Simulator is designed to be modular. It is divided into the following main components:
+
+1. `UAV dynamics` is the main node that handles actuator commands from the communicator, performs dynamics simulation, and publishes vehicle and sensors states.
+2. `Communicator` is the set of nodes that communicate with the `PX4 flight stack` in HITL (via Cyphal/DroneCAN) and SITL (via MAVLink) modes.
+3. `inno_sim_interface` is a bridge for interaction with `3D-Simulator` through ROS.
+
+The design of the simulator is shown below.
+
+<img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/scheme.png" alt="drawing"/>
+
+## 5. EXAMPLE
 
 Check the video below.
 
 [![Cyphal/DroneCAN HITL VTOL dynamics simulator](https://img.youtube.com/vi/e9MREW6tCmE/0.jpg)](https://youtu.be/e9MREW6tCmE)
 
-## 5. Auxilliary documentation
+## 6. REFERENCE
 
 Docs:
 
@@ -156,7 +243,7 @@ Outdated manual instructions:
 - [PX4 DroneCAN manual configuration instructions](docs/px4/dronecan.md)
 - [ArduPilot manual configuration instructions](docs/ardupilot/README.md)
 
-## 6. Changelog notes
+## 7. CHANGELOG NOTES
 
 | Version | ReleaseDate | Major changes |
 | ------- | ----------- | ------------- |

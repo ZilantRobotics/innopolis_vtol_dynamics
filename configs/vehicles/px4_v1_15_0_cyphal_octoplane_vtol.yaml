@@ -1,7 +1,7 @@
 release:
   org: PonomarevDA
   repo: PX4-Autopilot
-  tag: v1.15.0-0.6.0-beta1
+  tag: v1.15.0-0.6.1-beta1
 params:
   - configs/px4/v1.15/vtol_octoplane_coaxial/airframe.yaml
   - configs/px4/v1.15/vtol_octoplane_coaxial/cyphal.yaml
