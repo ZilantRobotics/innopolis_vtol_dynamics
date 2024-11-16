@@ -87,6 +87,7 @@ class SimCommander:
 
     def _kill(self) -> None:
         DockerWrapper.kill_container_by_id(self._model.docker_info.id)
+        self._model.docker_info.id = None
 
     def _build(self) -> None:
         DockerWrapper.build(self._model.full_image_name)

@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import glob
+import logging
 import platform
 import subprocess
 from typing import Optional
@@ -11,16 +12,22 @@ from raccoonlab_tools.common.device_manager import DeviceManager
 from docker_wrapper import DockerWrapper
 from colors import Colors
 
+logger = logging.getLogger(__name__)
+
 @dataclass
 class ContainerInfo:
-    version: str
+    tag: str
     architecture: str
     id: Optional[int] = None
     cpu_load_pct: Optional[int] = 0
 
     @property
     def full_name(self) -> str:
-        return f"ponomarevda/uavcan_hitl_dynamics_simulator:{self.version}{self.architecture}"
+        return f"ponomarevda/uavcan_hitl_dynamics_simulator:{self.tag}{self.architecture}"
+
+    @property
+    def version(self) -> str:
+        return f"{self.tag} ({self.architecture})"
 
     def update(self) -> bool:
         self.id = DockerWrapper.get_container_id_by_image_name(self.full_name)
@@ -105,12 +112,34 @@ class SnifferInterface:
             string = f"{Colors.OKGREEN}{self._transports[0].port}{Colors.ENDC}"
         return string
 
+class GitInterface:
+    @staticmethod
+    def get_latest_tag() -> str:
+        cmd = "git describe --tags --abbrev=0"
+        return subprocess.check_output(cmd, shell=True, text=True).strip()
+
+    @staticmethod
+    def get_current_commit() -> str:
+        cmd = "git rev-parse HEAD"
+        return subprocess.check_output(cmd, shell=True, text=True).strip()
+
+    @staticmethod
+    def get_branch_name() -> str:
+        cmd = "git rev-parse --abbrev-ref HEAD"
+        return subprocess.check_output(cmd, shell=True, text=True).strip()
+
+    @staticmethod
+    def get_dirty_state() -> str:
+        cmd = "git diff --quiet && git diff --cached --quiet || echo 'dirty'"
+        dirty_state = subprocess.check_output(cmd, shell=True, text=True).strip()
+        return 'Yes' if dirty_state else 'No'
+
 class SimModel:
     LOG_BUFFER_MAX_SIZE = 50
 
     def __init__(self) -> None:
         self._docker_info = ContainerInfo(
-            version=self._get_latest_tag(),
+            tag=GitInterface.get_latest_tag(),
             architecture=self._get_docker_architecture(),
         )
         self._elapsed_seconds = 0
@@ -120,6 +149,11 @@ class SimModel:
         self._autopilot_interface = AutopilotInterface()
         self._sniffer_interface = SnifferInterface()
         self.update()
+        logger.debug("Git information:")
+        logger.debug(f"  Latest tag: {self._docker_info.version}")
+        logger.debug(f"  Current Commit: {GitInterface.get_current_commit()}")
+        logger.debug(f"  Branch: {GitInterface.get_branch_name()}")
+        logger.debug(f"  Working Directory Dirty: {GitInterface.get_dirty_state()}")
 
     @property
     def docker_info(self) -> ContainerInfo:
@@ -161,11 +195,6 @@ class SimModel:
     def add_process(self, process: subprocess.Popen) -> None:
         assert isinstance(process, subprocess.Popen)
         self._process = process
-
-    @staticmethod
-    def _get_latest_tag() -> str:
-        cmd = "git describe --tags --abbrev=0"
-        return subprocess.check_output(cmd, shell=True, text=True).strip()
 
     @staticmethod
     def _get_docker_architecture() -> str:
@@ -211,7 +240,7 @@ class SimModel:
         separator = "-" * int(columns)
 
         return (
-            f"UAV HITL Simulator {self.docker_info.version} ({self.docker_info.architecture})\n"
+            f"UAV HITL Simulator {self.docker_info.tag} ({self.docker_info.architecture})\n"
             f"{separator}\n"
             f"Sniffer      : {self._sniffer_interface}\n"
             f"Autopilot    : {self._autopilot_interface}\n"
