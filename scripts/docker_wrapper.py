@@ -50,7 +50,7 @@ class DockerWrapper:
             return
 
         cmd = ["docker", "kill", container_identifier]
-        print(' '.join(cmd))
+        logger.debug(' '.join(cmd))
         subprocess.run(cmd, check=True)
 
     @staticmethod
