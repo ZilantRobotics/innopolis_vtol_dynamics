@@ -64,9 +64,13 @@ class AutopilotInterface:
                     autopilot = autopilot_type
                     break
 
-        updated = autopilot != self._autopilot
+        if autopilot == self._autopilot:
+            return False
+
+        logger.debug(f"Autopilot connection status has been updated: {autopilot}")
         self._autopilot = autopilot
-        return updated
+
+        return True
 
     @property
     def autopilot_name(self) -> Optional[str]:
@@ -92,15 +96,18 @@ class SnifferInterface:
         except (TypeError, IndexError):
             transports = None
 
-        updated = transports != self._transports
+        if transports == self._transports:
+            return False
+
+        logger.debug(f"Avaliable transports have been updated: {transports}")
         self._transports = transports
 
-        return updated
+        return True
 
     @property
     def sniffer(self) -> str:
         if self._transports is None or len(self._transports) == 0:
-            transport = "Undefined"
+            transport = None
         else:
             transport = self._transports[0].port
         return transport
