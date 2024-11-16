@@ -146,6 +146,7 @@ class SimModel:
         self._start_time = time.time()
         self._log_buffer = []
         self._process = None
+        self._command = " ".join(sys.argv[1:])
         self._autopilot_interface = AutopilotInterface()
         self._sniffer_interface = SnifferInterface()
         self.update()
@@ -245,7 +246,7 @@ class SimModel:
             f"Sniffer      : {self._sniffer_interface}\n"
             f"Autopilot    : {self._autopilot_interface}\n"
             f"Container    : {self.docker_info}\n"
-            f"Command      : ?\n"
+            f"Command      : {self._command}\n"
             f"Time         : {self.time}\n"
             f"{separator}\n"
         )
