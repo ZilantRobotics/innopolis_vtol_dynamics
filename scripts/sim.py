@@ -76,7 +76,13 @@ class SimCommander:
                                                   sim_config=command.sim_config,
                                                   mode=command.mode)
             self._model.add_process(process)
-        except Exception:
+        except Exception as err:
+            self._model.log((
+                "Failed to start the Docker container with HITL simulator. "
+                f'Reason: "{err}". '
+                "Please, fix the issue and run the simulator again."
+            ))
+            self._model.log("\nPress CTRL+C to exit...")
             self._kill()
 
     def _kill(self) -> None:
