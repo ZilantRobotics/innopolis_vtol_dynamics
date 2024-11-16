@@ -30,9 +30,6 @@ from model import SimModel
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 VEHICLES_DIR = os.path.join(REPO_DIR, "configs", "vehicles")
 BINARY_OUTPUT_PATH = os.path.join(REPO_DIR, "firmware.bin")
-LOG_FILENAME = f"log_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-LOGS_DIR = os.path.join(REPO_DIR, "logs")
-LOG_PATH = os.path.join(LOGS_DIR, LOG_FILENAME)
 
 COMMANDS = [
     SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
@@ -40,6 +37,8 @@ COMMANDS = [
     SimCommand(name="monitor", alias='', mode=None, info="Just monitor"),
     *SimCommand.create_list_from_directory(dir_with_yaml_files=VEHICLES_DIR)
 ]
+
+logger = logging.getLogger(__name__)
 
 class SimCommander:
     def __init__(self, model: SimModel) -> None:
@@ -116,18 +115,27 @@ class SimView:
             print(line)
         print("--------------------------------------------------------------------------------")
 
+def setup_logging():
+    log_filename = f"log_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+    logs_dir = os.path.join(REPO_DIR, "logs")
+    log_path = os.path.join(logs_dir, log_filename)
 
-def main():
-    Path(LOGS_DIR).mkdir(parents=True, exist_ok=True)
+    Path(logs_dir).mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        filename=LOG_PATH,
+                        filename=log_path,
                         filemode='w')
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     console.setFormatter(formatter)
     logging.getLogger().addHandler(console)
+
+    argv_string = " ".join(sys.argv)
+    logger.debug(f"Running {argv_string}")
+
+def main():
+    setup_logging()
 
     parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
 
