@@ -1,8 +1,23 @@
 #!/usr/bin/env python3
+import os
+import re
+import logging
+import platform
 import subprocess
 from typing import Optional
 from pathlib import Path
 from mode import SimMode
+
+logger = logging.getLogger(__name__)
+
+def is_valid_sniffer_path(sniffer_path: Optional[str]) -> bool:
+    if not isinstance(sniffer_path, str):
+        return False
+
+    if platform.system() == 'Windows':
+        return bool(re.match(r'^COM\d+$', sniffer_path, re.IGNORECASE))
+
+    return os.path.exists(sniffer_path)
 
 class DockerWrapper:
     COMMON_DOCKER_FLAGS = [
@@ -39,7 +54,10 @@ class DockerWrapper:
         subprocess.run(cmd, check=True)
 
     @staticmethod
-    def run_container(sniffer_path: str, image_name: str, sim_config: str, mode: SimMode):
+    def run_container(sniffer_path: str, image_name: str, sim_config: str, mode: SimMode) -> subprocess.Popen:
+        if not is_valid_sniffer_path(sniffer_path):
+            raise RuntimeError(f"CAN-Sniffer device has not been automatically found (sniffer_path={sniffer_path})")
+
         if mode == SimMode.CYPHAL_HITL:
             flags = [
                 *DockerWrapper.COMMON_DOCKER_FLAGS,

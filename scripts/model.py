@@ -196,11 +196,15 @@ class SimModel:
             return False
 
         if output:
-            self._log_buffer.append(output.strip().decode())
-        if len(self._log_buffer) > SimModel.LOG_BUFFER_MAX_SIZE:
-            self._log_buffer.pop(0)
+            line = output.strip().decode()
+            self.log(line)
 
         return True
+
+    def log(self, line: str):
+        self._log_buffer.append(line)
+        if len(self._log_buffer) > SimModel.LOG_BUFFER_MAX_SIZE:
+            self._log_buffer.pop(0)
 
     def __str__(self) -> str:
         _, columns = os.popen('stty size', 'r').read().split()
