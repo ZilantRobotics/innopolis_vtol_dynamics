@@ -31,6 +31,8 @@ The key feature of this simulation is to run it in such a way that the hardware 
 
 ## 1. USE CASES
 
+By centralizing communication through CAN and leveraging the HITL simulator, you can perform a wide range of tests that were previously complex or impractical. Let's consider them.
+
 ### 1.1. CI/CD Unit
 
 The HITL simulator itself is not computationally expensive. You can run it even on single-board computers like the Raspberry Pi. This feature allows the HITL simulator to be used as part of CI/CD process. Each time a developer makes a commit to the autopilot software, a the compiled binary can be deployed to a real flight controller and tested with HITL simulator. It is especially useful for developers actively working with DroneCAN/Cyphal drivers or related parts of the autopilot software.
@@ -106,7 +108,13 @@ Ground Infrastructure	Checking the interaction of unmanned aerial vehicles with 
 
 <!-- | lat: 55.7487847875 </br> lon: 48.7430507069 | lat: 55.7503992494 </br> lon: 48.7481202714 | lat: 55.7517506178 </br> lon: 48.7506804476 | lat: 55.7531869667 </br> lon: 48.7510098844 | -->
 
-### 1.3. UAV in HITL Mode
+### 1.3. Testing with Real UAV Components
+
+Connect the HITL simulator to a particular component of a vehicle or almost to the whole system.
+- Full-System Simulation: Use actual UAV hardware to simulate real-world operations without physical flight.
+- Actuator and Payload Testing: Validate that motors, control surfaces, and payloads respond correctly to simulated inputs.
+
+An example of connection to the whole system is show below.
 
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_3.png" alt="drawing" width="800"/>
 
@@ -247,7 +255,7 @@ Outdated manual instructions:
 
 | Version | ReleaseDate | Major changes |
 | ------- | ----------- | ------------- |
-| v0.9.0 | in progress  | Add fmu-v6c and fmu-v6x support beside fmu-v5 |
+| v0.9.0 | Nov .., 2024 | Add fmu-v6c and fmu-v6x support beside fmu-v5 |
 | v0.8.0 | Jun 10, 2024 | Update PX4 from v1.14 to v1.15 |
 | v0.7.0 | Oct 31, 2023 | Update PX4 from v1.13 to v1.14 |
 | v0.6.0 | Jul 16, 2023 | Add Octorotor dynamics, fault scenarios and Cyphal ESC feedback |
