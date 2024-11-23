@@ -12,27 +12,25 @@ jobs:
     container:
       image: ros:noetic
     steps:
-      # 1. Install basic requirements
-      - run: apt-get update && apt-get install -y git
-      - run: if [[ "$ROS_DISTRO" = "noetic" ]] ;  then apt-get install -y python3-pip ros-noetic-catkin python3-catkin-tools ; fi
-      - run: pip install setuptools==68.0.0 importlib-metadata==8.2.0 # hack because there is an issue on >=71.0.0 https://github.com/pypa/setuptools/issues/4478
+      - name: Handle issue with actions/checkout when Git version is less than 2.18 
+        run: apt-get update && apt-get install -y git
 
-      # 2. Checkout repo with submodules
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: catkin_ws/src/innopolis_vtol_dynamics
           submodules: recursive
 
-      # 3. Install requirements
-      - name: Install innopolis_vtol_dynamics requirements
-        run: ./catkin_ws/src/innopolis_vtol_dynamics/uav_dynamics/uav_hitl_dynamics/install_requirements.sh
+      - run: if [[ "$ROS_DISTRO" = "noetic" ]] ;  then apt-get install -y python3-pip ros-noetic-catkin python3-catkin-tools ; fi
+      - run: pip install setuptools==68.0.0 importlib-metadata==8.2.0 # hack because there is an issue on >=71.0.0 https://github.com/pypa/setuptools/issues/4478
+
+      - name: Install requirements
+        run: ./catkin_ws/src/innopolis_vtol_dynamics/scripts/install.sh --yes
+
       - name: Install uavcan_communicator requirements
         run: |
           cd catkin_ws/src/innopolis_vtol_dynamics/communicators/uavcan_communicator                &&  \
           ./scripts/install_requirements.sh                                                         &&  \
           ./scripts/install_libuavcan.sh
-      - name: Install cyphal_communicator requirements
-        run: ./catkin_ws/src/innopolis_vtol_dynamics/communicators/cyphal_communicator/install_requirements.sh
 
       - name: Install inno-sim-interface requirements
         run: |
