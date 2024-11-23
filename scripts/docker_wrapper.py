@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import re
+import time
+import shlex
 import logging
 import platform
 import subprocess
@@ -54,9 +56,12 @@ class DockerWrapper:
         subprocess.run(cmd, check=True)
 
     @staticmethod
-    def run_container(sniffer_path: str, image_name: str, sim_config: str, mode: SimMode) -> subprocess.Popen:
+    def run_container(sniffer_path: str,
+                      image_name: str,
+                      sim_config: str,
+                      mode: SimMode) -> Optional[subprocess.Popen]:
         if not is_valid_sniffer_path(sniffer_path):
-            raise RuntimeError(f"CAN-Sniffer device has not been automatically found (sniffer_path={sniffer_path})")
+            raise RuntimeError(f"CAN-Sniffer has not been found (sniffer_path={sniffer_path})")
 
         if mode == SimMode.CYPHAL_HITL:
             flags = [
@@ -84,5 +89,26 @@ class DockerWrapper:
             './scripts/run_sim.sh',
             sim_config
         ]
+        logger.info(" ".join([shlex.quote(arg) for arg in command]))
 
-        return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+            time.sleep(0.3)
+            returncode = process.poll()
+            if returncode is not None:
+                logger.critical("The process PID=%s exited with code=%s.", process.pid, returncode)
+                stdout, stderr = process.communicate(timeout=0.1)
+
+                stdout_decoded = stdout.decode()
+                if stdout_decoded.endswith("\n"):
+                    stdout_decoded = stdout_decoded[:-1]
+                logger.critical("STDOUT: %s", stdout_decoded)
+
+                stderr_decoded = stderr.decode()
+                if stderr_decoded.endswith("\n"):
+                    stderr_decoded = stderr_decoded[:-1]
+                logger.critical("STDERR: %s", stderr_decoded)
+
+                raise RuntimeError(stderr_decoded)
+
+            logger.info("The container (PID=%s) ran successfully.", process.pid)
+            return process
