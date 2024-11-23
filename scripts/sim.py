@@ -24,7 +24,8 @@ from pathlib import Path
 from argparse import ArgumentParser, RawTextHelpFormatter
 from autopilot_tools.configurator import AutopilotConfigurator
 
-from command import SimCommand, COMMANDS
+from mode import SimMode
+from command import SimCommand, CommandsManager
 from docker_wrapper import DockerWrapper
 from model import SimModel
 
@@ -48,63 +49,30 @@ class SimCommander:
         if self.command.name not in ['rviz']:
             self._kill()
 
-    def execute(self,
-                command: SimCommand,
-                need_upload_firmware: bool,
-                need_load_parameters: bool) -> None:
+    def execute(self, command: SimCommand) -> None:
         assert isinstance(command, SimCommand)
         self.command = command
 
-        if command.name == "kill":
-            self._kill()
-            sys.exit(0)
+        command_actions = {
+            "kill": self.execute_kill_command,
+            "build": self.execute_build_command,
+            "rviz": self.execute_rviz_command,
+            "px4-sitl": self.execute_px4_sitl,
+            "monitor": lambda: None,  # No action for monitor
+        }
 
-        if command.name == "build":
-            self._build()
-            sys.exit(0)
+        action = command_actions.get(command.name, self.execute_run_simulation_command)
+        action()
 
-        if command.name == "rviz":
-            SimCommander._rviz(command.args)
-            sys.exit(0)
+    def execute_kill_command(self) -> None:
+        self._kill()
+        sys.exit(0)
 
-        if need_upload_firmware or need_load_parameters:
-            config_path = f"{VEHICLES_DIR}/{command.name}.yaml"
-            AutopilotConfigurator.configure_with_yaml_file(config_path,
-                                                           need_upload_firmware,
-                                                           need_load_parameters)
-
-        if command.mode is None:
-            return
-
-        try:
-            self._kill()
-            process = DockerWrapper.run_container(sniffer_path=self._model.transport,
-                                                  image_name=self._model.full_image_name,
-                                                  sim_config=command.sim_config,
-                                                  mode=command.mode)
-            self._model.add_process(process)
-        except (RuntimeError, ValueError) as err:
-            self._model.log((
-                "Failed to start the Docker container with HITL simulator.\n"
-                f'Reason: "{err}".\n'
-                "\n"
-                "Please, fix the issue and run the simulator again.\n"
-                f"If you don't know how to fix it, open an issue: {ISSUES_URL}.\n"
-                f"Provide a log file {LOG_PATH} and text or screenshot of the error.\n"
-                "\n"
-                "Press CTRL+C to exit.."
-            ))
-            self._kill()
-
-    def _kill(self) -> None:
-        DockerWrapper.kill_container_by_id(self._model.docker_info.id)
-        self._model.docker_info.id = None
-
-    def _build(self) -> None:
+    def execute_build_command(self) -> None:
         DockerWrapper.build(self._model.full_image_name)
+        sys.exit(0)
 
-    @staticmethod
-    def _rviz(args: list) -> None:
+    def execute_rviz_command(self) -> None:
         rviz_dir = "rviz"
         repo_url = "git@github.com:PonomarevDA/rviz_docker.git"
         if not os.path.exists(rviz_dir) or not os.listdir(rviz_dir):
@@ -125,18 +93,72 @@ class SimCommander:
                 print(f"Error: {script_path} not found. Exiting.")
                 sys.exit(1)
             try:
-                subprocess.run(["bash", script_path, *args], check=True)
+                subprocess.run(["bash", script_path, *self.command.args], check=True)
             except subprocess.CalledProcessError:
                 logger.critical("Script %s failed. Exiting.", script)
                 sys.exit(1)
+        sys.exit(0)
+
+    def execute_px4_sitl(self) -> None:
+        logger.info("Execute %s", self.command)
+        image_name = "ponomarevda/px4-sitl"
+        DockerWrapper.build(image_name, f"{REPO_DIR}/scripts/px4-sitl")
+        DockerWrapper.interactive(image=image_name)
+        sys.exit(0)
+
+    def execute_run_simulation_command(self) -> None:
+        try:
+            self._kill()
+
+            if self.command.mode in [SimMode.DRONECAN_HITL, SimMode.CYPHAL_HITL]:
+                self._execute_hitl_container(self.command)
+            elif self.command.mode in [SimMode.MAVLINK_SITL]:
+                self._execute_sitl_container(self.command)
+
+        except (RuntimeError, ValueError) as err:
+            self._model.log((
+                "Failed to start the Docker container with Simulator.\n"
+                f'Reason: "{err}".\n'
+                "\n"
+                "Please, fix the issue and run the simulator again.\n"
+                f"If you don't know how to fix it, open an issue: {ISSUES_URL}.\n"
+                f"Provide a log file {LOG_PATH} and text or screenshot of the error.\n"
+                "\n"
+                "Press CTRL+C to exit.."
+            ))
+            self._kill()
+
+    def _execute_hitl_container(self, command) -> None:
+        if command.need_upload_firmware or command.need_load_parameters:
+            config_path = f"{VEHICLES_DIR}/{command.name}.yaml"
+            AutopilotConfigurator.configure_with_yaml_file(config_path,
+                                                           command.need_upload_firmware,
+                                                           command.need_load_parameters)
+
+        process = DockerWrapper.run_sim_container(mode=command.mode,
+                                                  image_name=self._model.full_image_name,
+                                                  argument=command.sim_config,
+                                                  sniffer_path=self._model.transport)
+        self._model.add_process(process)
+
+    def _execute_sitl_container(self, command) -> None:
+        process = DockerWrapper.run_sim_container(mode=command.mode,
+                                                  image_name=self._model.full_image_name,
+                                                  argument=command.sim_config)
+        self._model.add_process(process)
+
+    def _kill(self) -> None:
+        DockerWrapper.kill_container_by_id(self._model.docker_info.id)
+        self._model.docker_info.id = None
 
 class SimView:
-    def __init__(self, model: SimModel) -> None:
+    def __init__(self, model: SimModel, command: Optional[str]) -> None:
         assert isinstance(model, SimModel)
         self.model = model
+        self.command = command
 
-    def process(self, command: Optional[str]) -> None:
-        assert isinstance(command, str) or command is None
+    def process(self) -> None:
+        assert isinstance(self.command, str) or self.command is None
 
         if not self.model.update():
             return
@@ -174,9 +196,7 @@ def main():
 
     parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
 
-    command_help = f'{"Command":<36} {"Alias":<10} {"Info"}\n'
-    command_help += '\n'.join([f"{cmd.name:<36} {cmd.alias:<10} {cmd.info}" for cmd in COMMANDS])
-    parser.add_argument('command', help=command_help, nargs='+')
+    parser.add_argument('command', help=CommandsManager.get_help(), nargs='+')
 
     upload_help = "upload the required firmware"
     parser.add_argument("--upload", help=upload_help, default=False, action='store_true')
@@ -193,24 +213,23 @@ def main():
 
     args = parser.parse_args()
 
-    if args.force:
-        args.upload = True
-        args.configure = True
-
-    command = next((cmd for cmd in COMMANDS if cmd.check(args.command)), None)
+    command = CommandsManager.parse_command(args.command)
     if command is None:
         print(f"Unknown command {args.command}.")
         parser.print_help()
         sys.exit(1)
 
+    command.need_upload_firmware = args.force or args.upload
+    command.need_load_parameters = args.force or args.configure
+
     model = SimModel()
-    view = SimView(model)
+    view = SimView(model, command.name)
     commander = SimCommander(model=model)
-    commander.execute(command, args.upload, args.configure)
+    commander.execute(command)
 
     try:
         while True:
-            view.process(command.name)
+            view.process()
             time.sleep(0.01)
     except KeyboardInterrupt:
         print("KeyboardInterrupt")

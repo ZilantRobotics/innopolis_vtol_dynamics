@@ -1,0 +1,3 @@
+mode: mavlink
+alias: mq
+sim_config: px4_v1_15_0_mavlink_quadcopter

@@ -126,6 +126,22 @@ An example of connection to the whole system is show below.
 
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_3.png" alt="drawing" width="800"/>
 
+### 1.4. SITL if you don't have the hardware
+
+SITL mode is out of the scope of the interests of this simulator. But anyway, it happens that you need to test something and you don't have the required hardware in your hand. So, you can run the flight stack and the dynamics on your PC:
+
+Run the HITL dynamics as usual, but choose MAVLink mode, for example:
+
+```bash
+./scripts/sim.py mq  # mq stands for PX4 Mavlink Quadcopter
+```
+
+Run the PX4 flight stack. You can either build and run it according to PX4 official instructions, or use our Dockerfile to build and ru neverything in a single command:
+
+```bash
+./scripts/sim.py px4-sitl iris
+```
+
 ## 2. USAGE
 
 The simulator is distributed as a Docker image. To simplify the interraction with Docker, a `./scripts/sim.py` script was written. The script configures all the necessary Docker flags, performs automatic firmware upload, configuration, creates a CAN interface, and generally provides a simple interface to interact with the simulator.
@@ -151,7 +167,7 @@ pip install -r requirements.txt
 To build docker image, type:
 
 ```bash
-./scripts/sim.py b # build
+./scripts/sim.py b # b stands for build
 ```
 
 > An image on dockerhub usually is not up to date, so it's better to build manually

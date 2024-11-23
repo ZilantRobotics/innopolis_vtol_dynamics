@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import re
+import sys
 import time
 import shlex
 import logging
@@ -33,8 +34,8 @@ class DockerWrapper:
     REPOSITORY_DIR = Path(__file__).parent.parent.absolute()
     DOCKERFILE_DIR = REPOSITORY_DIR
     @staticmethod
-    def build(full_image_name : str) -> None:
-        cmd = ['docker', 'build', '-t', full_image_name, DockerWrapper.DOCKERFILE_DIR]
+    def build(full_image_name : str, dockerfile_dir: str = DOCKERFILE_DIR) -> None:
+        cmd = ['docker', 'build', '-t', full_image_name, dockerfile_dir]
         subprocess.run(cmd, check=True)
 
     @staticmethod
@@ -56,11 +57,23 @@ class DockerWrapper:
         subprocess.run(cmd, check=True)
 
     @staticmethod
-    def run_container(sniffer_path: str,
-                      image_name: str,
-                      sim_config: str,
-                      mode: SimMode) -> Optional[subprocess.Popen]:
-        if not is_valid_sniffer_path(sniffer_path):
+    def interactive(image: str, flags: list = ["--rm", "-it", "--net=host"]) -> None:
+        command = ["docker", "container", "run", *flags, image, "/bin/bash"]
+
+        try:
+            with subprocess.Popen(command, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) as process:
+                process.wait()
+        except KeyboardInterrupt:
+            print("\nScript interrupted.")
+        except Exception as err:
+            print(f"Error: {err}")
+
+    @staticmethod
+    def run_sim_container(mode: SimMode,
+                          image_name: str,
+                          argument: str,
+                          sniffer_path: Optional[str]=None) -> Optional[subprocess.Popen]:
+        if mode.is_hitl() and not is_valid_sniffer_path(sniffer_path):
             raise RuntimeError(f"CAN-Sniffer has not been found (sniffer_path={sniffer_path})")
 
         if mode == SimMode.CYPHAL_HITL:
@@ -79,6 +92,8 @@ class DockerWrapper:
             flags = [
                 *DockerWrapper.COMMON_DOCKER_FLAGS,
             ]
+        else:
+            raise RuntimeError(f"Unknown mode: {mode}")
 
         command = [
             "docker",
@@ -87,7 +102,7 @@ class DockerWrapper:
             *flags,
             image_name,
             './scripts/run_sim.sh',
-            sim_config
+            argument
         ]
         logger.info(" ".join([shlex.quote(arg) for arg in command]))
 
