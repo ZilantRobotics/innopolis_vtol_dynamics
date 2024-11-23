@@ -52,7 +52,10 @@ class SimCommander:
     def __del__(self):
         self._kill()
 
-    def execute(self, command: SimCommand, need_upload_firmware: bool, need_load_parameters: bool) -> None:
+    def execute(self,
+                command: SimCommand,
+                need_upload_firmware: bool,
+                need_load_parameters: bool) -> None:
         assert isinstance(command, SimCommand)
 
         if command.name == "kill":
@@ -65,9 +68,9 @@ class SimCommander:
 
         if need_upload_firmware or need_load_parameters:
             config_path = f"{VEHICLES_DIR}/{command.name}.yaml"
-            AutopilotConfigurator.configure_with_yaml_file(config_path=config_path,
-                                                           need_upload_firmware=need_upload_firmware,
-                                                           need_load_parameters=need_load_parameters)
+            AutopilotConfigurator.configure_with_yaml_file(config_path,
+                                                           need_upload_firmware,
+                                                           need_load_parameters)
 
         if command.mode is None:
             return
@@ -79,7 +82,7 @@ class SimCommander:
                                                   sim_config=command.sim_config,
                                                   mode=command.mode)
             self._model.add_process(process)
-        except Exception as err:
+        except (RuntimeError, ValueError) as err:
             self._model.log((
                 "Failed to start the Docker container with HITL simulator.\n"
                 f'Reason: "{err}".\n'
@@ -136,7 +139,7 @@ def setup_logging():
     logging.getLogger().addHandler(console)
 
     argv_string = " ".join(sys.argv)
-    logger.debug(f"Running {argv_string}")
+    logger.debug("Running %s", argv_string)
 
 def main():
     setup_logging()
@@ -147,13 +150,13 @@ def main():
     command_help += '\n'.join([f"{cmd.name:<36} {cmd.alias:<10} {cmd.info}" for cmd in COMMANDS])
     parser.add_argument('command', help=command_help)
 
-    upload_help = ("upload the required firmware")
+    upload_help = "upload the required firmware"
     parser.add_argument("--upload", help=upload_help, default=False, action='store_true')
 
-    configure_help = ("reset all the parameters to default and configure")
+    configure_help = "reset all the parameters to default and configure"
     parser.add_argument("--configure", help=configure_help, default=False, action='store_true')
 
-    force_help = ("both upload and then configure")
+    force_help = "both upload and then configure"
     parser.add_argument("--force", help=force_help, default=False, action='store_true')
 
     if len(sys.argv) == 1:

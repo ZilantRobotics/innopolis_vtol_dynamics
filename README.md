@@ -1,4 +1,6 @@
-# UAV HITL Simulator [![catkin_build](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/catkin_build.yml/badge.svg)](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/catkin_build.yml)
+[![catkin_build](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/catkin_build.yml/badge.svg)](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/catkin_build.yml) [![docker](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/docker.yml/badge.svg)](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/docker.yml) [![pylint](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/pylint.yml/badge.svg)](https://github.com/ZilantRobotics/innopolis_vtol_dynamics/actions/workflows/pylint.yml)
+
+# UAV HITL Simulator
 
 UAV HITL Simulator brings up a set of ROS packages, config files and instructions to establish a full simulation for UAV based on PX4/Ardupilot autopilot.
 
