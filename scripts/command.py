@@ -5,6 +5,9 @@ from typing import Optional
 import yaml
 from mode import SimMode
 
+REPO_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+VEHICLES_DIR = os.path.join(REPO_DIR, "configs", "vehicles")
+
 @dataclass
 class SimCommand:
     name: str
@@ -12,9 +15,20 @@ class SimCommand:
     mode: SimMode
     info: Optional[str]
     sim_config: Optional[str] = None
+    args: Optional[list] = None
 
-    def check(self, name: str) -> bool:
-        return name in [self.name, self.alias]
+    def check(self, command: str) -> bool:
+        if isinstance(command, str):
+            name = command
+        elif isinstance(command, list):
+            name = command[0]
+        else:
+            raise ValueError("The 'name' argument must be a string or a list of strings.")
+
+        res = name in [self.name, self.alias]
+        if res:
+            self.args = command[1:]
+        return res
 
     @staticmethod
     def create_from_yaml_file(file_path: str):
@@ -43,3 +57,11 @@ class SimCommand:
             if cmd is not None:
                 commands.append(cmd)
         return commands
+
+COMMANDS = [
+    SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
+    SimCommand(name="kill", alias='', mode=None, info="Kill the running Docker container"),
+    SimCommand(name="monitor", alias='', mode=None, info="Just monitor"),
+    SimCommand(name="rviz", alias='', mode=None, info="Run RVIZ"),
+    *SimCommand.create_list_from_directory(dir_with_yaml_files=VEHICLES_DIR)
+]
