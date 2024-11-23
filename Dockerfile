@@ -19,16 +19,9 @@ RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      
 
 # 2. Install requirements
 # 2.4. communicators
-COPY communicators/mavlink_communicator/                        communicators/mavlink_communicator/
 COPY communicators/uavcan_communicator/                         communicators/uavcan_communicator/
-COPY communicators/cyphal_communicator/scripts/config.sh        communicators/cyphal_communicator/scripts/config.sh
-COPY communicators/cyphal_communicator/install_requirements.sh  communicators/cyphal_communicator/install_requirements.sh
-COPY communicators/cyphal_communicator/requirements.txt         communicators/cyphal_communicator/requirements.txt
-COPY communicators/cyphal_communicator/compile_dsdl.sh          communicators/cyphal_communicator/compile_dsdl.sh
 RUN ./communicators/uavcan_communicator/scripts/install_requirements.sh         &&  \
     ./communicators/uavcan_communicator/scripts/install_libuavcan.sh
-RUN ./communicators/cyphal_communicator/install_requirements.sh                 &&  \
-    ./communicators/cyphal_communicator/compile_dsdl.sh
 
 # 3. Copy the source files
 COPY inno_sim_interface/ inno_sim_interface/
@@ -41,7 +34,11 @@ COPY uav_dynamics/uav_hitl_dynamics/tests              uav_dynamics/uav_hitl_dyn
 COPY uav_dynamics/uav_hitl_dynamics/urdf               uav_dynamics/uav_hitl_dynamics/urdf
 COPY uav_dynamics/uav_hitl_dynamics/CMakeLists.txt     uav_dynamics/uav_hitl_dynamics/CMakeLists.txt
 COPY uav_dynamics/uav_hitl_dynamics/package.xml        uav_dynamics/uav_hitl_dynamics/package.xml
+
+COPY communicators/mavlink_communicator/                        communicators/mavlink_communicator/
+
 COPY communicators/cyphal_communicator/src              communicators/cyphal_communicator/src
+COPY communicators/cyphal_communicator/scripts/config.sh communicators/cyphal_communicator/scripts/config.sh
 COPY communicators/cyphal_communicator/Libs             communicators/cyphal_communicator/Libs
 COPY communicators/cyphal_communicator/CMakeLists.txt   communicators/cyphal_communicator/CMakeLists.txt
 COPY communicators/cyphal_communicator/package.xml      communicators/cyphal_communicator/package.xml
