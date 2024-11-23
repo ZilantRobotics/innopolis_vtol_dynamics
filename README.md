@@ -85,6 +85,12 @@ With RVIZ you can visualise the vehicle orientation, vectors of the applied forc
 
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_2_rviz.gif" alt="drawing" width="800"/>
 
+How to run:
+
+```bash
+./scripts/sim.py rviz vtol_T_300
+```
+
 **Tool 3. 3D-simulator**
 
 > 3D-simulator demo is in process...

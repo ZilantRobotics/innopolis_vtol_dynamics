@@ -18,12 +18,13 @@ import sys
 import time
 import logging
 import datetime
+import subprocess
 from typing import Optional
 from pathlib import Path
 from argparse import ArgumentParser, RawTextHelpFormatter
 from autopilot_tools.configurator import AutopilotConfigurator
 
-from command import SimCommand
+from command import SimCommand, COMMANDS
 from docker_wrapper import DockerWrapper
 from model import SimModel
 
@@ -35,28 +36,24 @@ LOGS_DIR = os.path.join(REPO_DIR, "logs")
 LOG_PATH = os.path.join(LOGS_DIR, LOG_FILENAME)
 ISSUES_URL = "https://github.com/ZilantRobotics/innopolis_vtol_dynamics/issues"
 
-COMMANDS = [
-    SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
-    SimCommand(name="kill", alias='', mode=None, info="Kill the running Docker container"),
-    SimCommand(name="monitor", alias='', mode=None, info="Just monitor"),
-    *SimCommand.create_list_from_directory(dir_with_yaml_files=VEHICLES_DIR)
-]
-
 logger = logging.getLogger(__name__)
 
 class SimCommander:
     def __init__(self, model: SimModel) -> None:
         assert isinstance(model, SimModel)
         self._model = model
+        self.command = None
 
     def __del__(self):
-        self._kill()
+        if self.command.name not in ['rviz']:
+            self._kill()
 
     def execute(self,
                 command: SimCommand,
                 need_upload_firmware: bool,
                 need_load_parameters: bool) -> None:
         assert isinstance(command, SimCommand)
+        self.command = command
 
         if command.name == "kill":
             self._kill()
@@ -64,6 +61,10 @@ class SimCommander:
 
         if command.name == "build":
             self._build()
+            sys.exit(0)
+
+        if command.name == "rviz":
+            SimCommander._rviz(command.args)
             sys.exit(0)
 
         if need_upload_firmware or need_load_parameters:
@@ -101,6 +102,33 @@ class SimCommander:
 
     def _build(self) -> None:
         DockerWrapper.build(self._model.full_image_name)
+
+    @staticmethod
+    def _rviz(args: list) -> None:
+        rviz_dir = "rviz"
+        repo_url = "git@github.com:PonomarevDA/rviz_docker.git"
+        if not os.path.exists(rviz_dir) or not os.listdir(rviz_dir):
+            logger.info("Cloning repository from %s into %s...", repo_url, rviz_dir)
+            try:
+                subprocess.run(["git", "clone", repo_url, rviz_dir], check=True)
+            except subprocess.CalledProcessError:
+                logger.critical("Failed to clone repository from %s. Exiting.", repo_url)
+                sys.exit(1)
+        if not os.path.exists(rviz_dir):
+            logger.critical("The directory 'rviz' does not exist after cloning. Exiting.")
+            sys.exit(1)
+
+        scripts = ['build.sh', 'run.sh']
+        for script in scripts:
+            script_path = os.path.join(rviz_dir, script)
+            if not os.path.isfile(script_path):
+                print(f"Error: {script_path} not found. Exiting.")
+                sys.exit(1)
+            try:
+                subprocess.run(["bash", script_path, *args], check=True)
+            except subprocess.CalledProcessError:
+                logger.critical("Script %s failed. Exiting.", script)
+                sys.exit(1)
 
 class SimView:
     def __init__(self, model: SimModel) -> None:
@@ -148,7 +176,7 @@ def main():
 
     command_help = f'{"Command":<36} {"Alias":<10} {"Info"}\n'
     command_help += '\n'.join([f"{cmd.name:<36} {cmd.alias:<10} {cmd.info}" for cmd in COMMANDS])
-    parser.add_argument('command', help=command_help)
+    parser.add_argument('command', help=command_help, nargs='+')
 
     upload_help = "upload the required firmware"
     parser.add_argument("--upload", help=upload_help, default=False, action='store_true')
