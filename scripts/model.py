@@ -202,6 +202,7 @@ class SimModel:
 
     def add_process(self, process: subprocess.Popen) -> None:
         assert isinstance(process, subprocess.Popen)
+        logger.info(f"A process {process.pid} has been added to Model.")
         self._process = process
 
     @staticmethod
@@ -225,11 +226,32 @@ class SimModel:
         return updated
 
     def _update_process(self) -> bool:
+        """
+        True the process state has been updated, otherwise False.
+        """
         if self._process is None:
             return False
 
+        returncode = self._process.poll()
+        if returncode is not None:
+            self.log(f"The process {self._process.pid} failed with code={returncode}.")
+            stdout, stderr = self._process.communicate(timeout=0.1)
+
+            stdout_decoded = stdout.decode()
+            if stdout_decoded.endswith("\n"):
+                stdout_decoded = stdout_decoded[:-1]
+            self.log(f"STDOUT: {stdout_decoded}")
+
+            stderr_decoded = stderr.decode()
+            if stderr_decoded.endswith("\n"):
+                stderr_decoded = stderr_decoded[:-1]
+            self.log(f"STDERR: {stderr_decoded}")
+
+            self._process = None
+            return False
+
         output = self._process.stdout.readline()
-        if output == b'' and self._process.poll() is not None:
+        if output == b'':
             return False
 
         if output:

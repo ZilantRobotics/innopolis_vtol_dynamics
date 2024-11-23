@@ -30,6 +30,10 @@ from model import SimModel
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 VEHICLES_DIR = os.path.join(REPO_DIR, "configs", "vehicles")
 BINARY_OUTPUT_PATH = os.path.join(REPO_DIR, "firmware.bin")
+LOG_FILENAME = f"log_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+LOGS_DIR = os.path.join(REPO_DIR, "logs")
+LOG_PATH = os.path.join(LOGS_DIR, LOG_FILENAME)
+ISSUES_URL = "https://github.com/ZilantRobotics/innopolis_vtol_dynamics/issues"
 
 COMMANDS = [
     SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
@@ -77,11 +81,15 @@ class SimCommander:
             self._model.add_process(process)
         except Exception as err:
             self._model.log((
-                "Failed to start the Docker container with HITL simulator. "
-                f'Reason: "{err}". '
-                "Please, fix the issue and run the simulator again."
+                "Failed to start the Docker container with HITL simulator.\n"
+                f'Reason: "{err}".\n'
+                "\n"
+                "Please, fix the issue and run the simulator again.\n"
+                f"If you don't know how to fix it, open an issue: {ISSUES_URL}.\n"
+                f"Provide a log file {LOG_PATH} and text or screenshot of the error.\n"
+                "\n"
+                "Press CTRL+C to exit.."
             ))
-            self._model.log("\nPress CTRL+C to exit...")
             self._kill()
 
     def _kill(self) -> None:
@@ -116,14 +124,10 @@ class SimView:
         print("--------------------------------------------------------------------------------")
 
 def setup_logging():
-    log_filename = f"log_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-    logs_dir = os.path.join(REPO_DIR, "logs")
-    log_path = os.path.join(logs_dir, log_filename)
-
-    Path(logs_dir).mkdir(parents=True, exist_ok=True)
+    Path(LOGS_DIR).mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        filename=log_path,
+                        filename=LOG_PATH,
                         filemode='w')
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
