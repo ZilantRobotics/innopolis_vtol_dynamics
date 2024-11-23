@@ -1,4 +1,4 @@
-name: Build and Test with Docker
+name: docker
 on:
   push:
     branches:
@@ -8,7 +8,7 @@ on:
     branches:
     - '*'
 jobs:
-  build:
+  docker:
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-13]

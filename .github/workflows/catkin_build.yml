@@ -20,27 +20,8 @@ jobs:
           path: catkin_ws/src/innopolis_vtol_dynamics
           submodules: recursive
 
-      - run: if [[ "$ROS_DISTRO" = "noetic" ]] ;  then apt-get install -y python3-pip ros-noetic-catkin python3-catkin-tools ; fi
-      - run: pip install setuptools==68.0.0 importlib-metadata==8.2.0 # hack because there is an issue on >=71.0.0 https://github.com/pypa/setuptools/issues/4478
-
       - name: Install requirements
         run: ./catkin_ws/src/innopolis_vtol_dynamics/scripts/install.sh --yes
 
-      - name: Install uavcan_communicator requirements
-        run: |
-          cd catkin_ws/src/innopolis_vtol_dynamics/communicators/uavcan_communicator                &&  \
-          ./scripts/install_requirements.sh                                                         &&  \
-          ./scripts/install_libuavcan.sh
-
-      - name: Install inno-sim-interface requirements
-        run: |
-          sudo apt-get install -y ros-noetic-rosauth                                               &&  \
-          sudo apt-get install -y python-protobuf                                                   &&  \
-          pip install bson pymongo Pillow twisted
-
-      # 4. Build
       - name: catkin build
-        run: |
-          source /opt/ros/noetic/setup.bash                                                        &&  \
-          cd catkin_ws                                                                              &&  \
-          catkin build
+        run: source /opt/ros/noetic/setup.bash && cd catkin_ws && catkin build

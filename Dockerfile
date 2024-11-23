@@ -1,3 +1,6 @@
+# This software is distributed under the terms of the GPL v3 License.
+# Copyright (c) 2021-2024 Dmitry Ponomarev.
+# Author: Dmitry Ponomarev <ponomarevda96@gmail.com>
 ARG ROS_DISTRO=noetic
 
 FROM ros:$ROS_DISTRO
@@ -5,58 +8,15 @@ LABEL description="UAV simulator"
 SHELL ["/bin/bash", "-c"]
 WORKDIR /catkin_ws/src/uav_hitl_simulator
 
+# 1. Install requirements
+COPY scripts/install.sh scripts/install.sh
+RUN apt-get update && ./scripts/install.sh --yes && apt-get clean
 
-# 1. Install basic requirements
-COPY scripts/install.sh install.sh
-RUN apt-get update && apt-get upgrade -y
-RUN ./install.sh --yes
+# 2. Copy the source files
+COPY . /catkin_ws/src/uav_hitl_simulator
 
-# Setup ROS
-RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
-    cd ../../                                                                   &&  \
-    git config --global http.sslverify false                                    && \
-    catkin build
-
-# 2. Install requirements
-# 2.4. communicators
-COPY communicators/uavcan_communicator/                         communicators/uavcan_communicator/
-RUN ./communicators/uavcan_communicator/scripts/install_requirements.sh         &&  \
-    ./communicators/uavcan_communicator/scripts/install_libuavcan.sh
-
-# 3. Copy the source files
-COPY inno_sim_interface/ inno_sim_interface/
-COPY catkin_build.sh catkin_build.sh
-
-COPY uav_dynamics/uav_hitl_dynamics/libs               uav_dynamics/uav_hitl_dynamics/libs
-COPY uav_dynamics/uav_hitl_dynamics/meshes             uav_dynamics/uav_hitl_dynamics/meshes
-COPY uav_dynamics/uav_hitl_dynamics/src                uav_dynamics/uav_hitl_dynamics/src
-COPY uav_dynamics/uav_hitl_dynamics/tests              uav_dynamics/uav_hitl_dynamics/tests
-COPY uav_dynamics/uav_hitl_dynamics/urdf               uav_dynamics/uav_hitl_dynamics/urdf
-COPY uav_dynamics/uav_hitl_dynamics/CMakeLists.txt     uav_dynamics/uav_hitl_dynamics/CMakeLists.txt
-COPY uav_dynamics/uav_hitl_dynamics/package.xml        uav_dynamics/uav_hitl_dynamics/package.xml
-
-COPY communicators/mavlink_communicator/                        communicators/mavlink_communicator/
-
-COPY communicators/cyphal_communicator/src              communicators/cyphal_communicator/src
-COPY communicators/cyphal_communicator/scripts/config.sh communicators/cyphal_communicator/scripts/config.sh
-COPY communicators/cyphal_communicator/Libs             communicators/cyphal_communicator/Libs
-COPY communicators/cyphal_communicator/CMakeLists.txt   communicators/cyphal_communicator/CMakeLists.txt
-COPY communicators/cyphal_communicator/package.xml      communicators/cyphal_communicator/package.xml
-
-# 4. Build ROS
-RUN source /opt/ros/$ROS_DISTRO/setup.bash                                      &&  \
-    cd ../../                                                                   &&  \
-    git config --global http.sslverify false                                    && \
-    catkin build
-
-# 5. Copy configs, scripts, etc
-COPY uav_dynamics/uav_hitl_dynamics/scripts/           uav_dynamics/uav_hitl_dynamics/scripts
-COPY uav_dynamics/uav_hitl_dynamics/launch/            uav_dynamics/uav_hitl_dynamics/launch
-COPY uav_dynamics/uav_hitl_dynamics/config/            uav_dynamics/uav_hitl_dynamics/config
-COPY uav_dynamics/uav_hitl_dynamics/catkin_test.sh     uav_dynamics/uav_hitl_dynamics/catkin_test.sh
-COPY scripts/ scripts/
-COPY communicators/cyphal_communicator/                 communicators/cyphal_communicator/
-
+# 3. Build ROS
+RUN source /opt/ros/$ROS_DISTRO/setup.bash && cd /catkin_ws/ && git config --global http.sslverify false && catkin build
 RUN echo source scripts/run_sim.sh ros >> ~/.bashrc
 
 CMD echo "main process has been started"                                        &&  \

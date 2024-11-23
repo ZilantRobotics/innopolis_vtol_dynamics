@@ -1,0 +1,20 @@
+# Exclude everything by default
+**
+
+# Include only specific folders/files
+!communicators/
+
+!inno_sim_interface/
+
+!scripts/airframe_printer.sh
+!scripts/cyphal_port_id.sh
+!scripts/cyphal_config_slcan0.sh
+!scripts/cyphal_config_slcan1.sh
+!scripts/run_sim.sh
+!scripts/install.sh
+!scripts/tools/can/create_slcan.sh
+
+!uav_dynamics/timed_roslaunch
+!uav_dynamics/uav_hitl_dynamics
+
+!catkin_build.sh
