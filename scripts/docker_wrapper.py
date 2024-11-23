@@ -91,24 +91,24 @@ class DockerWrapper:
         ]
         logger.info(" ".join([shlex.quote(arg) for arg in command]))
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
-            time.sleep(0.3)
-            returncode = process.poll()
-            if returncode is not None:
-                logger.critical("The process PID=%s exited with code=%s.", process.pid, returncode)
-                stdout, stderr = process.communicate(timeout=0.1)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        time.sleep(0.1)
+        returncode = process.poll()
+        if returncode is not None:
+            logger.critical("The process PID=%s exited with code=%s.", process.pid, returncode)
+            stdout, stderr = process.communicate(timeout=0.1)
 
-                stdout_decoded = stdout.decode()
-                if stdout_decoded.endswith("\n"):
-                    stdout_decoded = stdout_decoded[:-1]
-                logger.critical("STDOUT: %s", stdout_decoded)
+            stdout_decoded = stdout.decode()
+            if stdout_decoded.endswith("\n"):
+                stdout_decoded = stdout_decoded[:-1]
+            logger.critical("STDOUT: %s", stdout_decoded)
 
-                stderr_decoded = stderr.decode()
-                if stderr_decoded.endswith("\n"):
-                    stderr_decoded = stderr_decoded[:-1]
-                logger.critical("STDERR: %s", stderr_decoded)
+            stderr_decoded = stderr.decode()
+            if stderr_decoded.endswith("\n"):
+                stderr_decoded = stderr_decoded[:-1]
+            logger.critical("STDERR: %s", stderr_decoded)
 
-                raise RuntimeError(stderr_decoded)
+            raise RuntimeError(stderr_decoded)
 
-            logger.info("The container (PID=%s) ran successfully.", process.pid)
-            return process
+        logger.info("The container (PID=%s) ran successfully.", process.pid)
+        return process
