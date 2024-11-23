@@ -134,7 +134,11 @@ Whenever you pull this repository, don't forget to update submodules:
 git submodule update --init --recursive
 ```
 
-**Step 2. Build/pull the docker image**
+**Step 2. Install requirements and Build/pull the docker image**
+
+```bash
+pip install -r requirements.txt
+```
 
 To build docker image, type:
 
