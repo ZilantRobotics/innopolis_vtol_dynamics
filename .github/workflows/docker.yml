@@ -1,0 +1,25 @@
+name: Build and Test with Docker
+
+on: [push]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        version: [ubuntu-20.04]
+    runs-on: ${{ matrix.version }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Set up Docker
+      if: runner.os == 'Linux'
+      uses: docker/setup-buildx-action@v2
+
+    - name: Install requirements
+      run: pip install -r requirements.txt
+
+    - name: Build project using Docker
+      run: ./scripts/sim.py b
