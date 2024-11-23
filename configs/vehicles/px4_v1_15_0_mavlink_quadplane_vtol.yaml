@@ -1,0 +1,3 @@
+mode: mavlink
+alias: mv4
+sim_config: px4_v1_15_0_mavlink_quadplane_vtol

@@ -16,3 +16,6 @@ class SimMode(Enum):
             "monitor": SimMode.MONITOR,
         }
         return string_to_mode.get(string)
+
+    def is_hitl(self) -> bool:
+        return self in {SimMode.CYPHAL_HITL, SimMode.DRONECAN_HITL}

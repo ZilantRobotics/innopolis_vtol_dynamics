@@ -16,6 +16,8 @@ class SimCommand:
     info: Optional[str]
     sim_config: Optional[str] = None
     args: Optional[list] = None
+    need_upload_firmware: bool = False
+    need_load_parameters: bool = False
 
     def check(self, command: str) -> bool:
         if isinstance(command, str):
@@ -58,10 +60,32 @@ class SimCommand:
                 commands.append(cmd)
         return commands
 
-COMMANDS = [
-    SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
-    SimCommand(name="kill", alias='', mode=None, info="Kill the running Docker container"),
-    SimCommand(name="monitor", alias='', mode=None, info="Just monitor"),
-    SimCommand(name="rviz", alias='', mode=None, info="Run RVIZ"),
-    *SimCommand.create_list_from_directory(dir_with_yaml_files=VEHICLES_DIR)
-]
+class CommandsManager:
+    COMMANDS = [
+        SimCommand(name="build", alias='b', mode=None, info="Build the Docker image"),
+        SimCommand(name="kill", alias='', mode=None, info="Kill the running Docker container"),
+        SimCommand(name="monitor", alias='', mode=None, info="Just monitor"),
+        SimCommand(name="rviz", alias='', mode=None, info="Run RVIZ"),
+        SimCommand(name="px4-sitl", alias='', mode=None, info="Run PX4 SITL Flight Stack"),
+        *SimCommand.create_list_from_directory(dir_with_yaml_files=VEHICLES_DIR)
+    ]
+
+    @staticmethod
+    def get_all_commands():
+        return CommandsManager.COMMANDS
+
+    @staticmethod
+    def get_help():
+        header = f'{"Command":<36} {"Alias":<10} {"Info"}\n'
+
+        commands_details = []
+        for cmd in CommandsManager.COMMANDS:
+            command_detail = f"{cmd.name:<36} {cmd.alias or '':<10} {cmd.info or ''}"
+            commands_details.append(command_detail)
+
+        return header + '\n'.join(commands_details)
+
+    @staticmethod
+    def parse_command(command: list) -> Optional[SimCommand]:
+        command = next((cmd for cmd in CommandsManager.COMMANDS if cmd.check(command)), None)
+        return command

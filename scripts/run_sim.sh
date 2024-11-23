@@ -19,8 +19,8 @@ Commands:
   px4_v1_15_0_cyphal_octoplane_vtol       Run dynamics simulator in Cyphal HITL mode for vtol 8 motors airframe.
   cyphal_and_dronecan_inno_vtol           Run dynamics simulator in DroneCan + Cyphal mode for vtol airframe.
                                           This mode uses 2 serial ports and is in the alpha testing stage yet.
-  px4_v1_12_0_mavlink_quadplane_vtol      Run dynamics simulator in MAVLink SITL mode for vtol airframe
-  px4_v1_12_0_mavlink_quadcopter          Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
+  px4_v1_15_0_mavlink_quadplane_vtol      Run dynamics simulator in MAVLink SITL mode for vtol airframe
+  px4_v1_15_0_mavlink_quadcopter          Run dynamics simulator in MAVLink SITL mode for flight_goggles airframe
 
 Auxilliary commands:
   ros                                     Source ROS and catkin_ws setup.bash files
@@ -173,7 +173,7 @@ cyphal_and_dronecan_inno_vtol() {
         dynamics:=quadcopter
 }
 
-px4_v1_12_0_mavlink_quadplane_vtol() {
+px4_v1_15_0_mavlink_quadplane_vtol() {
     setup_ros
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         logging_type:=standard_vtol                 \
@@ -184,7 +184,7 @@ px4_v1_12_0_mavlink_quadplane_vtol() {
         run_sitl_flight_stack:="false"
 }
 
-px4_v1_12_0_mavlink_quadcopter() {
+px4_v1_15_0_mavlink_quadcopter() {
     setup_ros
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         logging_type:=quadcopter                    \
@@ -218,10 +218,10 @@ elif [ "$1" = "px4_v1_15_0_cyphal_octoplane_vtol" ]; then
     px4_v1_15_0_cyphal_octoplane_vtol
 elif [ "$1" = "cyphal_and_dronecan_inno_vtol" ]; then
     cyphal_and_dronecan_inno_vtol
-elif [ "$1" = "px4_v1_12_0_mavlink_quadplane_vtol" ]; then
-    px4_v1_12_0_mavlink_quadplane_vtol
-elif [ "$1" = "px4_v1_12_0_mavlink_quadcopter" ]; then
-    px4_v1_12_0_mavlink_quadcopter
+elif [ "$1" = "px4_v1_15_0_mavlink_quadplane_vtol" ]; then
+    px4_v1_15_0_mavlink_quadplane_vtol
+elif [ "$1" = "px4_v1_15_0_mavlink_quadcopter" ]; then
+    px4_v1_15_0_mavlink_quadcopter
 elif [ "$1" = "ros" ]; then
     setup_ros
 else
