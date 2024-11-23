@@ -208,12 +208,12 @@ class SimModel:
     def _get_docker_architecture() -> str:
         architecture = platform.machine()
 
-        if 'aarch64' in architecture:
+        if architecture in ['aarch64', 'arm64']:
             docker_architecture = 'arm64'
-        elif 'x86_64' in architecture:
+        elif architecture in ['x86_64', 'amd64']:
             docker_architecture = 'amd64'
         else:
-            print("Unknown architecture")
+            logger.critical("Unknown architecture: {architecture}")
             sys.exit()
 
         return docker_architecture
