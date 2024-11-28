@@ -93,7 +93,7 @@ How to run:
 
 **Tool 3. 3D-simulator**
 
-> 3D-simulator demo is in process...
+Simulator3d is a digital environment that replicates the world as closely as a robot or UAV would perceive it, with all interactions being facilitated through the same API formats these robots would use in reality. It is avaliable on GitHub: [ZilantRobotics/Simulator3d](https://github.com/ZilantRobotics/Simulator3d).
 
 **Test scenarios**
 
@@ -107,6 +107,31 @@ How to run:
 Cartography	Cartography Scenarios are indended to be used with 3D-simulator.
 Ground Infrastructure	Checking the interaction of unmanned aerial vehicles with ground infrastructure within the framework of air logistics tasks. These scenarios might be a part of the previous scenarios.
 -->
+
+**How to run:**
+
+Download the simulator before the first usage:
+
+```bash
+# 1. Download Simulator3d in Downloads directory.
+cd Downloads
+wget https://github.com/ZilantRobotics/Simulator3d/releases/download/v0.1.19/ZilantSimulator-Linux64-0.1.19.zip
+
+# 2. Unzip it and make it executable
+unzip ZilantSimulator-Linux64-0.1.19.zip
+chmod +x ZilantSimulator.x86_64
+```
+
+Run it:
+
+```bash
+# 1. Run the Simulator3d itself
+./ZilantSimulator.x86_64
+
+# 2. Run rosbridge and sim interface nodes
+./scripts/docker.sh i
+roslaunch innopolis_vtol_dynamics 3d_sim.launch
+```
 
 **Key points in 3D simulation**
 

@@ -23,16 +23,17 @@ def is_valid_sniffer_path(sniffer_path: Optional[str]) -> bool:
     return os.path.exists(sniffer_path)
 
 class DockerWrapper:
+    REPOSITORY_DIR = Path(__file__).parent.parent.absolute()
+    DOCKERFILE_DIR = REPOSITORY_DIR
     COMMON_DOCKER_FLAGS = [
         '--rm',
         '--net=host',
+        f'--volume={REPOSITORY_DIR}/uav_dynamics/uav_hitl_dynamics/config:/catkin_ws/src/uav_hitl_simulator/uav_dynamics/uav_hitl_dynamics/config:ro',
         '-v', '/tmp/.X11-unix:/tmp/.X11-unix:rw',
         '-e', 'DISPLAY=:0',
         '-e', 'QT_X11_NO_MITSHM=1',
         '--privileged',
     ]
-    REPOSITORY_DIR = Path(__file__).parent.parent.absolute()
-    DOCKERFILE_DIR = REPOSITORY_DIR
     @staticmethod
     def build(full_image_name : str, dockerfile_dir: str = DOCKERFILE_DIR) -> None:
         cmd = ['docker', 'build', '-t', full_image_name, dockerfile_dir]
