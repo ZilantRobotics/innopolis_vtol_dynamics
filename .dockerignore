@@ -15,6 +15,14 @@
 !scripts/tools/can/create_slcan.sh
 
 !uav_dynamics/timed_roslaunch
-!uav_dynamics/uav_hitl_dynamics
+
+!uav_dynamics/uav_hitl_dynamics/launch
+!uav_dynamics/uav_hitl_dynamics/libs
+!uav_dynamics/uav_hitl_dynamics/scripts
+!uav_dynamics/uav_hitl_dynamics/src
+!uav_dynamics/uav_hitl_dynamics/tests
+!uav_dynamics/uav_hitl_dynamics/urdf
+!uav_dynamics/uav_hitl_dynamics/CMakeLists.txt
+!uav_dynamics/uav_hitl_dynamics/package.xml
 
 !catkin_build.sh
