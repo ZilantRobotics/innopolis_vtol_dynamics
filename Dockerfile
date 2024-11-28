@@ -19,6 +19,8 @@ COPY . /catkin_ws/src/uav_hitl_simulator
 RUN source /opt/ros/$ROS_DISTRO/setup.bash && cd /catkin_ws/ && git config --global http.sslverify false && catkin build
 RUN echo source scripts/run_sim.sh ros >> ~/.bashrc
 
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
 CMD echo "main process has been started"                                        &&  \
     source /opt/ros/$ROS_DISTRO/setup.bash && source /catkin_ws/devel/setup.bash &&  \
     echo "container has been finished"
