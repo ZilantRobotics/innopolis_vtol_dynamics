@@ -51,6 +51,9 @@ class AutopilotInterface:
 
         "/dev/serial/by-id/usb-Auterion_PX4_FMU_v6C"        : "px4_fmu-v6c",
         "/dev/serial/by-id/usb-Auterion_PX4_BL_FMU_v6C"     : "px4_fmu-v6c",
+
+        "/dev/serial/by-id/usb-CUAV_PX4_CUAV_X7Pro"         : "cuav_x7pro",
+        "/dev/serial/by-id/usb-ArduPilot_CUAV-X7-BL"        : "cuav_x7pro",
     }
     def __init__(self) -> None:
         self._autopilot = None
