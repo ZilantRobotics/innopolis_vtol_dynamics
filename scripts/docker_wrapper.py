@@ -13,6 +13,9 @@ from mode import SimMode
 
 logger = logging.getLogger(__name__)
 
+def is_slcan_already_created(sniffer_path: Optional[str]) -> bool:
+    return sniffer_path in ["slcan0", "slcan1"]
+
 def is_valid_sniffer_path(sniffer_path: Optional[str]) -> bool:
     if not isinstance(sniffer_path, str):
         return False
@@ -74,8 +77,16 @@ class DockerWrapper:
                           image_name: str,
                           argument: str,
                           sniffer_path: Optional[str]=None) -> Optional[subprocess.Popen]:
-        if mode.is_hitl() and not is_valid_sniffer_path(sniffer_path):
-            raise RuntimeError(f"CAN-Sniffer has not been found (sniffer_path={sniffer_path})")
+        if mode.is_hitl():
+            if is_slcan_already_created(sniffer_path):
+                raise RuntimeError(
+                    "slcan0 is already exist. "
+                    "You can see it by running 'ifconfig' command. "
+                    "Please, remove slcan0 before using the simulator. "
+                    "Reconnect the SLCAN adapter manually."
+                )
+            if not is_valid_sniffer_path(sniffer_path):
+                raise RuntimeError(f"CAN-Sniffer has not been found (sniffer_path={sniffer_path})")
 
         if mode == SimMode.CYPHAL_HITL:
             flags = [
