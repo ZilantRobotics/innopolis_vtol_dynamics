@@ -74,13 +74,16 @@ setup_image_name_and_version() {
     IMAGE_NAME=$DOCKERHUB_REPOSITOTY:$TAG_NAME
 }
 
-setup_mavlink_sitl_config() {
+setup_minimim_required_docker_flags() {
     DOCKER_FLAGS="--net=host"
-    DOCKER_FLAGS="$DOCKER_FLAGS -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1)"
+    DOCKER_FLAGS+=" -v /tmp/.X11-unix:/tmp/.X11-unix:rw"
+    DOCKER_FLAGS+=" -e DISPLAY=$DISPLAY"
+    DOCKER_FLAGS+=" -e QT_X11_NO_MITSHM=1"
+    DOCKER_FLAGS+=" --volume=${REPOSITORY_DIR}/uav_dynamics/uav_hitl_dynamics/config:/catkin_ws/src/uav_hitl_simulator/uav_dynamics/uav_hitl_dynamics/config:ro"
 }
 
 setup_dronecan_hitl_config() {
-    setup_mavlink_sitl_config
+    setup_minimim_required_docker_flags
     if [ -z "$SNIFFER" ]; then
         source ./tools/can/create_slcan.sh --only-find
         DRONECAN_DEV_PATH_SYMLINK=$DEV_PATH
@@ -99,7 +102,7 @@ setup_dronecan_hitl_config() {
 }
 
 setup_cyphal_hitl_config() {
-    setup_mavlink_sitl_config
+    setup_minimim_required_docker_flags
     if [ -z "$SNIFFER" ]; then
         source ./tools/can/create_slcan.sh --only-find
         CYPHAL_DEV_PATH_SYMLINK=$DEV_PATH
@@ -118,7 +121,7 @@ setup_cyphal_hitl_config() {
 }
 
 setup_cyphal_and_dronecan_hitl_config() {
-    setup_mavlink_sitl_config
+    setup_minimim_required_docker_flags
 
     DRONECAN_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0674FF524957778667133858-if02"
     CYPHAL_DEV_PATH_SYMLINK="/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066AFF524957778667134207-if02"
@@ -156,7 +159,7 @@ docker_countainer_run_interactive() {
 }
 
 docker_container_run_test() {
-    setup_mavlink_sitl_config
+    setup_minimim_required_docker_flags
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./uav_dynamics/uav_hitl_dynamics/catkin_test.sh --docker
 }
 
@@ -191,7 +194,7 @@ docker_container_run_cyphal() {
 
 docker_container_run_mavlink() {
     docker_kill_all_related_containers
-    setup_mavlink_sitl_config
+    setup_minimim_required_docker_flags
     docker container run --rm $DOCKER_FLAGS $IMAGE_NAME ./scripts/run_sim.sh ${vehicle}
 }
 

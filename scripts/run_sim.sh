@@ -66,11 +66,11 @@ setup_cyphal_hitl() {
 
 setup_combined_hitl() {
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
-        echo "Trying to create slcan0 for dronecan..."
+        echo "Trying to create slcan0 for combined HITL: dronecan..."
         $SCRIPT_DIR/tools/can/create_slcan.sh -d $DRONECAN_DEV_PATH_SYMLINK -i slcan0
     fi
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
-        echo "Trying to create slcan1 for cyphal..."
+        echo "Trying to create slcan1 for combined HITL: cyphal..."
         $SCRIPT_DIR/tools/can/create_slcan.sh -d $CYPHAL_DEV_PATH_SYMLINK -i slcan1
         source $SCRIPT_DIR/cyphal_config_slcan1.sh
     fi
