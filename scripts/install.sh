@@ -41,9 +41,3 @@ fi
 
 # Hack because there is an issue on >=71.0.0 https://github.com/pypa/setuptools/issues/4478
 pip install setuptools==68.0.0 importlib-metadata==8.2.0
-
-# Required for Github Action CI
-kernel_release=$(uname -r)
-if [[ $kernel_release == *azure ]]; then
-    $SUDO apt-get install $FORCE_APT_INSTALL linux-modules-extra-$(uname -r)
-fi
