@@ -18,6 +18,7 @@ class SimCommand:
     args: Optional[list] = None
     need_upload_firmware: bool = False
     need_load_parameters: bool = False
+    sniffer: Optional[str] = None
 
     def check(self, command: str) -> bool:
         if isinstance(command, str):

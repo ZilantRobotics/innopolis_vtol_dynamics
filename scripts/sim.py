@@ -135,10 +135,12 @@ class SimCommander:
                                                            command.need_upload_firmware,
                                                            command.need_load_parameters)
 
+        sniffer_path = command.sniffer if command.sniffer else self._model.transport
+
         process = DockerWrapper.run_sim_container(mode=command.mode,
                                                   image_name=self._model.full_image_name,
                                                   argument=command.sim_config,
-                                                  sniffer_path=self._model.transport)
+                                                  sniffer_path=sniffer_path)
         self._model.add_process(process)
 
     def _execute_sitl_container(self, command) -> None:
@@ -207,6 +209,9 @@ def main():
     force_help = "both upload and then configure"
     parser.add_argument("--force", help=force_help, default=False, action='store_true')
 
+    sniffer_help = "explicitly specify what sniffer to use"
+    parser.add_argument("--sniffer", type=str, required=False, help=sniffer_help, default=None)
+
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -221,6 +226,7 @@ def main():
 
     command.need_upload_firmware = args.force or args.upload
     command.need_load_parameters = args.force or args.configure
+    command.sniffer = args.sniffer
 
     model = SimModel()
     view = SimView(model, command.name)
