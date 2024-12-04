@@ -308,7 +308,7 @@ Outdated manual instructions:
 
 | Version | ReleaseDate | Major changes |
 | ------- | ----------- | ------------- |
-| v0.9.0 | Dec .., 2024 | Add px4_fmu-v6c, px4_fmu-v6x and cuav_x7pro support beside fmu-v5 |
+| v0.9.0 | Dec .., 2024 | Add px4_fmu-v6c, px4_fmu-v6x, cuav_x7pro, cuav_nora support beside fmu-v5 |
 | v0.8.0 | Jun 10, 2024 | Update PX4 from v1.14 to v1.15 |
 | v0.7.0 | Oct 31, 2023 | Update PX4 from v1.13 to v1.14 |
 | v0.6.0 | Jul 16, 2023 | Add Octorotor dynamics, fault scenarios and Cyphal ESC feedback |
