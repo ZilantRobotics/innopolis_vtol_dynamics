@@ -85,7 +85,7 @@ setup_minimim_required_docker_flags() {
 setup_dronecan_hitl_config() {
     setup_minimim_required_docker_flags
     if [ -z "$SNIFFER" ]; then
-        source ./tools/can/create_slcan.sh --only-find
+        source ./create_slcan.sh --only-find
         DRONECAN_DEV_PATH_SYMLINK=$DEV_PATH
     else
         DRONECAN_DEV_PATH_SYMLINK=$SNIFFER
@@ -104,7 +104,7 @@ setup_dronecan_hitl_config() {
 setup_cyphal_hitl_config() {
     setup_minimim_required_docker_flags
     if [ -z "$SNIFFER" ]; then
-        source ./tools/can/create_slcan.sh --only-find
+        source ./create_slcan.sh --only-find
         CYPHAL_DEV_PATH_SYMLINK=$DEV_PATH
     else
         CYPHAL_DEV_PATH_SYMLINK=$SNIFFER
