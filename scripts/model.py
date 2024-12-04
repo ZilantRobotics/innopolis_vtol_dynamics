@@ -169,6 +169,7 @@ class SimModel:
         logger.debug(f"  Current Commit: {GitInterface.get_current_commit()}")
         logger.debug(f"  Branch: {GitInterface.get_branch_name()}")
         logger.debug(f"  Working Directory Dirty: {GitInterface.get_dirty_state()}")
+        logger.debug(f"  Unix Name: {os.uname()}")
 
     @property
     def docker_info(self) -> ContainerInfo:
