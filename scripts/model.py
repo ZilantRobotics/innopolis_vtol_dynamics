@@ -54,6 +54,10 @@ class AutopilotInterface:
 
         "/dev/serial/by-id/usb-CUAV_PX4_CUAV_X7Pro"         : "cuav_x7pro",
         "/dev/serial/by-id/usb-ArduPilot_CUAV-X7-BL"        : "cuav_x7pro",
+
+        "/dev/serial/by-id/usb-CUAV_PX4_CUAV_Nora"          : "cuav_nora",
+        "/dev/serial/by-id/usb-ArduPilot_CUAV-Nora-BL"      : "cuav_nora",
+
     }
     def __init__(self) -> None:
         self._autopilot = None
