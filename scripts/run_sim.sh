@@ -44,7 +44,7 @@ setup_ros() {
 setup_dronecan_hitl() {
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan0 for dronecan..."
-        $SCRIPT_DIR/tools/can/create_slcan.sh -d $DRONECAN_DEV_PATH_SYMLINK -i slcan0
+        $SCRIPT_DIR/create_slcan.sh -d $DRONECAN_DEV_PATH_SYMLINK -i slcan0
     fi
     if [[ -z $(ifconfig | grep slcan0) ]]; then
         echo "HITL can't be started without CAN interface!"
@@ -55,7 +55,7 @@ setup_dronecan_hitl() {
 setup_cyphal_hitl() {
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
         echo "Trying to create slcan0 for cyphal/serial..."
-        $SCRIPT_DIR/tools/can/create_slcan.sh -d $CYPHAL_DEV_PATH_SYMLINK -i slcan0
+        $SCRIPT_DIR/create_slcan.sh -d $CYPHAL_DEV_PATH_SYMLINK -i slcan0
     fi
     if [[ -z $(ifconfig | grep slcan0) ]]; then
         echo "HITL can't be started without CAN interface!"
@@ -66,12 +66,12 @@ setup_cyphal_hitl() {
 
 setup_combined_hitl() {
     if [ ! -z $DRONECAN_DEV_PATH_SYMLINK ]; then
-        echo "Trying to create slcan0 for combined HITL: dronecan..."
-        $SCRIPT_DIR/tools/can/create_slcan.sh -d $DRONECAN_DEV_PATH_SYMLINK -i slcan0
+        echo "Trying to create slcan0 for comined HITL: dronecan..."
+        $SCRIPT_DIR/create_slcan.sh -d $DRONECAN_DEV_PATH_SYMLINK -i slcan0
     fi
     if [ ! -z $CYPHAL_DEV_PATH_SYMLINK ]; then
-        echo "Trying to create slcan1 for combined HITL: cyphal..."
-        $SCRIPT_DIR/tools/can/create_slcan.sh -d $CYPHAL_DEV_PATH_SYMLINK -i slcan1
+        echo "Trying to create slcan1 for comined HITL: cyphal..."
+        $SCRIPT_DIR/create_slcan.sh -d $CYPHAL_DEV_PATH_SYMLINK -i slcan1
         source $SCRIPT_DIR/cyphal_config_slcan1.sh
     fi
 }

@@ -12,7 +12,7 @@
 !scripts/cyphal_config_slcan1.sh
 !scripts/run_sim.sh
 !scripts/install.sh
-!scripts/tools/can/create_slcan.sh
+!scripts/create_slcan.sh
 
 !uav_dynamics/timed_roslaunch
 
