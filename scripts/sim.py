@@ -74,7 +74,7 @@ class SimCommander:
 
     def execute_rviz_command(self) -> None:
         rviz_dir = "rviz"
-        repo_url = "git@github.com:PonomarevDA/rviz_docker.git"
+        repo_url = "https://github.com/PonomarevDA/rviz_docker.git"
         if not os.path.exists(rviz_dir) or not os.listdir(rviz_dir):
             logger.info("Cloning repository from %s into %s...", repo_url, rviz_dir)
             try:
