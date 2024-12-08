@@ -202,7 +202,7 @@ if [ "${BASH_SOURCE[0]}" -ef "$0" ]; then
 fi
 SCRIPT_DIR="$(dirname "$0")"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
-VEHICLE_PARAMS_DIR=$REPO_DIR//uav_dynamics/uav_hitl_dynamics/config/vehicle_params
+VEHICLE_PARAMS_DIR=$REPO_DIR/uav_dynamics/uav_hitl_dynamics/config/vehicle_params
 
 if [ "$1" = "px4_v1_15_0_dronecan_quadplane_vtol" ]; then
     px4_v1_15_0_dronecan_quadplane_vtol
