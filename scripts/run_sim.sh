@@ -83,7 +83,7 @@ px4_v1_15_0_dronecan_quadplane_vtol() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
         logging_type:=standard_vtol                 \
-        vehicle_params:=vtol_7kg                     \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/vtol_7kg/params.yaml \
         mixer:=px4_v1_14_0_vtol_13000_mixer         \
         dynamics:=vtol_dynamics
 }
@@ -95,7 +95,7 @@ px4_v1_13_0_dronecan_vtol() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
         logging_type:=standard_vtol                 \
-        vehicle_params:=vtol_7kg                    \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/vtol_7kg/params.yaml \
         mixer:=vtol_13070_mixer                     \
         dynamics:=vtol_dynamics
 }
@@ -107,7 +107,7 @@ px4_v1_15_0_dronecan_quadrotor() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
         logging_type:=quadcopter                    \
-        vehicle_params:=quadrotor                   \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/quadrotor/params.yaml \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter
 }
@@ -119,7 +119,7 @@ px4_v1_15_0_cyphal_quadcopter() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         logging_type:=quadcopter                    \
-        vehicle_params:=quadrotor                   \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/quadrotor/params.yaml \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter
 }
@@ -131,7 +131,7 @@ px4_v1_15_0_cyphal_octorotor() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         logging_type:=quadcopter                    \
-        vehicle_params:=octorotor                   \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/octorotor/params.yaml \
         mixer:=direct_mixer                         \
         dynamics:=octorotor
 }
@@ -143,7 +143,7 @@ px4_v1_15_0_cyphal_quadplane_vtol() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         logging_type:=standard_vtol                 \
-        vehicle_params:=vtol_7kg                    \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/vtol_7kg/params.yaml \
         mixer:=px4_v1_14_0_vtol_13000_mixer         \
         dynamics:=vtol_dynamics
 }
@@ -155,7 +155,7 @@ px4_v1_15_0_cyphal_octoplane_vtol() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         logging_type:=vtol_8_motors_logger          \
-        vehicle_params:=vtol_tfm15                  \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/vtol_tfm15/params.yaml \
         mixer:=px4_v1_14_0_vtol_13000_8_motors_mixer \
         dynamics:=vtol_dynamics
 }
@@ -168,7 +168,7 @@ cyphal_and_dronecan_inno_vtol() {
         run_cyphal_communicator:=true               \
         run_dronecan_communicator:=true             \
         logging_type:=quadcopter                    \
-        vehicle_params:=quadrotor_ardupilot         \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/quadrotor_ardupilot/params.yaml \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter
 }
@@ -178,8 +178,8 @@ px4_v1_15_0_mavlink_quadplane_vtol() {
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         logging_type:=standard_vtol                 \
         sitl_vehicle:=innopolis_vtol                \
-        vehicle_params:=vtol_7kg                    \
-        mixer:=vtol_13070_mixer                     \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/vtol_7kg/params.yaml \
+        mixer:=px4_v1_14_0_vtol_13000_mixer         \
         dynamics:=vtol_dynamics                     \
         run_sitl_flight_stack:="false"
 }
@@ -189,7 +189,7 @@ px4_v1_15_0_mavlink_quadcopter() {
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         logging_type:=quadcopter                    \
         sitl_vehicle:=iris                          \
-        vehicle_params:=quadrotor                   \
+        vehicle_params:=$VEHICLE_PARAMS_DIR/quadrotor/params.yaml \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter                        \
         run_sitl_flight_stack:="false"
@@ -201,6 +201,8 @@ if [ "${BASH_SOURCE[0]}" -ef "$0" ]; then
     set -e
 fi
 SCRIPT_DIR="$(dirname "$0")"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
+VEHICLE_PARAMS_DIR=$REPO_DIR//uav_dynamics/uav_hitl_dynamics/config/vehicle_params
 
 if [ "$1" = "px4_v1_15_0_dronecan_quadplane_vtol" ]; then
     px4_v1_15_0_dronecan_quadplane_vtol
