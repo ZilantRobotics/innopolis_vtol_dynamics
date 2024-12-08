@@ -154,7 +154,7 @@ docker_push_image() {
 }
 
 docker_countainer_run_interactive() {
-    setup_cyphal_hitl_config
+    setup_cyphal_hitl_config || true
     docker container run --rm -it $DOCKER_FLAGS $IMAGE_NAME /bin/bash
 }
 
