@@ -3,6 +3,7 @@
 
 # Include only specific folders/files
 !communicators/
+!configs/dynamics/
 
 !inno_sim_interface/
 
