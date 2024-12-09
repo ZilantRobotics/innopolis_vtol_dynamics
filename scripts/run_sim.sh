@@ -112,6 +112,18 @@ px4_v1_15_0_dronecan_quadrotor() {
         dynamics:=quadcopter
 }
 
+ap_copter_v4_5_7_dronecan() {
+    setup_ros
+    setup_dronecan_hitl
+    $SCRIPT_DIR/airframe_printer.sh 4001
+    roslaunch innopolis_vtol_dynamics hitl.launch   \
+        run_dronecan_communicator:=true             \
+        logging_type:=quadcopter                    \
+        vehicle_params:=$DYNAMICS_CONFIGS_DIR/quadcopter_ardupilot/params.yaml \
+        mixer:=direct_mixer                         \
+        dynamics:=quadcopter
+}
+
 px4_v1_15_0_cyphal_quadcopter() {
     setup_ros
     setup_cyphal_hitl
@@ -203,6 +215,7 @@ fi
 SCRIPT_DIR="$(dirname "$0")"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 VEHICLE_PARAMS_DIR=$REPO_DIR/uav_dynamics/uav_hitl_dynamics/config/vehicle_params
+DYNAMICS_CONFIGS_DIR=$REPO_DIR/configs/dynamics
 
 if [ "$1" = "px4_v1_15_0_dronecan_quadplane_vtol" ]; then
     px4_v1_15_0_dronecan_quadplane_vtol
@@ -210,6 +223,8 @@ elif [ "$1" = "px4_v1_13_0_dronecan_vtol" ]; then
     px4_v1_13_0_dronecan_vtol
 elif [ "$1" = "px4_v1_15_0_dronecan_quadrotor" ]; then
     px4_v1_15_0_dronecan_quadrotor
+elif [ "$1" = "ap_copter_v4_5_7_dronecan" ]; then
+    ap_copter_v4_5_7_dronecan
 elif [ "$1" = "px4_v1_15_0_cyphal_quadcopter" ]; then
     px4_v1_15_0_cyphal_quadcopter
 elif [ "$1" = "px4_v1_15_0_cyphal_octorotor" ]; then

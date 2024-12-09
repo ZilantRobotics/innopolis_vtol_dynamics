@@ -1,0 +1,72 @@
+# Usage: autopilot-configurator --force-calibrate -v --params configs/ardupilot_dronecan_params.yaml
+# devid = bus_type * (1 << 0) + bus * (1 << 3) + address * (1 << 8) + devtype * (1 << 8)
+# bus_type = devid % 8 = 3
+# bus = (devid >> 3) % 32
+# address = (devid >> 8) % 256
+# devtype = (devid >> 16) % 256
+
+FRAME_CLASS         : 1.0         # Quadcopter
+CAN_D1_PROTOCOL     : 1.0         # DroneCAN
+CAN_D1_UC_ESC_BM    : 15.0        # For a Quadcopter
+CAN_D2_PROTOCOL     : 0.0         # Disable
+CAN_P1_DRIVER       : 1.0         # First driver
+CAN_P1_BITRATE      : 1000000.0
+BRD_SAFETY_DEFLT    : 0.0         # Disabled
+FS_THR_ENABLE       : 0.0         # Disabled
+GPS_TYPE            : 9.0         # DroneCAN
+ATC_RAT_RLL_P       : 0.08
+
+# Disable board sensors
+EK3_IMU_MASK        : 1.0
+INS_ENABLE_MASK     : 1.0
+INS_USE             : 1.0        # Enabled
+INS_USE2            : 0.0        # Disabled
+INS_USE3            : 0.0        # Disabled
+
+# CUAV X7 SPI Compass devid=1114642  bus_type=2 (SPI), bus=2, address=2    devtype=17
+# CAN Compass         devid=76291    bus_type=3 (CAN), bus=0, address=42   devtype=1
+COMPASS_DEV_ID      : 76291.0    # DroneCAN magnetometer
+COMPASS_PRIO1_ID    : 76291.0
+COMPASS_USE         : 1.0
+COMPASS_USE2        : 0.0
+COMPASS_USE3        : 0.0
+COMPASS_EXTERNAL    : 1.0
+COMPASS_EXTERN2     : 0.0
+COMPASS_EXTERN3     : 0.0
+COMPASS_USE         : 1.0
+COMPASS_USE2        : 0.0
+COMPASS_USE3        : 0.0
+COMPASS_DEC         : 0.0
+
+COMPASS_DIA_X       : 0.999
+COMPASS_DIA_Y       : 0.999
+COMPASS_DIA_Z       : 0.999
+
+COMPASS_ODI_X       : 0.001
+COMPASS_ODI_Y       : 0.001
+COMPASS_ODI_Z       : 0.001
+
+COMPASS_OFS_X       : 0.001
+COMPASS_OFS_Y       : 0.001
+COMPASS_OFS_Z       : 0.001
+
+# Use HITL IMU
+AHRS_TRIM_X         : 0.000214698069612496
+AHRS_TRIM_Y         : 0.000064728621509857
+AHRS_TRIM_Z         : 0.000000000000000000
+
+# CUAV X7 SPI INS     devid=3211786  bus_type=2 (SPI), bus=1, address=2    devtype=49
+# DroneCAN Accel      devid=3997955  bus_type=3 (BUS_TYPE_UAVCAN), bus=0, address=1    devtype=61 (DEVTYPE_UAVCAN)
+# DroneCAN Gyro       devid=3998211  bus_type=3 (BUS_TYPE_UAVCAN), bus=0, address=2    devtype=61 (DEVTYPE_UAVCAN)
+INS_ACC1_CALTEMP    : 0.000
+INS_ACCOFFS_X       : 0.001
+INS_ACCOFFS_Y       : 0.001
+INS_ACCOFFS_Z       : 0.001
+INS_ACCSCAL_X       : 0.999
+INS_ACCSCAL_Y       : 0.999
+INS_ACCSCAL_Z       : 0.999
+
+INS_GYR1_CALTEMP    : 0.000
+INS_GYROFFS_X       : 0.001
+INS_GYROFFS_Y       : 0.001
+INS_GYROFFS_Z       : 0.001

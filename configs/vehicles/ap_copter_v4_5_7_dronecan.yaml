@@ -1,0 +1,5 @@
+params:
+mode: dronecan
+alias: ac
+sim_config: ap_copter_v4_5_7_dronecan
+info: ""

@@ -1,0 +1,40 @@
+vehicle_mass :              2.0       # kg
+
+# This represents the response time of the motor to changes in input for brushless motors with ESCs
+# Higher-quality ESCs and motors may have a faster response (closer to 0.02 sec).
+# Slower or less efficient systems may be closer to 0.05 sec.
+motor_time_constant:        0.02      # sec
+
+# For a standard 10–12 inch propeller
+# This is the rotational inertia of the motor and propeller system.
+# It depends on the size and weight of the propeller and motor rotor:
+# Typical value: 0.00002–0.00006 kg·m²
+# Smaller drones with lighter props will have lower values.
+motor_rotational_inertia:   6.62e-6   # kg m^2
+thrust_coefficient:         1.91e-6   # N/(rad/s)^2"
+torque_coefficient:         2.6e-7    # Nm/(rad/s)^2
+drag_coefficient:           0.1       # N/(m/s)
+aeromoment_coefficient_xx:  0.003     # Nm/(rad/s)^2
+aeromoment_coefficient_yy:  0.003     # Nm/(rad/s)^2
+aeromoment_coefficient_zz:  0.003     # Nm/(rad/s)^2
+vehicle_inertia_xx:         0.045     # kg * m^2
+vehicle_inertia_yy:         0.045     # kg * m^2
+
+# Low value -> the yaw oscillations.
+# High value -> slow response on yaw inputs and it may feel "lazy" in maintaining the commanded yaw angle.
+vehicle_inertia_zz:         0.045     # kg * m^2
+
+max_prop_speed:             2200      # rad/s
+moment_process_noise:       1.25e-7   # (Nm)^2 s
+force_process_noise:        0.0005    # N^2 s"
+
+# The perpendicular distance between a force's line of action (such as thrust
+# or lift) and the center of mass (or the axis of rotation) of the UAV
+moment_arm:                 0.35      # m
+
+accelerometer_biasprocess:  0.0       # m^2/s^5, 1.0e-7
+gyroscope_biasprocess:      0.0       # rad^2/s^3, 1.0e-7
+accelerometer_biasinitvar:  0.00001   # (m/s^2)^2, 0.005
+gyroscope_biasinitvar:      0.00001   # (rad/s)^2, 0.003
+accelerometer_variance:     0.0001    # m^2/s^4, 0.001
+gyroscope_variance:         0.00001   # rad^2/s^2, 0.001
