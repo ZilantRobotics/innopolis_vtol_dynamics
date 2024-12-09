@@ -29,6 +29,7 @@ $SUDO apt-get install $FORCE_APT_INSTALL \
     ros-$ROS_DISTRO-tf2         \
     ros-$ROS_DISTRO-tf2-ros     \
     ros-$ROS_DISTRO-mavros-msgs \
+    ros-$ROS_DISTRO-rosbridge-server \
     python3-pip \
     python3-catkin-tools
 
