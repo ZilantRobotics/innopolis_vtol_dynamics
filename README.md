@@ -6,21 +6,24 @@ UAV HITL Simulator brings up a set of ROS packages, config files and instruction
 
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/dynamics.png" alt="drawing"/>
 
-The key feature of this simulation is to run it in such a way that the hardware knows nothing about the simulation. This can be done with Cyphal/DroneCAN. It covers more PX4 modules than standard SITL and HITL.
+The key feature is to run the simulation on a real hardware and use the actual Cyphal/DroneCAN drivers, so the autopilot knows nothing about the simulation. It covers more PX4 modules than SITL and MAVLink HITL.
 
 **Purpose**
 
-- Simulation of UAV onboard systems at a low hardware level
-- Testing and debugging of UAV control systems using a CAN-bus
-- Development and testing of intelligent automatic control systems for UAVs
+- Testing autopilot peripheral drivers (DroneCAN or Cyphal)
+- Testing real hardware components (actuators, payload, power and electrical systems) in pair with control system
+- Communication Bus and Wiring Testing
+- Fault Injection and Safety Measures
+- Environmental and Durability Testing: Vibration Emulation, Long-Duration Endurance Runs
 - Training in the development and use of drones, including creating datasets and automated testing
 
-**Minimal requirements (for HITL only):**
+**Recommended requirements for HITL:**
 
-- Operating System: Linux based OS such as Ubuntu 22.04
-- Raspberry PI 4 is enough
+- Operating System: Pure Ubuntu 20.04, 22.04 or 24.04 installation is highly recommended; WSL and VM are not recommended
+- Docker: use regular Docker Engine, not Docker Desktop (because Docker Desktop relies on VM)
+- Performance: for HITL part even Raspberry PI 4 is enough
 
-**Recommended requirements (for HITL + 3D simulator):**
+**Recommended requirements for 3D simulator:**
 
 - Operating System: We've tailored the simulator for modern versions of Windows, Linux, and Mac. Choose the build that matches your OS.
 - CPU: Aim for an Intel i7 from the 11th or 12th generation. For those using AMD, any equivalent processor will suffice.
@@ -29,7 +32,7 @@ The key feature of this simulation is to run it in such a way that the hardware 
 **Required hardware:**
 
 - Flight controller: fmu-v5, fmu-v6c or fmu-v6x
-- CAN-sniffer
+- CAN-sniffer: Zubax Babel is recommended, but other CAN-adapters can be suitable as well
 
 ## 1. USE CASES
 
@@ -308,12 +311,13 @@ Outdated manual instructions:
 
 | Version | ReleaseDate | Major changes |
 | ------- | ----------- | ------------- |
-| v0.9.0 | Dec .., 2024 | Add px4_fmu-v6c, px4_fmu-v6x, cuav_x7pro, cuav_nora support beside fmu-v5 |
-| v0.8.0 | Jun 10, 2024 | Update PX4 from v1.14 to v1.15 |
-| v0.7.0 | Oct 31, 2023 | Update PX4 from v1.13 to v1.14 |
-| v0.6.0 | Jul 16, 2023 | Add Octorotor dynamics, fault scenarios and Cyphal ESC feedback |
-| v0.5.0 | May 17, 2023 | Add Cyphal PX4 v1.13.0 quadcopter, update DroneCAN PX4 from v1.12.1 to v1.13.0 |
-| v0.4.0 | May 16, 2022 | Add Cyphal/DroneCAN custom version of Ardupilot |
-| v0.3.0 | Aug 25, 2021 | Add Docker |
-| v0.2.0 | Aug 17, 2021 | Update to public DroneCAN PX4 v1.12.1 |
-| v0.1.0 | Mar 18, 2021 | First public release for private custom version of DroneCAN PX4 v1.11.2, only CUAV V5+, SITL and HITL modes |
+| v0.10.0 | In progress... | Add ArduPilot support |
+| v0.9.0  | Dec 08, 2024 | Add px4_fmu-v6c, px4_fmu-v6x, cuav_x7pro, cuav_nora support beside fmu-v5 |
+| v0.8.0  | Jun 10, 2024 | Update PX4 from v1.14 to v1.15 |
+| v0.7.0  | Oct 31, 2023 | Update PX4 from v1.13 to v1.14 |
+| v0.6.0  | Jul 16, 2023 | Add Octorotor dynamics, fault scenarios and Cyphal ESC feedback |
+| v0.5.0  | May 17, 2023 | Add Cyphal PX4 v1.13.0 quadcopter, update DroneCAN PX4 from v1.12.1 to v1.13.0 |
+| v0.4.0  | May 16, 2022 | Add Cyphal/DroneCAN custom version of Ardupilot |
+| v0.3.0  | Aug 25, 2021 | Add Docker |
+| v0.2.0  | Aug 17, 2021 | Update to public DroneCAN PX4 v1.12.1 |
+| v0.1.0  | Mar 18, 2021 | First public release for private custom version of DroneCAN PX4 v1.11.2, only CUAV V5+, SITL and HITL modes |
