@@ -26,6 +26,8 @@ INS_USE3            : 0.0        # Disabled
 # CUAV X7 SPI Compass devid=1114642  bus_type=2 (SPI), bus=2, address=2    devtype=17
 # CAN Compass         devid=76291    bus_type=3 (CAN), bus=0, address=42   devtype=1
 COMPASS_DEV_ID      : 76291.0    # DroneCAN magnetometer
+COMPASS_DEV_ID2     : 0.0
+COMPASS_DEV_ID3     : 0.0
 COMPASS_PRIO1_ID    : 76291.0
 COMPASS_USE         : 1.0
 COMPASS_USE2        : 0.0
@@ -49,6 +51,8 @@ COMPASS_ODI_Z       : 0.001
 COMPASS_OFS_X       : 0.001
 COMPASS_OFS_Y       : 0.001
 COMPASS_OFS_Z       : 0.001
+
+TERRAIN_ENABLE      : 0.0
 
 # Use HITL IMU
 AHRS_TRIM_X         : 0.000214698069612496
