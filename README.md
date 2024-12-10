@@ -11,7 +11,7 @@ The key feature is to run the simulation on a real hardware and use the actual C
 **Purpose**
 
 - Testing autopilot peripheral drivers (DroneCAN or Cyphal)
-- Testing real hardware components (actuators, payload, power and electrical systems) in pair with control system
+- Testing hardware components (actuators, payload, power and electrical systems) in pair with autopilot
 - Communication Bus and Wiring Testing
 - Fault Injection and Safety Measures
 - Environmental and Durability Testing: Vibration Emulation, Long-Duration Endurance Runs
@@ -20,18 +20,19 @@ The key feature is to run the simulation on a real hardware and use the actual C
 **Recommended requirements for HITL:**
 
 - Operating System: Pure Ubuntu 20.04, 22.04 or 24.04 installation is highly recommended; WSL and VM are not recommended
+Operating System: A pure installation of Ubuntu 20.04, 22.04, or 24.04 is recommended; avoid WSL and VMs
 - Docker: use regular Docker Engine, not Docker Desktop (because Docker Desktop relies on VM)
 - Performance: for HITL part even Raspberry PI 4 is enough
 
 **Recommended requirements for 3D simulator:**
 
-- Operating System: We've tailored the simulator for modern versions of Windows, Linux, and Mac. Choose the build that matches your OS.
-- CPU: Aim for an Intel i7 from the 11th or 12th generation. For those using AMD, any equivalent processor will suffice.
+- Operating System: Modern versions of Windows, Linux, and Mac.
+- CPU: Aim for an Intel i7 (from 11th/12th gen). For those using AMD, any equivalent processor will suffice.
 - RAM: 16GB is a recommended minimum, but more is always better for performance.
 
 **Required hardware:**
 
-- Flight controller: fmu-v5, fmu-v6c or fmu-v6x
+- Flight controller: fmu-v5, fmu-v6c or fmu-v6x, cuav_x7pro, cuav_nora and more by request
 - CAN-sniffer: Zubax Babel is recommended, but other CAN-adapters can be suitable as well
 
 ## 1. USE CASES
@@ -146,17 +147,31 @@ roslaunch innopolis_vtol_dynamics 3d_sim.launch
 
 ### 1.3. Testing with Real UAV Components
 
-Connect the HITL simulator to a particular component of a vehicle or almost to the whole system.
-- Full-System Simulation: Use actual UAV hardware to simulate real-world operations without physical flight.
-- Actuator and Payload Testing: Validate that motors, control surfaces, and payloads respond correctly to simulated inputs.
+Connect the HITL simulator to a particular component of a vehicle or almost to the whole system. Use actual UAV hardware to simulate real-world operations without physical flight.
 
 An example of connection to the whole system is show below.
 
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/use_case_3.png" alt="drawing" width="800"/>
 
-### 1.4. SITL if you don't have the hardware
+Example of testing scenarios:
+1. Power and Electrical System Verification:
+    - Load Testing: Simulate various flight profiles that cause different current draws on ESCs and motors.
+    - Battery and Power Module Evaluation: Emulate different battery states-of-charge, voltage sags, or current spikes
+2. Thermal Management Assessment:
+    - Thermal Stress Scenarios: By simulating prolonged hover or aggressive maneuvers, the electronics may heat up.
+3. Communication Bus and Wiring Testing:
+    - Bus Utilization and Noise: By simulating high CAN communication traffic engineers can evaluate if cables, connectors, and bus termination are correct.
+4. Fault Injection and Safety Measures:
+    - Fail-Safe Triggers: Simulate sensor failures, GPS dropouts, or communications errors and observe the hardware’s ability to detect and respond via built-in fail-safes, including checking the reaction of power relays, backup power lines, or redundant components.
+5. Environmental and Durability Testing:
+    - Vibration Emulation: Although you aren’t using real propellers, you can introduce simulated vibration profiles through test stands or external actuators. This allows checking if connectors remain tight under conditions similar to real flight.
+    - Long-Duration Endurance Runs: Run the drone hardware in a simulated “mission” environment for hours, verifying long-term reliability, potential component drift, or intermittent connection issues that only appear after extended usage.
+
+### 1.4. SITL (If you don't have the hardware)
 
 SITL mode is out of the scope of the interests of this simulator. But anyway, it happens that you need to test something and you don't have the required hardware in your hand. So, you can run the flight stack and the dynamics on your PC:
+
+[![](https://img.youtube.com/vi/bk03fAoYGfk/0.jpg)](https://youtu.be/bk03fAoYGfk)
 
 Run the HITL dynamics as usual, but choose MAVLink mode, for example:
 
@@ -197,8 +212,6 @@ To build docker image, type:
 ```bash
 ./scripts/sim.py b # b stands for build
 ```
-
-> An image on dockerhub usually is not up to date, so it's better to build manually
 
 **Step 3. Connect everything together for HITL**
 
@@ -250,29 +263,29 @@ Here 2 options are suggested.
 
 **Step 6. (optional) 3D Simulator**
 
-> A new 3D simulator will appear here soon.
+```bash
+# 1. Run the Simulator3d itself
+./ZilantSimulator.x86_64
+
+# 2. Run rosbridge and sim interface nodes
+./scripts/docker.sh i
+roslaunch innopolis_vtol_dynamics 3d_sim.launch
+```
 
 ## 3. SUPPORTED MODES
 
 You can obrain the actual list of the suported modes by typing `./scripts/sim.py --help`.
 
-Well, here is the output of the command:
+Well, here is our main targets:
 
-```bash
-Primary supported modes (with aliases):
-  px4_v1_15_0_cyphal_quadcopter,cq       | Cyphal     PX4 v1.15-beta  Quadrotor x (4001)
-  px4_v1_15_0_cyphal_quadplane_vtol,csv  | Cyphal     PX4 v1.15-beta  Standard VTOL (13000)
-  px4_v1_15_0_dronecan_quadrotor,dq      | DroneCAN   PX4 v1.15-beta  Quadrotor (4001)
-  px4_v1_15_0_dronecan_quadplane_vtol,dv | DroneCAN   PX4 v1.15-beta  Standard VTOL (13000)
-  px4_v1_13_0_dronecan_vtol,dv1130       | DroneCAN   PX4 v1.13.0     vtol 13070
-
-Other modes:
-  px4_v1_12_0_mavlink_quadplane_vtol    | MAVLink     PX4 v1.12       vtol 13070
-  px4_v1_12_0_mavlink_quadcopter        | MAVLink     PX4 v1.12       Quadrotor (4001)
-  cyphal_and_dronecan                   | 2 CAN       AP  v4.4.0      Copter
-  px4_v1_15_0_cyphal_octorotor,co       | Cyphal      PX4 v1.15-beta  Octorotor Coaxial (12001)
-
-```
+| **Target** | **DroneCAN** | **Cyphal** | **MAVLink SITL** |
+|----------------------|--------------|------------|------------------|
+| PX4 v1.15 Quadcopter | ✅ Supported | ✅ Supported | ✅ Supported |
+| PX4 v1.15 Quadplane VTOL | ✅ Supported | ✅ Supported | ✅ Supported |
+| PX4 v1.15 Plane | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported |
+| ArduPilot v4.5.7 Copter | ✅ Supported | ❌ Not Supported | ❌ Not Supported |
+| ArduPilot v4.5.7 Plane | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported |
+| ArduPilot v4.5.7 QuadPlane | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported |
 
 New modes will be extended step by step.
 
@@ -288,13 +301,23 @@ The design of the simulator is shown below.
 
 <img src="https://github.com/ZilantRobotics/innopolis_vtol_dynamics/wiki/assets/welcome/scheme.png" alt="drawing"/>
 
-## 5. EXAMPLE
+## 5. ADDING A CUSTOM DYNAMICS
+
+1. Create a new command in [configs/vehicles/](configs/vehicles/) folder.
+    - Once you create a new yaml file, the command should appear in `./scripts/sim.py --help`
+2. Create a dynamics properties in [configs/dynamics/](configs/dynamics/) directory
+    - Use either existed multirotor or VTOL dynamics as template 
+3. Keep your autopilot configuration parameters in [configs/](configs/) directory
+    - It can be used either as a hint for manual further configuration or in an auto configuration script
+4. [will be automoted soon] Add a command in [scripts/run_sim.sh](scripts/run_sim.sh).
+
+## 6. EXAMPLE
 
 Check the video below.
 
 [![Cyphal/DroneCAN HITL VTOL dynamics simulator](https://img.youtube.com/vi/e9MREW6tCmE/0.jpg)](https://youtu.be/e9MREW6tCmE)
 
-## 6. REFERENCE
+## 7. REFERENCE
 
 Docs:
 
@@ -307,11 +330,11 @@ Outdated manual instructions:
 - [PX4 DroneCAN manual configuration instructions](docs/px4/dronecan.md)
 - [ArduPilot manual configuration instructions](docs/ardupilot/README.md)
 
-## 7. CHANGELOG NOTES
+## 8. CHANGELOG NOTES
 
 | Version | ReleaseDate | Major changes |
 | ------- | ----------- | ------------- |
-| v0.10.0 | In progress... | Add ArduPilot support |
+| v0.10.0 | In progress... | Add ArduPilot: Quadcopter and Plane support |
 | v0.9.0  | Dec 08, 2024 | Add px4_fmu-v6c, px4_fmu-v6x, cuav_x7pro, cuav_nora support beside fmu-v5 |
 | v0.8.0  | Jun 10, 2024 | Update PX4 from v1.14 to v1.15 |
 | v0.7.0  | Oct 31, 2023 | Update PX4 from v1.13 to v1.14 |
