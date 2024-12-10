@@ -1,0 +1,37 @@
+# PX4 SITL Iris Quadcopter Model Configuration
+# This configuration file defines the dynamics properties for the PX4 SITL (Software-in-the-Loop)
+# Iris quadcopter model. The Iris is a standard lightweight drone used in simulation environments
+# to validate flight control algorithms and test mission planning.
+#
+# Key Assumptions:
+# - This configuration is specifically for use in PX4 SITL simulations
+# - It is expected to work perfectly with the default PX4 SITL parameters configuration
+#
+# The dynamics parameters are based on PX4 Iris Model from Gazebo SDF file
+
+vehicle_mass :              1.5       # kg
+motor_time_constant:        0.02      # sec
+motor_rotational_inertia:   6.62e-6   # kg m^2
+thrust_coefficient:         1.91e-6   # N/(rad/s)^2"
+torque_coefficient:         2.6e-7    # Nm/(rad/s)^2
+drag_coefficient:           0.1       # N/(m/s)
+aeromoment_coefficient_xx:  0.003     # Nm/(rad/s)^2
+aeromoment_coefficient_yy:  0.003     # Nm/(rad/s)^2
+aeromoment_coefficient_zz:  0.003     # Nm/(rad/s)^2
+vehicle_inertia_xx:         0.029125  # kg * m^2
+vehicle_inertia_yy:         0.029125  # kg * m^2
+vehicle_inertia_zz:         0.055225  # kg * m^2
+max_prop_speed:             2200      # rad/s
+moment_process_noise:       1.25e-7   # (Nm)^2 s
+force_process_noise:        0.0005    # N^2 s"
+
+# The perpendicular distance between a force's line of action (such as thrust
+# or lift) and the center of mass (or the axis of rotation) of the UAV
+moment_arm:                 0.19      # m
+
+accelerometer_biasprocess:  0.0       # m^2/s^5, 1.0e-7
+gyroscope_biasprocess:      0.0       # rad^2/s^3, 1.0e-7
+accelerometer_biasinitvar:  0.00001   # (m/s^2)^2, 0.005
+gyroscope_biasinitvar:      0.00001   # (rad/s)^2, 0.003
+accelerometer_variance:     0.0001    # m^2/s^4, 0.001
+gyroscope_variance:         0.00001   # rad^2/s^2, 0.001
