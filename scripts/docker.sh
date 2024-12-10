@@ -80,6 +80,7 @@ setup_minimim_required_docker_flags() {
     DOCKER_FLAGS+=" -e DISPLAY=$DISPLAY"
     DOCKER_FLAGS+=" -e QT_X11_NO_MITSHM=1"
     DOCKER_FLAGS+=" --volume=${REPOSITORY_DIR}/uav_dynamics/uav_hitl_dynamics/config:/catkin_ws/src/uav_hitl_simulator/uav_dynamics/uav_hitl_dynamics/config:ro"
+    DOCKER_FLAGS+=" --volume=${REPOSITORY_DIR}/configs/dynamics:/catkin_ws/src/uav_hitl_simulator/configs/dynamics:ro"
 }
 
 setup_dronecan_hitl_config() {
