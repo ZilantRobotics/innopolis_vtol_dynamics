@@ -32,6 +32,7 @@ class DockerWrapper:
         '--rm',
         '--net=host',
         f'--volume={REPOSITORY_DIR}/uav_dynamics/uav_hitl_dynamics/config:/catkin_ws/src/uav_hitl_simulator/uav_dynamics/uav_hitl_dynamics/config:ro',
+        f'--volume={REPOSITORY_DIR}/configs/dynamics:/catkin_ws/src/uav_hitl_simulator/configs/dynamics:ro',
         '-v', '/tmp/.X11-unix:/tmp/.X11-unix:rw',
         '-e', 'DISPLAY=:0',
         '-e', 'QT_X11_NO_MITSHM=1',
