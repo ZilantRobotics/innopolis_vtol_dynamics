@@ -107,7 +107,7 @@ px4_v1_15_0_dronecan_quadrotor() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_dronecan_communicator:=true             \
         logging_type:=quadcopter                    \
-        vehicle_params:=$VEHICLE_PARAMS_DIR/quadrotor/params.yaml \
+        vehicle_params:=$DYNAMICS_CONFIGS_DIR/quadcopter_hany/params.yaml \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter
 }
@@ -131,7 +131,7 @@ px4_v1_15_0_cyphal_quadcopter() {
     roslaunch innopolis_vtol_dynamics hitl.launch   \
         run_cyphal_communicator:=true               \
         logging_type:=quadcopter                    \
-        vehicle_params:=$VEHICLE_PARAMS_DIR/quadrotor/params.yaml \
+        vehicle_params:=$DYNAMICS_CONFIGS_DIR/quadcopter_hany/params.yaml \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter
 }
