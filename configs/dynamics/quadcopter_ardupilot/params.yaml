@@ -1,3 +1,16 @@
+# QuadCopter Dynamics Configuration for ArduCopter
+# This configuration file defines the dynamics properties for a general quadcopter model
+# with a total mass of 2 kg. It is designed specifically for HITL (Hardware-in-the-Loop)
+# simulation in an ArduPilot environment, aiming to replicate the behavior of a real-world drone.
+#
+# Key Assumptions:
+# - The quadcopter follows a symmetric X-frame design.
+# - The drone uses four identical motors and propellers, with a thrust-to-weight ratio
+#   sufficient for stable flight.
+# - Dynamics parameters align with the default PID tuning of ArduPilot to minimize
+#   the need for manual adjustments.
+
+# The total mass of the vehicle, including the frame, motors, ESCs, and payload.
 vehicle_mass :              2.0       # kg
 
 # This represents the response time of the motor to changes in input for brushless motors with ESCs
@@ -5,18 +18,32 @@ vehicle_mass :              2.0       # kg
 # Slower or less efficient systems may be closer to 0.05 sec.
 motor_time_constant:        0.02      # sec
 
-# For a standard 10–12 inch propeller
-# This is the rotational inertia of the motor and propeller system.
-# It depends on the size and weight of the propeller and motor rotor:
-# Typical value: 0.00002–0.00006 kg·m²
+# The rotational inertia of the motor and propeller system.
+# Depends on the size and weight of the propeller and motor rotor.
+# Typical value: 0.00002–0.00006 kg·m² for standard 10–12 inch propellers.
 # Smaller drones with lighter props will have lower values.
-motor_rotational_inertia:   6.62e-6   # kg m^2
+motor_rotational_inertia:   6.62e-6   # kg·m²
+
+# This coefficient relates motor rotational speed to generated thrust.
+# Higher values indicate more thrust is produced for a given RPM.
 thrust_coefficient:         1.91e-6   # N/(rad/s)^2"
+
+# This coefficient relates motor rotational speed to generated torque.
+# Torque impacts the drone's rotational dynamics (yaw).
 torque_coefficient:         2.6e-7    # Nm/(rad/s)^2
+
+# Represents the aerodynamic drag acting on the drone.
+# Higher values indicate more resistance to motion through the air.
 drag_coefficient:           0.1       # N/(m/s)
+
+# Coefficient representing aerodynamic moments acting about the axis.
+# This can arise from asymmetries in the propeller wash or frame.
 aeromoment_coefficient_xx:  0.003     # Nm/(rad/s)^2
 aeromoment_coefficient_yy:  0.003     # Nm/(rad/s)^2
 aeromoment_coefficient_zz:  0.003     # Nm/(rad/s)^2
+
+# The moment of inertia about the X or Y-axis, affecting roll or pitch dynamics.
+# Larger values indicate more resistance to angular acceleration in roll or pitch.
 vehicle_inertia_xx:         0.045     # kg * m^2
 vehicle_inertia_yy:         0.045     # kg * m^2
 
@@ -24,7 +51,12 @@ vehicle_inertia_yy:         0.045     # kg * m^2
 # High value -> slow response on yaw inputs and it may feel "lazy" in maintaining the commanded yaw angle.
 vehicle_inertia_zz:         0.045     # kg * m^2
 
+# The maximum rotational speed of the propeller.
+# Determines the upper limit of thrust and torque generation.
 max_prop_speed:             2200      # rad/s
+
+# The process noise for the moment and force estimation in the filter.
+# Lower values indicate more confidence in model accuracy.
 moment_process_noise:       1.25e-7   # (Nm)^2 s
 force_process_noise:        0.0005    # N^2 s"
 
@@ -32,6 +64,7 @@ force_process_noise:        0.0005    # N^2 s"
 # or lift) and the center of mass (or the axis of rotation) of the UAV
 moment_arm:                 0.35      # m
 
+# The process noise for bias estimation, the initial variance in the filter and measurement noice.
 accelerometer_biasprocess:  0.0       # m^2/s^5, 1.0e-7
 gyroscope_biasprocess:      0.0       # rad^2/s^3, 1.0e-7
 accelerometer_biasinitvar:  0.00001   # (m/s^2)^2, 0.005
