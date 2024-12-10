@@ -201,7 +201,7 @@ px4_v1_15_0_mavlink_quadcopter() {
     roslaunch innopolis_vtol_dynamics sitl.launch   \
         logging_type:=quadcopter                    \
         sitl_vehicle:=iris                          \
-        vehicle_params:=$VEHICLE_PARAMS_DIR/quadrotor/params.yaml \
+        vehicle_params:=$DYNAMICS_CONFIGS_DIR/quadcopter_iris_px4/params.yaml \
         mixer:=direct_mixer                         \
         dynamics:=quadcopter                        \
         run_sitl_flight_stack:="false"
